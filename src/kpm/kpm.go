@@ -43,7 +43,7 @@ var (
 	}
 )
 
-// KPM entrypoint
+// Entrypoint
 func main() {
 	// CLI app details
 	app := cli.NewApp()
@@ -63,7 +63,7 @@ func main() {
 			},
 			Action: func(c *cli.Context) error {
 				packageDir := getFlagValuePackageDir(c)
-				paramFile := getFlagValueParamFile(c, packageDir)
+				paramFile := getFlagValueParametersFile(c, packageDir)
 				outputDir := getFlagValueOutputDir(c)
 				return subcommands.GenerateCmd(packageDir, paramFile, outputDir)
 			},
@@ -104,41 +104,40 @@ func main() {
 // +-------+
 
 // Value for flag "packageDir"
-func getFlagValuePackageDir(c *cli.Context) string {
+func getFlagValuePackageDir(c *cli.Context) *string {
 	var err error
 
 	// Get user input
-	packageDir := c.String(packageDirFlagName)
+	var packageDir = getStringFlag(c, &packageDirFlagName)
 
 	// Get default path (current working directory)
 	defaultPath, err := os.Getwd()
 	if err != nil {
 		logger.Fatalln(err)
-		os.Exit(1)
 	}
 
 	// Resolve absolute path to use for packageDir
-	packageDir = getAbsolutePathOrDefaultOrExit(&packageDir, &defaultPath)
+	packageDir = getAbsolutePathOrDefaultOrExit(packageDir, &defaultPath)
 
 	return packageDir
 }
 
 // Value for flag "paramFile"
-func getFlagValueParamFile(c *cli.Context, defaultDir string) string {
-	paramFile := c.String(parametersFileFlagName)
-	defaultPath := filepath.Join(defaultDir, "parameters.yaml")
-	paramFile = getAbsolutePathOrDefaultOrExit(&paramFile, &defaultPath)
-	c.Set(parametersFileFlagName, paramFile)
+func getFlagValueParametersFile(c *cli.Context, defaultDir *string) *string {
+	var defaultPath = "parameters.yaml"
+
+	var paramFile = getStringFlag(c, &parametersFileFlagName)
+	paramFile = getAbsolutePathOrDefaultOrExit(paramFile, &defaultPath)
 
 	return paramFile
 }
 
 // Value for flag "outputDir"
-func getFlagValueOutputDir(c *cli.Context) string {
-	outputDir := c.String(outputDirFlagName)
-	defaultPath := "../_generated_"
-	outputDir = getAbsolutePathOrDefaultOrExit(&outputDir, &defaultPath)
-	c.Set(outputDirFlagName, outputDir)
+func getFlagValueOutputDir(c *cli.Context) *string {
+	var defaultPath = "_output_"
+
+	var outputDir = getStringFlag(c, &outputDirFlagName)
+	outputDir = getAbsolutePathOrDefaultOrExit(outputDir, &defaultPath)
 
 	return outputDir
 }
@@ -147,8 +146,17 @@ func getFlagValueOutputDir(c *cli.Context) string {
 // | HELPERS |
 // +---------+
 
-func getAbsolutePathOrDefaultOrExit(path *string, defaultPath *string) string {
-	outputPath := *path
+func getStringFlag(c *cli.Context, flagName *string) *string {
+	if !c.IsSet(*flagName) {
+		return nil
+	}
+
+	var result = c.String(*flagName)
+	return &result
+}
+
+func getAbsolutePathOrDefaultOrExit(path *string, defaultPath *string) *string {
+	var outputPath *string
 	if path != nil {
 		outputPath = getAbsolutePathOrExit(path)
 	} else {
@@ -158,22 +166,24 @@ func getAbsolutePathOrDefaultOrExit(path *string, defaultPath *string) string {
 	return outputPath
 }
 
-func getAbsolutePathOrExit(path *string) string {
+func getAbsolutePathOrExit(path *string) *string {
 	var err error
 
-	outputPath := *path
+	var outputPath = path
 
 	// Resolve "~" to the user's home directory if required
-	if len(outputPath) > 0 && outputPath[0] == '~' && (outputPath[1] == '/' || outputPath[1] == '\\') {
+	if len(*outputPath) > 0 && (*outputPath)[0] == '~' && ((*outputPath)[1] == '/' || (*outputPath)[1] == '\\') {
 		var usr *(user.User)
 		usr, err = user.Current()
-		outputPath = filepath.Join(usr.HomeDir, outputPath[2:])
+		*outputPath = filepath.Join(usr.HomeDir, (*outputPath)[2:])
 	}
 
 	// Check if path is already absolute
-	if !filepath.IsAbs(outputPath) {
+	if !filepath.IsAbs(*outputPath) {
 		// Get absolute path
-		outputPath, err = filepath.Abs(outputPath)
+		var newOutputPath string
+		newOutputPath, err = filepath.Abs(*outputPath)
+		outputPath = &newOutputPath
 
 		// Exit on error
 		if err != nil {
