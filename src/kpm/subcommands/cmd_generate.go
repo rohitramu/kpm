@@ -2,6 +2,7 @@ package subcommands
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -24,14 +25,23 @@ func GenerateCmd(packageDirPath *string, parametersFilePath *string, outputDirPa
 	logger.Println(fmt.Sprintf("Parameters file: %s", *parametersFilePath))
 	logger.Println(fmt.Sprintf("Output directory: %s", *outputDirPath))
 
+	// Define well-known file names
+	//var dependenciesFileName = "dependencies.yaml"
+	var interfaceFileName = "interface.yaml"
+	//var packageFileName = "package.yaml"
+
 	// Define file locations
-	//var dependenciesFilePath = filepath.Join(*packageDirPath, "dependencies.yaml")
-	var interfaceFilePath = filepath.Join(*packageDirPath, "interface.yaml")
-	//var packageFilePath = filepath.Join(*packageDirPath, "package.yaml")
+	//var dependenciesFilePath = filepath.Join(*packageDirPath, dependenciesFileName)
+	var interfaceFilePath = filepath.Join(*packageDirPath, interfaceFileName)
+	//var packageFilePath = filepath.Join(*packageDirPath, packageFileName)
+
+	// Define well-known directory names
+	//var dependenciesDirName = "dependencies"
+	var templatesDirName = "templates"
 
 	// Define directory locations
-	//var dependenciesDirPath = filepath.Join(packageDirPath, "dependencies")
-	var templatesDirPath = filepath.Join(*packageDirPath, "templates")
+	//var dependenciesDirPath = filepath.Join(packageDirPath, dependenciesDirName)
+	var templatesDirPath = filepath.Join(*packageDirPath, templatesDirName)
 
 	// Get the list of filesystem objects in the templates directory
 	var filesystemObjects []os.FileInfo
@@ -54,7 +64,9 @@ func GenerateCmd(packageDirPath *string, parametersFilePath *string, outputDirPa
 	os.MkdirAll(*outputDirPath, os.ModePerm)
 
 	// Read the interface file and apply the template
-	var parameters = getParametersFromInterface(&interfaceFilePath, parametersFilePath)
+	var interfaceTemplateString = string(*readFileToBytes(&interfaceFilePath))
+	var interfaceBytes = executeTemplate(&interfaceFileName, &interfaceTemplateString, yamlBytesToObject(readFileToBytes(parametersFilePath)))
+	var parameters = yamlBytesToObject(interfaceBytes)
 
 	// Get the templates
 	for _, filesystemObject := range filesystemObjects {
@@ -65,7 +77,7 @@ func GenerateCmd(packageDirPath *string, parametersFilePath *string, outputDirPa
 
 		// Generate the output
 		var templateString = string(*readFileToBytes(&filePath))
-		var generatedFileBytes = executeTemplate(&templateString, parameters)
+		var generatedFileBytes = executeTemplate(&fileName, &templateString, parameters)
 
 		// Write the output to a file
 		ioutil.WriteFile(outputFilePath, *generatedFileBytes, os.ModePerm)
@@ -76,28 +88,12 @@ func GenerateCmd(packageDirPath *string, parametersFilePath *string, outputDirPa
 	return nil
 }
 
-func getParametersFromInterface(interfaceFilePath *string, userParametersFilePath *string) *map[interface{}]interface{} {
-	// Get interface template as a string
-	var templateString = string(*readFileToBytes(interfaceFilePath))
-
-	// Get user parameters
-	var userParameters = yamlBytesToObject(readFileToBytes(userParametersFilePath))
-
-	// Generate interface from template and user parameters
-	var interfaceBytes = executeTemplate(&templateString, userParameters)
-
-	// Get values from generated interface
-	var result = yamlBytesToObject(interfaceBytes)
-
-	return result
-}
-
-func executeTemplate(templateString *string, parameters *map[interface{}]interface{}) *[]byte {
+func executeTemplate(templateName *string, templateString *string, parameters *map[interface{}]interface{}) *[]byte {
 	var err error
 
 	// Create template object
 	var tmpl *template.Template
-	tmpl, err = template.New("kpm-template").Option("missingkey=error").Parse(*templateString)
+	tmpl, err = template.New(*templateName).Option("missingkey=error").Funcs(functionMap).Parse(*templateString)
 	if err != nil {
 		logger.Fatalln(err)
 	}
@@ -132,4 +128,32 @@ func yamlBytesToObject(yamlBytes *[]byte) *map[interface{}]interface{} {
 	}
 
 	return &result
+}
+
+var functionMap = template.FuncMap{
+	// Override the "index" function so it correctly fails the template generation on missing keys
+	"index": func(values map[interface{}]interface{}, keys ...string) (interface{}, error) {
+		if len(keys) == 0 {
+			return values, nil
+		}
+
+		var currentMap = values
+		var result interface{}
+		for _, key := range keys {
+			var ok bool
+			result, ok = currentMap[key]
+			if !ok {
+				return nil, errors.New("Missing key: " + key)
+			}
+
+			// Try to assign the next map if the type is a map
+			currentMap, ok = result.(map[interface{}]interface{})
+			if !ok {
+				// If the type is not a map, set this to nil so we don't reuse the old map
+				currentMap = nil
+			}
+		}
+
+		return result, nil
+	},
 }
