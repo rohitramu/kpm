@@ -64,7 +64,7 @@ func main() {
 			Action: func(c *cli.Context) error {
 				packageDir := getFlagValuePackageDir(c)
 				paramFile := getFlagValueParametersFile(c, packageDir)
-				outputDir := getFlagValueOutputDir(c)
+				outputDir := getFlagValueOutputDir(c, packageDir)
 				return subcommands.GenerateCmd(packageDir, paramFile, outputDir)
 			},
 		},
@@ -124,7 +124,7 @@ func getFlagValuePackageDir(c *cli.Context) *string {
 
 // Value for flag "paramFile"
 func getFlagValueParametersFile(c *cli.Context, defaultDir *string) *string {
-	var defaultPath = "parameters.yaml"
+	var defaultPath = filepath.Join(*defaultDir, "parameters.yaml")
 
 	var paramFile = getStringFlag(c, &parametersFileFlagName)
 	paramFile = getAbsolutePathOrDefaultOrExit(paramFile, &defaultPath)
@@ -133,8 +133,8 @@ func getFlagValueParametersFile(c *cli.Context, defaultDir *string) *string {
 }
 
 // Value for flag "outputDir"
-func getFlagValueOutputDir(c *cli.Context) *string {
-	var defaultPath = "_output_"
+func getFlagValueOutputDir(c *cli.Context, defaultDir *string) *string {
+	var defaultPath = filepath.Join(*defaultDir, "_output_")
 
 	var outputDir = getStringFlag(c, &outputDirFlagName)
 	outputDir = getAbsolutePathOrDefaultOrExit(outputDir, &defaultPath)
