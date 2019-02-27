@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
-	"path/filepath"
 
 	"github.com/urfave/cli"
 
@@ -13,7 +11,7 @@ import (
 )
 
 // Main logger
-var logger = log.New(os.Stderr, "", log.LstdFlags)
+var logger = log.New(os.Stdout, "", log.LstdFlags)
 
 // Sub-command names
 var (
@@ -22,9 +20,10 @@ var (
 
 // Flag names
 var (
-	packageDirFlagName     = "packageDir"
-	parametersFileFlagName = "parametersFile"
-	outputDirFlagName      = "outputDir"
+	packageDirFlagName  = "packageDir"
+	valuesFileFlagName  = "valuesFile"
+	outputDirFlagName   = "outputDir"
+	downloadDirFlagName = "downloadDir"
 )
 
 // Flags
@@ -33,13 +32,17 @@ var (
 		Name:  fmt.Sprintf("%s, p", packageDirFlagName),
 		Usage: "Directory of the KPM package (defaults to current working directory)",
 	}
-	parametersFileFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, f", parametersFileFlagName),
-		Usage: "Filepath of the parameters file to use",
+	valuesFileFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, v", valuesFileFlagName),
+		Usage: "Filepath of the values file to use",
 	}
 	outputDirFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, o", outputDirFlagName),
 		Usage: "Directory in which output files should be created",
+	}
+	downloadDirFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, d", downloadDirFlagName),
+		Usage: "Directory in which KPM packages should be downloaded to (defaults to the current working directory)",
 	}
 )
 
@@ -58,14 +61,25 @@ func main() {
 			Usage: fmt.Sprintf("Generates a Kubernetes configuration using the template package specified by the \"--%s\" argument", packageDirFlagName),
 			Flags: []cli.Flag{
 				packageDirFlag,
-				parametersFileFlag,
+				valuesFileFlag,
 				outputDirFlag,
 			},
 			Action: func(c *cli.Context) error {
-				packageDir := getFlagValuePackageDir(c)
-				paramFile := getFlagValueParametersFile(c, packageDir)
-				outputDir := getFlagValueOutputDir(c, packageDir)
+				var packageDir = getStringFlag(c, &packageDirFlagName)
+				var paramFile = getStringFlag(c, &valuesFileFlagName)
+				var outputDir = getStringFlag(c, &outputDirFlagName)
 				return subcommands.GenerateCmd(packageDir, paramFile, outputDir)
+			},
+		},
+		{
+			Name:  "pull",
+			Usage: "Pulls a template package from a docker repository",
+			Flags: []cli.Flag{
+				outputDirFlag,
+			},
+			Action: func(c *cli.Context) error {
+				downloadDir := getStringFlag(c, &downloadDirFlagName)
+				return subcommands.PullCmd(downloadDir)
 			},
 		},
 		{
@@ -75,20 +89,8 @@ func main() {
 				packageDirFlag,
 			},
 			Action: func(c *cli.Context) error {
-				packageDir := getFlagValuePackageDir(c)
+				packageDir := getStringFlag(c, &packageDirFlagName)
 				return subcommands.PushCmd(packageDir)
-			},
-		},
-		{
-			Name:  "apply",
-			Usage: "Applies a generated Kubernetes configuration to a Kubernetes cluster",
-			Flags: []cli.Flag{
-				packageDirFlag,
-				parametersFileFlag,
-			},
-			Action: func(c *cli.Context) error {
-				packageDir := getFlagValuePackageDir(c)
-				return subcommands.ApplyCmd(packageDir)
 			},
 		},
 	}
@@ -97,49 +99,6 @@ func main() {
 	if err != nil {
 		logger.Fatalln(err)
 	}
-}
-
-// +-------+
-// | FLAGS |
-// +-------+
-
-// Value for flag "packageDir"
-func getFlagValuePackageDir(c *cli.Context) *string {
-	var err error
-
-	// Get user input
-	var packageDir = getStringFlag(c, &packageDirFlagName)
-
-	// Get default path (current working directory)
-	defaultPath, err := os.Getwd()
-	if err != nil {
-		logger.Fatalln(err)
-	}
-
-	// Resolve absolute path to use for packageDir
-	packageDir = getAbsolutePathOrDefaultOrExit(packageDir, &defaultPath)
-
-	return packageDir
-}
-
-// Value for flag "paramFile"
-func getFlagValueParametersFile(c *cli.Context, defaultDir *string) *string {
-	var defaultPath = filepath.Join(*defaultDir, "parameters.yaml")
-
-	var paramFile = getStringFlag(c, &parametersFileFlagName)
-	paramFile = getAbsolutePathOrDefaultOrExit(paramFile, &defaultPath)
-
-	return paramFile
-}
-
-// Value for flag "outputDir"
-func getFlagValueOutputDir(c *cli.Context, defaultDir *string) *string {
-	var defaultPath = filepath.Join(*defaultDir, "_output_")
-
-	var outputDir = getStringFlag(c, &outputDirFlagName)
-	outputDir = getAbsolutePathOrDefaultOrExit(outputDir, &defaultPath)
-
-	return outputDir
 }
 
 // +---------+
@@ -153,43 +112,4 @@ func getStringFlag(c *cli.Context, flagName *string) *string {
 
 	var result = c.String(*flagName)
 	return &result
-}
-
-func getAbsolutePathOrDefaultOrExit(path *string, defaultPath *string) *string {
-	var outputPath *string
-	if path != nil {
-		outputPath = getAbsolutePathOrExit(path)
-	} else {
-		outputPath = getAbsolutePathOrExit(defaultPath)
-	}
-
-	return outputPath
-}
-
-func getAbsolutePathOrExit(path *string) *string {
-	var err error
-
-	var outputPath = path
-
-	// Resolve "~" to the user's home directory if required
-	if len(*outputPath) > 0 && (*outputPath)[0] == '~' && ((*outputPath)[1] == '/' || (*outputPath)[1] == '\\') {
-		var usr *(user.User)
-		usr, err = user.Current()
-		*outputPath = filepath.Join(usr.HomeDir, (*outputPath)[2:])
-	}
-
-	// Check if path is already absolute
-	if !filepath.IsAbs(*outputPath) {
-		// Get absolute path
-		var newOutputPath string
-		newOutputPath, err = filepath.Abs(*outputPath)
-		outputPath = &newOutputPath
-
-		// Exit on error
-		if err != nil {
-			logger.Fatalln(err)
-		}
-	}
-
-	return outputPath
 }
