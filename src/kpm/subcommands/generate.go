@@ -2,28 +2,21 @@ package subcommands
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
 	"gopkg.in/yaml.v2"
 
+	"./templatefuncs"
 	"./utils"
 )
 
 // Logger
 var logger = utils.NewLogger()
-
-// Root template
-var rootTemplate = getRootTemplate()
-
-// A generic map
-type genericMap map[interface{}]interface{}
 
 // Define top-level objects in template inputs
 const (
@@ -39,8 +32,8 @@ type packageInfo struct {
 
 // The structure of a dependency definition's yaml file
 type dependencyPackageInfo struct {
-	PackageInfo packageInfo `yaml:"package"`
-	Values      genericMap  `yaml:"values"`
+	PackageInfo packageInfo      `yaml:"package"`
+	Values      utils.GenericMap `yaml:"values"`
 }
 
 // GenerateCmd creates Kubernetes configuration files from the
@@ -59,43 +52,55 @@ func GenerateCmd(packageDirPathArg *string, parametersFilePathArg *string, outpu
 		dependenciesDirName = "dependencies"
 		templatesDirName    = "templates"
 		helpersDirName      = "helpers"
-		outputDirName       = "_generated"
+		outputDirName       = ".kpm_generated"
 	)
 
-	// Resolve package path
-	var packageDirPath = utils.GetAbsolutePathOrDefault(packageDirPathArg, utils.GetCurrentWorkingDir())
+	// Resolve paths
+	var (
+		workingDir          = utils.GetCurrentWorkingDir()
+		packageDirPath      = utils.GetAbsolutePathOrDefault(packageDirPathArg, workingDir)
+		packageName         = filepath.Base(packageDirPath)
+		outputDirParentPath = utils.GetAbsolutePathOrDefault(outputDirPathArg, filepath.Join(workingDir, outputDirName))
+		outputDirPath       = filepath.Join(outputDirParentPath, packageName)
+		parametersFilePath  = utils.GetAbsolutePathOrDefault(parametersFilePathArg, filepath.Join(packageDirPath, parametersFileName))
+	)
 
-	// Resolve parameters file path
-	var parametersFilePath = utils.GetAbsolutePathOrDefault(parametersFilePathArg, filepath.Join(packageDirPath, parametersFileName))
-
-	// Resolve output directory
-	var outputDirPath = utils.GetAbsolutePathOrDefault(outputDirPathArg, filepath.Join(packageDirPath, outputDirName))
-
-	// Log resolved arguments
+	// Log resolved paths
+	logger.Verbose.Println("====")
 	logger.Verbose.Println(fmt.Sprintf("Package directory: %s", packageDirPath))
 	logger.Verbose.Println(fmt.Sprintf("Parameters file:   %s", parametersFilePath))
 	logger.Verbose.Println(fmt.Sprintf("Output directory:  %s", outputDirPath))
+	logger.Verbose.Println("====")
 
 	// Define file locations
-	var interfaceFilePath = filepath.Join(packageDirPath, interfaceFileName)
-	var packageFilePath = filepath.Join(packageDirPath, packageFileName)
+	var (
+		interfaceFilePath = filepath.Join(packageDirPath, interfaceFileName)
+		packageFilePath   = filepath.Join(packageDirPath, packageFileName)
+	)
 
 	// Define directory locations
-	var dependenciesDirPath = filepath.Join(packageDirPath, dependenciesDirName)
-	var templatesDirPath = filepath.Join(packageDirPath, templatesDirName)
-	var helpersDirPath = filepath.Join(packageDirPath, helpersDirName)
+	var (
+		dependenciesDirPath = filepath.Join(packageDirPath, dependenciesDirName)
+		templatesDirPath    = filepath.Join(packageDirPath, templatesDirName)
+		helpersDirPath      = filepath.Join(packageDirPath, helpersDirName)
+	)
+
+	// Get template from helpers
+	var helpersTemplate, numHelpers = chainTemplatesFromDir(getRootTemplate(), helpersDirPath)
+	logger.Verbose.Println(fmt.Sprintf("Found %d helper template(s) in directory: %s", numHelpers, helpersDirPath))
 
 	// Get template input values by applying parameters to interface
-	var templateInput = getTemplateInput(packageFilePath, interfaceFilePath, parametersFilePath)
-
-	// Get helpers template
-	var helpersTemplate = getHelpersTemplate(rootTemplate, helpersDirPath)
+	var templateInput = getTemplateInput(helpersTemplate, packageFilePath, interfaceFilePath, parametersFilePath)
 
 	// Generate output files from dependencies
 	processDependenciesAndWriteToFilesystem(dependenciesDirPath, outputDirPath, helpersTemplate, templateInput)
 
 	// Generate output files and write them to the output directory
-	processTemplatesAndWriteToFilesystem(templatesDirPath, outputDirPath, helpersTemplate, templateInput)
+	var numProcessedTemplates = processTemplatesAndWriteToFilesystem(helpersTemplate, templatesDirPath, templateInput, outputDirPath)
+	logger.Verbose.Println(fmt.Sprintf("Processed %d template(s) in directory: %s", numProcessedTemplates, templatesDirPath))
+
+	// Print status
+	logger.Info.Println(fmt.Sprintf("SUCCESS - Generated output in directory: %s", outputDirPath))
 
 	return nil
 }
@@ -104,7 +109,7 @@ func GenerateCmd(packageDirPathArg *string, parametersFilePathArg *string, outpu
 // | Process dependencies |
 // +----------------------+
 
-func processDependenciesAndWriteToFilesystem(dependenciesDirPath string, outputDirPath string, parentTemplate *template.Template, templateInput *genericMap) {
+func processDependenciesAndWriteToFilesystem(dependenciesDirPath string, outputDirPath string, parentTemplate *template.Template, templateInput *utils.GenericMap) {
 
 }
 
@@ -112,127 +117,39 @@ func processDependenciesAndWriteToFilesystem(dependenciesDirPath string, outputD
 // | Process templates |
 // +-------------------+
 
-func processTemplatesAndWriteToFilesystem(templatesDirPath string, outputDirPath string, parentTemplate *template.Template, templateInput *genericMap) {
-	var err error
-
-	// Get the list of filesystem objects in the templates directory
-	var filesystemObjects []os.FileInfo
-	filesystemObjects, err = ioutil.ReadDir(templatesDirPath)
-	if err != nil {
-		logger.Error.Panicln(err)
-	}
-
-	// Make sure that there are no directories in the templates folder before starting the generation
-	for _, filesystemObject := range filesystemObjects {
-		var fileName = filesystemObject.Name()
-		if filesystemObject.IsDir() {
-			logger.Error.Fatalln(fmt.Sprintf("Directories are not allowed inside the \"%s\" folder.  Found sub-directory: %s", templatesDirPath, fileName))
-		}
-	}
-
+func processTemplatesAndWriteToFilesystem(parentTemplate *template.Template, templatesDirPath string, templateInput *utils.GenericMap, outputDirPath string) int {
 	// Delete and re-create the output directory in case it isn't empty or doesn't exist
 	os.RemoveAll(outputDirPath)
 	os.MkdirAll(outputDirPath, os.ModePerm)
 
-	// Generate output from the templates
-	for _, filesystemObject := range filesystemObjects {
-		var fileName = filesystemObject.Name()
-		var filePath = filepath.Join(templatesDirPath, fileName)
-		var outputFilePath = filepath.Join(outputDirPath, fileName)
-		logger.Verbose.Println(fmt.Sprintf("Generating: %s", outputFilePath))
-
-		// Generate the output
-		var templateString = readFileToString(filePath)
-		var generatedFileBytes = executeTemplate(parentTemplate, fileName, templateString, templateInput)
+	var numTemplates = visitTemplatesFromDir(templatesDirPath, func() *template.Template {
+		// Use the given parent template
+		return parentTemplate
+	}, func(tmpl *template.Template) {
+		// Generate output from each template
+		var generatedFileBytes = executeTemplate(tmpl, templateInput)
 
 		// Write the output to a file
+		var outputFilePath = filepath.Join(outputDirPath, tmpl.Name())
 		ioutil.WriteFile(outputFilePath, generatedFileBytes, os.ModeAppend|os.ModePerm)
-	}
+	})
 
-	// Print status
-	logger.Info.Println(fmt.Sprintf("SUCCESS: %s", outputDirPath))
-}
-
-func executeTemplate(parentTemplate *template.Template, templateName string, templateString string, data interface{}) []byte {
-	var err error
-
-	// Create template object
-	var tmpl *template.Template
-	if parentTemplate == nil {
-		logger.Error.Panicln("A parent template must be provided")
-	}
-
-	// Create a new template which references the parent template
-	tmpl = parentTemplate.New(templateName)
-
-	// Parse the template
-	tmpl, err = tmpl.Parse(templateString)
-	if err != nil {
-		logger.Error.Fatalln(err)
-	}
-
-	// Apply data to template
-	var outputByteBuffer = new(bytes.Buffer)
-	err = tmpl.Execute(outputByteBuffer, data)
-	if err != nil {
-		logger.Error.Fatalln(err)
-	}
-
-	// Convert bytes to a string
-	var outputBytes = outputByteBuffer.Bytes()
-
-	return outputBytes
-}
-
-var functionMap = template.FuncMap{
-	// Override the "index" function so it correctly fails the template generation on missing keys
-	"index": func(data genericMap, keys ...interface{}) (interface{}, error) {
-		if len(keys) == 0 {
-			return data, nil
-		}
-
-		var currentMap = data
-		var result interface{}
-		for _, key := range keys {
-			var ok bool
-			result, ok = currentMap[key]
-			if !ok {
-				var keyName string
-				keyName, ok = key.(string)
-				var message string
-				if !ok {
-					message = fmt.Sprintf("Missing key of type: %s", reflect.TypeOf(key))
-				} else {
-					message = fmt.Sprintf("Missing key: %s", keyName)
-				}
-				return nil, errors.New(message)
-			}
-
-			// Try to assign the next map if the type is a map
-			currentMap, ok = result.(genericMap)
-			if !ok {
-				// If the type is not a map, set this to nil so we don't reuse the old map
-				currentMap = nil
-			}
-		}
-
-		return result, nil
-	},
+	return numTemplates
 }
 
 // +------------+
 // | Get values |
 // +------------+
 
-func getTemplateInput(packageFilePath string, interfaceFilePath string, parametersFilePath string) *genericMap {
+func getTemplateInput(parentTemplate *template.Template, packageFilePath string, interfaceFilePath string, parametersFilePath string) *utils.GenericMap {
 	// Get package info
 	var packageInfo = getPackageInfo(packageFilePath)
 
 	// Generate the values by populating the interface template with parameters
-	var values = getValuesFromInterface(interfaceFilePath, parametersFilePath)
+	var values = getValuesFromInterface(parentTemplate, interfaceFilePath, parametersFilePath)
 
 	// Add top-level objects
-	var result = genericMap{}
+	var result = utils.GenericMap{}
 	result[templateFieldPackage] = packageInfo
 	result[templateFieldValues] = values
 
@@ -249,16 +166,26 @@ func getPackageInfo(packageInfoFilePath string) *packageInfo {
 	return result
 }
 
-func getValuesFromInterface(interfaceFilePath string, parametersFilePath string) *genericMap {
-	// Get interface template as a string
-	var templateString = readFileToString(interfaceFilePath)
+func getValuesFromInterface(parentTemplate *template.Template, interfaceFilePath string, parametersFilePath string) *utils.GenericMap {
+	var err error
+
+	// Create template object from interface file
+	var templateName = filepath.Base(interfaceFilePath)
+	var tmpl = getTemplateFromFile(parentTemplate, templateName, interfaceFilePath)
+
+	// Get parameters file content as bytes
+	var parametersFileBytes []byte
+	parametersFileBytes, err = ioutil.ReadFile(parametersFilePath)
+	if err != nil {
+		logger.Warning.Println(fmt.Sprintf("Failed to read parameters file: %s", err))
+		parametersFileBytes = []byte{}
+	}
 
 	// Get parameters
-	var parameters = yamlBytesToMap(readFileToBytes(parametersFilePath))
+	var parameters = yamlBytesToMap(parametersFileBytes)
 
-	// Generate values yaml file (in-memory) by applying parameters to interface
-	var interfaceFileName = filepath.Base(interfaceFilePath)
-	var interfaceBytes = executeTemplate(rootTemplate, interfaceFileName, templateString, parameters)
+	// Generate values by applying parameters to interface
+	var interfaceBytes = executeTemplate(tmpl, parameters)
 
 	// Get values object from generated values yaml file
 	var result = yamlBytesToMap(interfaceBytes)
@@ -266,42 +193,9 @@ func getValuesFromInterface(interfaceFilePath string, parametersFilePath string)
 	return result
 }
 
-func getHelpersTemplate(parentTemplate *template.Template, helpersDirPath string) *template.Template {
-	var err error
-
-	// Get the list of filesystem objects in the helpers directory
-	var filesystemObjects []os.FileInfo
-	filesystemObjects, err = ioutil.ReadDir(helpersDirPath)
-	if err != nil {
-		logger.Error.Fatalln(err)
-	}
-
-	// Make sure that there are no directories in the helpers folder, and collect all of the file paths
-	var filePaths []string
-	for _, filesystemObject := range filesystemObjects {
-		var fileName = filesystemObject.Name()
-		var filePath = filepath.Join(helpersDirPath, fileName)
-		if filesystemObject.IsDir() {
-			logger.Error.Fatalln(fmt.Sprintf("Sub-directories are not allowed in the \"%s\" folder.  Found sub-directory: %s", helpersDirPath, fileName))
-		}
-
-		filePaths = append(filePaths, filePath)
-	}
-
-	// Create template
-	var tmpl = template.New("helpers")
-
-	// Add options and functions
-	tmpl = tmpl.Option("missingkey=error").Funcs(functionMap).Funcs(sprig.TxtFuncMap())
-
-	// Parse helper files
-	tmpl, err = tmpl.ParseFiles(filePaths...)
-	if err != nil {
-		logger.Error.Fatalln(err)
-	}
-
-	return tmpl
-}
+// +-----------+
+// | Templates |
+// +-----------+
 
 func getRootTemplate() *template.Template {
 	// Create template
@@ -314,9 +208,122 @@ func getRootTemplate() *template.Template {
 	tmpl.Funcs(sprig.TxtFuncMap())
 
 	// Add custom functions
-	tmpl.Funcs(functionMap)
+	tmpl.Funcs(templateFunctions)
 
 	return tmpl
+}
+
+func getTemplateFromFile(parentTemplate *template.Template, templateName string, filePath string) *template.Template {
+	var err error
+
+	// Create template
+	var tmpl *template.Template
+	if parentTemplate != nil {
+		tmpl = parentTemplate.New(templateName)
+	} else {
+		tmpl = template.New(templateName)
+	}
+
+	// Get template file as string
+	var templateString = readFileToString(filePath)
+
+	// Parse template
+	tmpl, err = tmpl.Parse(templateString)
+	if err != nil {
+		logger.Error.Fatalln(err)
+	}
+
+	return tmpl
+}
+
+func getTemplatesFromDir(parentTemplate *template.Template, templatesDirPath string) ([]*template.Template, int) {
+	var templates []*template.Template
+	var numTemplates = visitTemplatesFromDir(templatesDirPath, func() *template.Template {
+		// Use the same parent template each time
+		return parentTemplate
+	}, func(tmpl *template.Template) {
+		// Add the template to the array
+		templates = append(templates, tmpl)
+	})
+
+	return templates, numTemplates
+}
+
+func chainTemplatesFromDir(parentTemplate *template.Template, templatesDirPath string) (*template.Template, int) {
+	var currentTemplate = parentTemplate
+	var numTemplates = visitTemplatesFromDir(templatesDirPath, func() *template.Template {
+		// Use the current template as the parent
+		return currentTemplate
+	}, func(nextTemplate *template.Template) {
+		// Set the next template as current
+		currentTemplate = nextTemplate
+	})
+
+	return currentTemplate, numTemplates
+}
+
+func visitTemplatesFromDir(templatesDirPath string, getParentTemplate utils.TemplateSupplier, consumeTemplate utils.TemplateConsumer) int {
+	var err error
+
+	// Get the list of filesystem objects in the helpers directory
+	var filesystemObjects []os.FileInfo
+	filesystemObjects, err = ioutil.ReadDir(templatesDirPath)
+	if err != nil {
+		logger.Error.Fatalln(err)
+	}
+
+	// Parse all templates in the given directory, ignoring sub-directories
+	logger.Info.Println(fmt.Sprintf("Parsing templates in directory: %s", templatesDirPath))
+	var numTemplates = 0
+	for _, filesystemObject := range filesystemObjects {
+		var fileName = filesystemObject.Name()
+
+		// Ignore directories
+		if filesystemObject.IsDir() {
+			logger.Warning.Println(fmt.Sprintf("Ignoring sub-directory: %s", fileName))
+		} else {
+			logger.Verbose.Println(fmt.Sprintf("Parsing template: %s", fileName))
+
+			// Create a template object from the file
+			var filePath = filepath.Join(templatesDirPath, fileName)
+			var tmpl = getTemplateFromFile(getParentTemplate(), fileName, filePath)
+
+			// Consume template
+			logger.Verbose.Println(fmt.Sprintf("Consuming template: %s", tmpl.Name()))
+			consumeTemplate(tmpl)
+
+			// Increment template count
+			numTemplates++
+		}
+	}
+
+	return numTemplates
+}
+
+func executeTemplate(tmpl *template.Template, data interface{}) []byte {
+	var err error
+
+	// Create template object
+	if tmpl == nil {
+		logger.Error.Panicln("The template to execute cannot be nil")
+	}
+
+	// Apply data to template
+	var outputByteBuffer = new(bytes.Buffer)
+	err = tmpl.Execute(outputByteBuffer, data)
+	if err != nil {
+		logger.Error.Fatalln(err)
+	}
+
+	// Convert bytes to a string
+	var outputBytes = outputByteBuffer.Bytes()
+
+	return outputBytes
+}
+
+var templateFunctions = template.FuncMap{
+	// Override the "index" function so it correctly fails the template generation on missing keys
+	"index": templatefuncs.Index,
 }
 
 // +-----------+
@@ -342,9 +349,9 @@ func readFileToBytes(filePath string) []byte {
 // | Convert yaml bytes to object |
 // +------------------------------+
 
-func yamlBytesToMap(yamlBytes []byte) *genericMap {
+func yamlBytesToMap(yamlBytes []byte) *utils.GenericMap {
 	// NOTE: ALWAYS pass "UnmarshalStrict()" a pointer rather than a real value
-	var result = &genericMap{}
+	var result = &utils.GenericMap{}
 	var err = yaml.UnmarshalStrict(yamlBytes, result)
 	if err != nil {
 		logger.Error.Fatalln(err)

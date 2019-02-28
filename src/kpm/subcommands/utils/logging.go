@@ -5,19 +5,23 @@ import (
 	"os"
 )
 
-type _logger struct {
+// TODO: abstract away the "log" library so users of this library won't need to import it
+
+// Logger represents a logger
+type Logger struct {
 	Verbose *log.Logger
 	Info    *log.Logger
 	Warning *log.Logger
 	Error   *log.Logger
 }
 
-func NewLogger() _logger {
-	var defaultLogger = _logger{
+// NewLogger creates a new logger
+func NewLogger() Logger {
+	var defaultLogger = Logger{
 		log.New(os.Stdout, "[VERB] ", log.LstdFlags),
 		log.New(os.Stdout, "[INFO] ", log.LstdFlags),
 		log.New(os.Stdout, "[WARN] ", log.LstdFlags),
-		log.New(os.Stderr, "[ERR!] ", log.LstdFlags),
+		log.New(os.Stderr, "[_ERR] ", log.LstdFlags),
 	}
 
 	return defaultLogger
