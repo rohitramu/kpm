@@ -2,47 +2,40 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/urfave/cli"
 
 	"./subcommands"
-)
-
-// Main logger
-var logger = log.New(os.Stdout, "", log.LstdFlags)
-
-// Sub-command names
-var (
-	generateCmdName = "generate"
-)
-
-// Flag names
-var (
-	packageDirFlagName  = "packageDir"
-	valuesFileFlagName  = "valuesFile"
-	outputDirFlagName   = "outputDir"
-	downloadDirFlagName = "downloadDir"
+	"./subcommands/utils/constants"
+	"./subcommands/utils/logger"
 )
 
 // Flags
 var (
+	packageNameFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, n", constants.PackageNameFlagName),
+		Usage: "Name of the package",
+	}
+	packageVersionFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, v", constants.PackageVersionFlagName),
+		Usage: "Version of the package",
+	}
 	packageDirFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, p", packageDirFlagName),
+		Name:  fmt.Sprintf("%s, d", constants.PackageDirFlagName),
 		Usage: "Directory of the KPM package (defaults to current working directory)",
 	}
-	valuesFileFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, v", valuesFileFlagName),
-		Usage: "Filepath of the values file to use",
+	parametersFileFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, f", constants.ParametersFileFlagName),
+		Usage: "Filepath of the parameters file to use",
 	}
 	outputDirFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, o", outputDirFlagName),
-		Usage: "Directory in which output files should be created",
+		Name:  fmt.Sprintf("%s, o", constants.OutputDirFlagName),
+		Usage: "Directory in which output files should be written",
 	}
-	downloadDirFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, d", downloadDirFlagName),
-		Usage: "Directory in which KPM packages should be downloaded to (defaults to the current working directory)",
+	kpmHomeDirFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, k", constants.KpmHomeDirFlagName),
+		Usage: "Directory to use as the KPM home folder - this value should be consistent value across all invocations of KPM commands",
 	}
 )
 
@@ -57,47 +50,81 @@ func main() {
 	// Sub-commands
 	app.Commands = []cli.Command{
 		{
-			Name:  generateCmdName,
-			Usage: fmt.Sprintf("Generates a Kubernetes configuration using the template package specified by the \"--%s\" argument", packageDirFlagName),
+			Name:    constants.ListCmdName,
+			Aliases: []string{"ls"},
+			Usage:   "Lists all packages that are currently available for use",
 			Flags: []cli.Flag{
-				packageDirFlag,
-				valuesFileFlag,
-				outputDirFlag,
+				kpmHomeDirFlag,
 			},
 			Action: func(c *cli.Context) error {
-				var packageDir = getStringFlag(c, &packageDirFlagName)
-				var paramFile = getStringFlag(c, &valuesFileFlagName)
-				var outputDir = getStringFlag(c, &outputDirFlagName)
-				return subcommands.GenerateCmd(packageDir, paramFile, outputDir)
+				var kpmHomeDir = getStringFlag(c, &constants.KpmHomeDirFlagName)
+				return subcommands.ListCmd(kpmHomeDir)
 			},
 		},
 		{
-			Name:  "pull",
+			Name:  constants.PackCmdName,
+			Usage: "Packs a template package to make it available for use",
+			Flags: []cli.Flag{
+				packageDirFlag,
+				kpmHomeDirFlag,
+			},
+			Action: func(c *cli.Context) error {
+				var packageDir = getStringFlag(c, &constants.PackageDirFlagName)
+				var kpmHomeDir = getStringFlag(c, &constants.KpmHomeDirFlagName)
+				return subcommands.PackCmd(packageDir, kpmHomeDir)
+			},
+		},
+		{
+			Name:    constants.GenerateCmdName,
+			Aliases: []string{"gen"},
+			Usage:   fmt.Sprintf("Generates a Kubernetes configuration using the template package specified by the \"--%s\" argument", constants.PackageDirFlagName),
+			Flags: []cli.Flag{
+				packageNameFlag,
+				packageVersionFlag,
+				parametersFileFlag,
+				outputDirFlag,
+				kpmHomeDirFlag,
+			},
+			Action: func(c *cli.Context) error {
+				var packageName = getStringFlag(c, &constants.PackageNameFlagName)
+				var packageVersion = getStringFlag(c, &constants.PackageVersionFlagName)
+				var paramFile = getStringFlag(c, &constants.ParametersFileFlagName)
+				var outputDir = getStringFlag(c, &constants.OutputDirFlagName)
+				var kpmHomeDir = getStringFlag(c, &constants.KpmHomeDirFlagName)
+				return subcommands.GenerateCmd(packageName, packageVersion, paramFile, outputDir, kpmHomeDir)
+			},
+		},
+		{
+			Name:  constants.PullCmdName,
 			Usage: "Pulls a template package from a docker repository",
 			Flags: []cli.Flag{
-				outputDirFlag,
+				packageNameFlag,
+				kpmHomeDirFlag,
 			},
 			Action: func(c *cli.Context) error {
-				downloadDir := getStringFlag(c, &downloadDirFlagName)
-				return subcommands.PullCmd(downloadDir)
+				var packageName = getStringFlag(c, &constants.PackageNameFlagName)
+				var kpmHomeDir = getStringFlag(c, &constants.KpmHomeDirFlagName)
+				return subcommands.PullCmd(packageName, kpmHomeDir)
 			},
 		},
 		{
-			Name:  "push",
+			Name:  constants.PushCmdName,
 			Usage: "Pushes the template package to a docker repository",
 			Flags: []cli.Flag{
-				packageDirFlag,
+				packageNameFlag,
+				kpmHomeDirFlag,
 			},
 			Action: func(c *cli.Context) error {
-				packageDir := getStringFlag(c, &packageDirFlagName)
-				return subcommands.PushCmd(packageDir)
+				var packageName = getStringFlag(c, &constants.PackageNameFlagName)
+				var kpmHomeDir = getStringFlag(c, &constants.KpmHomeDirFlagName)
+				return subcommands.PushCmd(packageName, kpmHomeDir)
 			},
 		},
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
-		logger.Fatalln(err)
+		logger.Default.Error.Fatalln(err)
 	}
 }
 

@@ -1,4 +1,4 @@
-package utils
+package logger
 
 import (
 	"log"
@@ -6,6 +6,9 @@ import (
 )
 
 // TODO: abstract away the "log" library so users of this library won't need to import it
+
+// Default is the default logger
+var Default = NewLogger()
 
 // Logger represents a logger
 type Logger struct {
