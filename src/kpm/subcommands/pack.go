@@ -32,7 +32,7 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	var packageInfo = common.GetPackageInfo(packageDirPath)
 
 	// Get package name with version and output path
-	var packageNameWithVersion = validation.GetPackageNameWithVersion(packageInfo.Name, packageInfo.Version)
+	var packageNameWithVersion = validation.GetFullPackageName(packageInfo.Name, packageInfo.Version)
 	var outputDirPath = filepath.Join(localPackageRepositoryDirPath, packageNameWithVersion)
 
 	// Delete the output directory in case it isn't empty
@@ -42,9 +42,10 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	logger.Default.Verbose.Println(fmt.Sprintf("Copying package to: %s", outputDirPath))
 	files.CopyDir(packageDirPath, outputDirPath)
 
-	logger.Default.Info.Println("Pack command completed")
 	logger.Default.Info.Println(fmt.Sprintf("Template package name:    %s", packageInfo.Name))
 	logger.Default.Info.Println(fmt.Sprintf("Template package version: %s", packageInfo.Version))
+
+	logger.Default.Info.Println(fmt.Sprintf("SUCCESS - Pack command created package in directory: %s", outputDirPath))
 
 	return nil
 }

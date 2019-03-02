@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"../logger"
 )
@@ -40,9 +41,35 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 	return nil
 }
 
-// GetPackageNameWithVersion returns the full package name with version.
-func GetPackageNameWithVersion(packageName string, packageVersion string) string {
+// GetFullPackageName returns the full package name with version.
+func GetFullPackageName(packageName string, packageVersion string) string {
 	return fmt.Sprintf("%s-%s", packageName, packageVersion)
+}
+
+// GetNameAndVersionFromFullPackageName returns the name and version of a template package, given the full package name.
+func GetNameAndVersionFromFullPackageName(fullPackageName string) (packageName string, packageVersion string, err error) {
+	// Split the file name to get the name and version
+	var splitFileName = strings.SplitN(fullPackageName, "-", 2)
+
+	// Check that this is a valid package name
+	if len(splitFileName) != 2 {
+		return "", "", fmt.Errorf("Full package name is an invalid format: %s", fullPackageName)
+	}
+
+	packageName = splitFileName[0]
+	packageVersion = splitFileName[1]
+
+	// Validate the package name
+	if err := ValidatePackageName(packageName); err != nil {
+		return "", "", err
+	}
+
+	// Validate the package version
+	if err := ValidatePackageVersion(packageVersion, false); err != nil {
+		return "", "", err
+	}
+
+	return packageName, packageVersion, nil
 }
 
 // CheckRegexMatch checks whether a string satisfies the given regex expression.

@@ -20,14 +20,28 @@ import (
 // given template package directory and parameters file, and then
 // writes them to the given output directory.
 func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string) error {
-	// Resolve paths
+	// Validate string arguments
+	var (
+		packageName    = validation.GetStringOrFail(packageNameArg, "packageName")
+		packageVersion = validation.GetStringOrDefault(packageVersionArg, "*")
+	)
+
+	// Resolve base paths
 	var (
 		workingDir = files.GetWorkingDir()
 		kpmHomeDir = files.GetAbsolutePathOrDefault(kpmHomeDirPathArg, files.GetDefaultKpmHomeDir())
+	)
 
-		packageName        = validation.GetStringOrFail(packageNameArg, "packageName")
-		packageVersion     = validation.GetStringOrDefault(packageVersionArg, "*")
-		packageDirPath     = files.GetPackageDir(kpmHomeDir, packageName, packageVersion)
+	// Check remote repository for newest matching versions of the package
+	if pulledVersion, err := common.PullPackage(packageName, packageVersion); err != nil {
+		logger.Default.Warning.Println(err)
+	} else {
+		packageVersion = pulledVersion
+	}
+
+	// Resolve generation paths
+	var (
+		packageDirPath     = common.GetPackageDir(kpmHomeDir, packageName, packageVersion)
 		outputDirPath      = files.GetAbsolutePathOrDefault(outputDirPathArg, filepath.Join(workingDir, constants.GeneratedDirName, filepath.Base(packageDirPath)))
 		parametersFilePath = files.GetAbsolutePathOrDefault(parametersFilePathArg, filepath.Join(packageDirPath, constants.ParametersFileName))
 	)
@@ -55,12 +69,12 @@ func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFi
 	// Get template input values by applying parameters to interface
 	var templateInput = common.GetPackageInput(helpersTemplate, packageDirPath, parametersFilePath)
 
+	// Generate output files from dependencies
+	processDependenciesAndWriteToFilesystem(dependenciesDirPath, outputDirPath, helpersTemplate, templateInput)
+
 	// Generate output files from the package and write them to the output directory
 	var numProcessedTemplates = processTemplatesAndWriteToFilesystem(helpersTemplate, templatesDirPath, templateInput, outputDirPath)
 	logger.Default.Verbose.Println(fmt.Sprintf("Processed %d template(s) in directory: %s", numProcessedTemplates, templatesDirPath))
-
-	// Generate output files from dependencies
-	processDependenciesAndWriteToFilesystem(dependenciesDirPath, outputDirPath, helpersTemplate, templateInput)
 
 	// Print status
 	logger.Default.Info.Println(fmt.Sprintf("SUCCESS - Generated output in directory: %s", outputDirPath))
