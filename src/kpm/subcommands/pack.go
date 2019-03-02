@@ -2,6 +2,7 @@ package subcommands
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"./common"
@@ -33,6 +34,9 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	// Get package name with version and output path
 	var packageNameWithVersion = validation.GetPackageNameWithVersion(packageInfo.Name, packageInfo.Version)
 	var outputDirPath = filepath.Join(localPackageRepositoryDirPath, packageNameWithVersion)
+
+	// Delete the output directory in case it isn't empty
+	os.RemoveAll(outputDirPath)
 
 	// Copy package to output directory
 	logger.Default.Verbose.Println(fmt.Sprintf("Copying package to: %s", outputDirPath))

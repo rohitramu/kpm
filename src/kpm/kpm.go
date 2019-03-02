@@ -26,7 +26,7 @@ var (
 		Usage: "Directory of the KPM package (defaults to current working directory)",
 	}
 	parametersFileFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, f", constants.ParametersFileFlagName),
+		Name:  fmt.Sprintf("%s, p", constants.ParametersFileFlagName),
 		Usage: "Filepath of the parameters file to use",
 	}
 	outputDirFlag = cli.StringFlag{
