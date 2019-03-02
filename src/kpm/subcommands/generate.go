@@ -28,8 +28,7 @@ func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFi
 		packageName        = validation.GetStringOrFail(packageNameArg, "packageName")
 		packageVersion     = validation.GetStringOrDefault(packageVersionArg, "*")
 		packageDirPath     = files.GetPackageDir(kpmHomeDir, packageName, packageVersion)
-		outputDirPath      = files.GetAbsolutePathOrDefault(outputDirPathArg, filepath.Join(workingDir, constants.KpmHomeDirName))
-		generatedDirPath   = filepath.Join(outputDirPath, constants.GeneratedDirName, filepath.Base(packageDirPath))
+		outputDirPath      = files.GetAbsolutePathOrDefault(outputDirPathArg, filepath.Join(workingDir, constants.GeneratedDirName, filepath.Base(packageDirPath)))
 		parametersFilePath = files.GetAbsolutePathOrDefault(parametersFilePathArg, filepath.Join(packageDirPath, constants.ParametersFileName))
 	)
 
@@ -57,14 +56,14 @@ func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFi
 	var templateInput = common.GetPackageInput(helpersTemplate, packageDirPath, parametersFilePath)
 
 	// Generate output files from the package and write them to the output directory
-	var numProcessedTemplates = processTemplatesAndWriteToFilesystem(helpersTemplate, templatesDirPath, templateInput, generatedDirPath)
+	var numProcessedTemplates = processTemplatesAndWriteToFilesystem(helpersTemplate, templatesDirPath, templateInput, outputDirPath)
 	logger.Default.Verbose.Println(fmt.Sprintf("Processed %d template(s) in directory: %s", numProcessedTemplates, templatesDirPath))
 
 	// Generate output files from dependencies
-	processDependenciesAndWriteToFilesystem(dependenciesDirPath, generatedDirPath, helpersTemplate, templateInput)
+	processDependenciesAndWriteToFilesystem(dependenciesDirPath, outputDirPath, helpersTemplate, templateInput)
 
 	// Print status
-	logger.Default.Info.Println(fmt.Sprintf("SUCCESS - Generated output in directory: %s", generatedDirPath))
+	logger.Default.Info.Println(fmt.Sprintf("SUCCESS - Generated output in directory: %s", outputDirPath))
 
 	return nil
 }
@@ -86,11 +85,12 @@ func processTemplatesAndWriteToFilesystem(parentTemplate *template.Template, tem
 	os.RemoveAll(outputDirPath)
 	os.MkdirAll(outputDirPath, os.ModePerm)
 
+	// Generate output from each template
 	var numTemplates = templates.VisitTemplatesFromDir(templatesDirPath, func() *template.Template {
 		// Use the given parent template
 		return parentTemplate
 	}, func(tmpl *template.Template) {
-		// Generate output from each template
+		// Apply input values to the template
 		var generatedFileBytes = templates.ExecuteTemplate(tmpl, templateInput)
 
 		// Write the output to a file

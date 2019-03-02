@@ -16,4 +16,4 @@ const KpmHomeDirName = ".kpm"
 const PackageRepositoryDirName = "packages"
 
 // GeneratedDirName is the name of the directory in which generated output is written
-const GeneratedDirName = "generated"
+const GeneratedDirName = ".kpm_generated"
