@@ -75,32 +75,6 @@ func GetDefaultKpmHomeDir() string {
 	return filepath.Join(GetUserHomeDir(), constants.KpmHomeDirName)
 }
 
-// CheckDirExists returns true if the directory was found, otherwise false.
-func CheckDirExists(path string) bool {
-	var fileInfo = GetFileInfo(path)
-
-	return fileInfo != nil && fileInfo.IsDir()
-}
-
-// CheckFileExists returns true if the file was found, otherwise false.
-func CheckFileExists(path string) bool {
-	var fileInfo = GetFileInfo(path)
-
-	return fileInfo != nil && fileInfo.Mode().IsRegular()
-}
-
-// GetFileInfo returns the os.FileInfo object for the given path.
-func GetFileInfo(path string) os.FileInfo {
-	var fileInfo, err = os.Stat(path)
-	if err != nil {
-		logger.Default.Error.Panicln(err)
-	} else if os.IsNotExist(err) {
-		return nil
-	}
-
-	return fileInfo
-}
-
 // ReadFileToString returns the contents of the given file as a string.
 func ReadFileToString(filePath string) string {
 	var result = string(ReadFileToBytes(filePath))

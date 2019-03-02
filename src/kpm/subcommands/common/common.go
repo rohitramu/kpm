@@ -2,7 +2,7 @@ package common
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"text/template"
 
@@ -36,30 +36,46 @@ func GetPackageInfo(packageDirPath string) *types.PackageInfo {
 	var err error
 
 	// Make sure that the package exists
-	var fileInfo = files.GetFileInfo(packageDirPath)
-	if fileInfo == nil {
-		logger.Default.Error.Fatalln(fmt.Sprintf("Package not found in directory: %s", packageDirPath))
+	if fileInfo, err := os.Stat(packageDirPath); err != nil {
+		if os.IsNotExist(err) {
+			logger.Default.Error.Fatalln(fmt.Sprintf("Package not found in directory: %s", packageDirPath))
+		} else {
+			logger.Default.Error.Panicln(err)
+		}
 	} else if !fileInfo.IsDir() {
 		logger.Default.Error.Fatalln(fmt.Sprintf("Package path does not point to a directory: %s", packageDirPath))
+	} else {
+		logger.Default.Verbose.Println(fmt.Sprintf("Found template package in directory: %s", packageDirPath))
 	}
 
 	// Check that the package info file exists
 	var packageInfoFilePath = filepath.Join(packageDirPath, constants.PackageInfoFileName)
-	if !files.CheckFileExists(packageInfoFilePath) {
-		logger.Default.Error.Fatalln(fmt.Sprintf("Package information file does not exist: %s", packageInfoFilePath))
+	if fileInfo, err := os.Stat(packageInfoFilePath); err != nil {
+		if os.IsNotExist(err) {
+			logger.Default.Error.Fatalln(fmt.Sprintf("Package information file does not exist: %s", packageInfoFilePath))
+		} else {
+			logger.Default.Error.Panicln(err)
+		}
+	} else if fileInfo.IsDir() {
+		logger.Default.Error.Fatalln(fmt.Sprintf("Package path does not point to a file: %s", packageInfoFilePath))
+	} else {
+		logger.Default.Verbose.Println(fmt.Sprintf("Found package information file: %s", packageInfoFilePath))
 	}
 
 	// Get package info file content
 	var yamlBytes = files.ReadFileToBytes(packageInfoFilePath)
 
 	// Get package info object from file content
-	var packageInfo = yaml.BytesToPackageInfo(yamlBytes)
+	var packageInfo = new(types.PackageInfo)
+	yaml.BytesToObject(yamlBytes, packageInfo)
 
-	// Validate the package name and version
+	// Validate package name
 	err = validation.ValidatePackageName(packageInfo.Name)
 	if err != nil {
 		logger.Default.Error.Fatalln(err)
 	}
+
+	// Validate package version
 	err = validation.ValidatePackageVersion(packageInfo.Version, false)
 	if err != nil {
 		logger.Default.Error.Fatalln(err)
@@ -70,8 +86,6 @@ func GetPackageInfo(packageDirPath string) *types.PackageInfo {
 
 // getValuesFromInterface creates the values which can be used as input to templates by executing the interface with parameters.
 func getValuesFromInterface(parentTemplate *template.Template, packageDirPath string, parametersFilePath string) *types.GenericMap {
-	var err error
-
 	// Create template object from interface file
 	var templateName = constants.InterfaceFileName
 	var interfaceFilePath = filepath.Join(packageDirPath, templateName)
@@ -79,20 +93,29 @@ func getValuesFromInterface(parentTemplate *template.Template, packageDirPath st
 
 	// Get parameters file content as bytes
 	var parametersFileBytes []byte
-	parametersFileBytes, err = ioutil.ReadFile(parametersFilePath)
-	if err != nil {
-		logger.Default.Warning.Println(fmt.Sprintf("Failed to read parameters file: %s", err))
-		parametersFileBytes = []byte{}
+	if fileInfo, err := os.Stat(parametersFilePath); err != nil {
+		if os.IsNotExist(err) {
+			logger.Default.Warning.Println(fmt.Sprintf("Parameters file does not exist: %s", parametersFilePath))
+		} else {
+			logger.Default.Error.Panicln(err)
+		}
+	} else if fileInfo.IsDir() {
+		logger.Default.Warning.Println(fmt.Sprintf("Parameters file path does not point to a file: %s", parametersFilePath))
+	} else {
+		logger.Default.Verbose.Println(fmt.Sprintf("Found parameters file: %s", parametersFilePath))
+		parametersFileBytes = files.ReadFileToBytes(parametersFilePath)
 	}
 
 	// Get parameters
-	var parameters = yaml.BytesToMap(parametersFileBytes)
+	var parameters = new(types.GenericMap)
+	yaml.BytesToObject(parametersFileBytes, parameters)
 
 	// Generate values by applying parameters to interface
 	var interfaceBytes = templates.ExecuteTemplate(tmpl, parameters)
 
 	// Get values object from generated values yaml file
-	var result = yaml.BytesToMap(interfaceBytes)
+	var result = new(types.GenericMap)
+	yaml.BytesToObject(interfaceBytes, result)
 
 	return result
 }
