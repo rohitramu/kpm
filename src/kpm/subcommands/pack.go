@@ -9,7 +9,6 @@ import (
 	"./utils/constants"
 	"./utils/files"
 	"./utils/logger"
-	"./utils/validation"
 )
 
 // PackCmd packs a local template package so it available for use in the given KPM home directory.
@@ -32,8 +31,8 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	var packageInfo = common.GetPackageInfo(packageDirPath)
 
 	// Get package name with version and output path
-	var packageNameWithVersion = validation.GetFullPackageName(packageInfo.Name, packageInfo.Version)
-	var outputDirPath = filepath.Join(localPackageRepositoryDirPath, packageNameWithVersion)
+	var packageNameWithVersion = common.GetPackageFullName(packageInfo.Name, packageInfo.Version)
+	var outputDirPath = common.GetPackageDirPath(localPackageRepositoryDirPath, packageNameWithVersion)
 
 	// Delete the output directory in case it isn't empty
 	os.RemoveAll(outputDirPath)

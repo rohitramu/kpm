@@ -10,6 +10,10 @@ import (
 
 // ValidatePackageName validates the given package's name.
 func ValidatePackageName(packageName string) error {
+	if len(strings.TrimSpace(packageName)) == 0 {
+		return fmt.Errorf("Package name cannot be empty")
+	}
+
 	var isValid = CheckRegexMatch(packageName, "^[a-z](\\.?[a-z0-9])*$")
 
 	if !isValid {
@@ -21,6 +25,10 @@ func ValidatePackageName(packageName string) error {
 
 // ValidatePackageVersion validates the given package version.
 func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
+	if len(strings.TrimSpace(packageVersion)) == 0 {
+		return fmt.Errorf("Package version string cannot be empty")
+	}
+
 	// Regex for each segment that has a valid integer
 	var segmentRegex = "(0|[1-9][0-9]*)"
 
@@ -41,13 +49,14 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 	return nil
 }
 
-// GetFullPackageName returns the full package name with version.
-func GetFullPackageName(packageName string, packageVersion string) string {
-	return fmt.Sprintf("%s-%s", packageName, packageVersion)
+// ValidateOutputName validates the output name when generating output.
+func ValidateOutputName(outputName string) error {
+	//TODO: Add validation
+	return nil
 }
 
-// GetNameAndVersionFromFullPackageName returns the name and version of a template package, given the full package name.
-func GetNameAndVersionFromFullPackageName(fullPackageName string) (packageName string, packageVersion string, err error) {
+// ExtractNameAndVersionFromFullPackageName returns the name and version of a template package, given the full package name.
+func ExtractNameAndVersionFromFullPackageName(fullPackageName string) (packageName string, packageVersion string, err error) {
 	// Split the file name to get the name and version
 	var splitFileName = strings.SplitN(fullPackageName, "-", 2)
 

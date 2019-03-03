@@ -14,7 +14,7 @@ import (
 // Flags
 var (
 	packageNameFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, n", constants.PackageNameFlagName),
+		Name:  fmt.Sprintf("%s, p", constants.PackageNameFlagName),
 		Usage: "Name of the package",
 	}
 	packageVersionFlag = cli.StringFlag{
@@ -26,8 +26,12 @@ var (
 		Usage: "Directory of the KPM package (defaults to current working directory)",
 	}
 	parametersFileFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, p", constants.ParametersFileFlagName),
+		Name:  fmt.Sprintf("%s, f", constants.ParametersFileFlagName),
 		Usage: "Filepath of the parameters file to use",
+	}
+	outputNameFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, n", constants.OutputNameFlagName),
+		Usage: "Name of the output configuration",
 	}
 	outputDirFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, o", constants.OutputDirFlagName),
@@ -82,6 +86,7 @@ func main() {
 				packageNameFlag,
 				packageVersionFlag,
 				parametersFileFlag,
+				outputNameFlag,
 				outputDirFlag,
 				kpmHomeDirFlag,
 			},
@@ -89,9 +94,10 @@ func main() {
 				var packageName = getStringFlag(c, &constants.PackageNameFlagName)
 				var packageVersion = getStringFlag(c, &constants.PackageVersionFlagName)
 				var paramFile = getStringFlag(c, &constants.ParametersFileFlagName)
+				var outputName = getStringFlag(c, &constants.OutputNameFlagName)
 				var outputDir = getStringFlag(c, &constants.OutputDirFlagName)
 				var kpmHomeDir = getStringFlag(c, &constants.KpmHomeDirFlagName)
-				return subcommands.GenerateCmd(packageName, packageVersion, paramFile, outputDir, kpmHomeDir)
+				return subcommands.GenerateCmd(packageName, packageVersion, paramFile, outputName, outputDir, kpmHomeDir)
 			},
 		},
 		{

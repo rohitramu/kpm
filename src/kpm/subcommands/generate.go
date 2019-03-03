@@ -8,7 +8,6 @@ import (
 	"text/template"
 
 	"./common"
-	"./utils/constants"
 	"./utils/files"
 	"./utils/logger"
 	"./utils/templates"
@@ -19,11 +18,13 @@ import (
 // GenerateCmd creates Kubernetes configuration files from the
 // given template package directory and parameters file, and then
 // writes them to the given output directory.
-func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string) error {
+func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputNameArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string) error {
+	var err error
+
 	// Validate string arguments
 	var (
-		packageName    = validation.GetStringOrFail(packageNameArg, "packageName")
-		packageVersion = validation.GetStringOrDefault(packageVersionArg, "*")
+		packageName            = validation.GetStringOrFail(packageNameArg, "packageName")
+		wildcardPackageVersion = validation.GetStringOrDefault(packageVersionArg, "*")
 	)
 
 	// Resolve base paths
@@ -33,84 +34,71 @@ func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFi
 	)
 
 	// Check remote repository for newest matching versions of the package
-	if pulledVersion, err := common.PullPackage(packageName, packageVersion); err != nil {
+	var pulledVersion string
+	pulledVersion, err = common.PullPackage(packageName, wildcardPackageVersion)
+	if err != nil {
 		logger.Default.Warning.Println(err)
 	} else {
-		packageVersion = pulledVersion
+		wildcardPackageVersion = pulledVersion
+	}
+
+	// Resolve the package version
+	var resolvedPackageVersion string
+	if resolvedPackageVersion, err = common.ResolvePackageVersion(kpmHomeDir, packageName, wildcardPackageVersion); err != nil {
+		logger.Default.Error.Fatalln(err)
 	}
 
 	// Resolve generation paths
 	var (
-		packageDirPath     = common.GetPackageDir(kpmHomeDir, packageName, packageVersion)
-		outputDirPath      = files.GetAbsolutePathOrDefault(outputDirPathArg, filepath.Join(workingDir, constants.GeneratedDirName, filepath.Base(packageDirPath)))
-		parametersFilePath = files.GetAbsolutePathOrDefault(parametersFilePathArg, filepath.Join(packageDirPath, constants.ParametersFileName))
+		packageFullName    = common.GetPackageFullName(packageName, resolvedPackageVersion)
+		packageDirPath     = common.GetPackageDirPath(common.GetPackageRepositoryDirPath(kpmHomeDir), packageFullName)
+		outputName         = validation.GetStringOrDefault(outputNameArg, packageFullName)
+		outputDirPath      = common.GetOutputDirPath(files.GetAbsolutePathOrDefault(outputDirPathArg, workingDir), outputName)
+		parametersFilePath = files.GetAbsolutePathOrDefault(parametersFilePathArg, common.GetDefaultParametersFilePath(packageDirPath))
 	)
 
-	// Log resolved paths
+	// Log resolved values
 	logger.Default.Verbose.Println("====")
 	logger.Default.Verbose.Println(fmt.Sprintf("Package name:      %s", packageName))
-	logger.Default.Verbose.Println(fmt.Sprintf("Package version:   %s", packageVersion))
+	logger.Default.Verbose.Println(fmt.Sprintf("Package version:   %s", resolvedPackageVersion))
 	logger.Default.Verbose.Println(fmt.Sprintf("Package directory: %s", packageDirPath))
 	logger.Default.Verbose.Println(fmt.Sprintf("Parameters file:   %s", parametersFilePath))
+	logger.Default.Verbose.Println(fmt.Sprintf("Output name:       %s", outputName))
 	logger.Default.Verbose.Println(fmt.Sprintf("Output directory:  %s", outputDirPath))
 	logger.Default.Verbose.Println("====")
 
-	// Define directory locations
-	var (
-		dependenciesDirPath = filepath.Join(packageDirPath, constants.DependenciesDirName)
-		templatesDirPath    = filepath.Join(packageDirPath, constants.TemplatesDirName)
-		helpersDirPath      = filepath.Join(packageDirPath, constants.HelpersDirName)
-	)
+	// Get the dependency tree
+	var parameters = common.GetPackageParameters(parametersFilePath)
+	var dependencyTree *common.DependencyTree
+	if dependencyTree, err = common.GetDependencyTree(outputName, kpmHomeDir, packageName, wildcardPackageVersion, parameters); err != nil {
+		logger.Default.Error.Fatalln(err)
+	}
 
-	// Get template from helpers
-	var helpersTemplate, numHelpers = templates.ChainTemplatesFromDir(templates.GetRootTemplate(), helpersDirPath)
-	logger.Default.Verbose.Println(fmt.Sprintf("Found %d helper template(s) in directory: %s", numHelpers, helpersDirPath))
+	// Delete the output directory in case it isn't empty
+	os.RemoveAll(outputDirPath)
 
-	// Get template input values by applying parameters to interface
-	var templateInput = common.GetPackageInput(helpersTemplate, packageDirPath, parametersFilePath)
+	// Execute template packages in the dependency tree and write the output to the filesystem
+	dependencyTree.VisitNodesDepthFirst(func(pathSegments []string, executableTemplates []*template.Template, templateInput *types.GenericMap) {
+		// Get the output directory
+		var outputDir = filepath.Join(outputDirPath, filepath.Join(pathSegments...))
 
-	// Generate output files from dependencies
-	processDependenciesAndWriteToFilesystem(dependenciesDirPath, outputDirPath, helpersTemplate, templateInput)
+		// Create the output directory if it doesn't exist
+		os.MkdirAll(outputDir, os.ModePerm)
 
-	// Generate output files from the package and write them to the output directory
-	var numProcessedTemplates = processTemplatesAndWriteToFilesystem(helpersTemplate, templatesDirPath, templateInput, outputDirPath)
-	logger.Default.Verbose.Println(fmt.Sprintf("Processed %d template(s) in directory: %s", numProcessedTemplates, templatesDirPath))
+		// Get the templates in the package
+		for _, tmpl := range executableTemplates {
+			// Execute the template with the provided input data
+			var templateOutput = templates.ExecuteTemplate(tmpl, templateInput)
+
+			// Write the data to the filesystem
+			var outputFilePath = filepath.Join(outputDir, tmpl.Name())
+			logger.Default.Verbose.Println(fmt.Sprintf("Output file path: %s", outputFilePath))
+			ioutil.WriteFile(outputFilePath, templateOutput, os.ModeAppend)
+		}
+	})
 
 	// Print status
 	logger.Default.Info.Println(fmt.Sprintf("SUCCESS - Generated output in directory: %s", outputDirPath))
 
 	return nil
-}
-
-// +----------------------+
-// | Process dependencies |
-// +----------------------+
-
-func processDependenciesAndWriteToFilesystem(dependenciesDirPath string, outputDirPath string, parentTemplate *template.Template, templateInput *types.GenericMap) {
-
-}
-
-// +-------------------+
-// | Process templates |
-// +-------------------+
-
-func processTemplatesAndWriteToFilesystem(parentTemplate *template.Template, templatesDirPath string, templateInput *types.GenericMap, outputDirPath string) int {
-	// Delete and re-create the output directory in case it isn't empty or doesn't exist
-	os.RemoveAll(outputDirPath)
-	os.MkdirAll(outputDirPath, os.ModePerm)
-
-	// Generate output from each template
-	var numTemplates = templates.VisitTemplatesFromDir(templatesDirPath, func() *template.Template {
-		// Use the given parent template
-		return parentTemplate
-	}, func(tmpl *template.Template) {
-		// Apply input values to the template
-		var generatedFileBytes = templates.ExecuteTemplate(tmpl, templateInput)
-
-		// Write the output to a file
-		var outputFilePath = filepath.Join(outputDirPath, tmpl.Name())
-		ioutil.WriteFile(outputFilePath, generatedFileBytes, os.ModeAppend|os.ModePerm)
-	})
-
-	return numTemplates
 }

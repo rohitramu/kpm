@@ -12,6 +12,7 @@ import (
 
 	"../files"
 	"../logger"
+	"../templatefuncs"
 	"../types"
 )
 
@@ -29,7 +30,7 @@ func GetRootTemplate() *template.Template {
 	// Add custom functions
 	tmpl.Funcs(template.FuncMap{
 		// Override the "index" function so it correctly fails the template generation on missing keys
-		"index": FuncIndex,
+		"index": templatefuncs.Index,
 	})
 
 	return tmpl
@@ -60,9 +61,9 @@ func GetTemplateFromFile(parentTemplate *template.Template, templateName string,
 }
 
 // GetTemplatesFromDir returns an array containing all of the templates found in the given directory.
-func GetTemplatesFromDir(parentTemplate *template.Template, templatesDirPath string) ([]*template.Template, int) {
+func GetTemplatesFromDir(parentTemplate *template.Template, templatesDirPath string) []*template.Template {
 	var templates []*template.Template
-	var numTemplates = VisitTemplatesFromDir(templatesDirPath, func() *template.Template {
+	visitTemplatesFromDir(templatesDirPath, func() *template.Template {
 		// Use the same parent template each time
 		return parentTemplate
 	}, func(tmpl *template.Template) {
@@ -70,13 +71,13 @@ func GetTemplatesFromDir(parentTemplate *template.Template, templatesDirPath str
 		templates = append(templates, tmpl)
 	})
 
-	return templates, numTemplates
+	return templates
 }
 
 // ChainTemplatesFromDir returns a single template which contains all of the templates that were found in the given directory.
 func ChainTemplatesFromDir(parentTemplate *template.Template, templatesDirPath string) (*template.Template, int) {
 	var currentTemplate = parentTemplate
-	var numTemplates = VisitTemplatesFromDir(templatesDirPath, func() *template.Template {
+	var numTemplates = visitTemplatesFromDir(templatesDirPath, func() *template.Template {
 		// Use the current template as the parent
 		return currentTemplate
 	}, func(nextTemplate *template.Template) {
@@ -87,10 +88,32 @@ func ChainTemplatesFromDir(parentTemplate *template.Template, templatesDirPath s
 	return currentTemplate, numTemplates
 }
 
-// VisitTemplatesFromDir visits each template found in the given directory, sets the parent using the given "getParentTemplate" function
+// ExecuteTemplate executes a template given the template object and the values.
+func ExecuteTemplate(tmpl *template.Template, values *types.GenericMap) []byte {
+	var err error
+
+	// Create template object
+	if tmpl == nil {
+		logger.Default.Error.Panicln("The template to execute cannot be nil")
+	}
+
+	// Apply values to template
+	var outputByteBuffer = new(bytes.Buffer)
+	err = tmpl.Execute(outputByteBuffer, (*types.GenericMap)(values))
+	if err != nil {
+		logger.Default.Error.Fatalln(err)
+	}
+
+	// Convert bytes to a string
+	var outputBytes = outputByteBuffer.Bytes()
+
+	return outputBytes
+}
+
+// visitTemplatesFromDir visits each template found in the given directory, sets the parent using the given "getParentTemplate" function
 // and then consumes the template using the given "consumeTemplate" function.  Finally, this function returns a count of the number of
 // templates that were visited.
-func VisitTemplatesFromDir(templatesDirPath string, getParentTemplate types.TemplateSupplier, consumeTemplate types.TemplateConsumer) int {
+func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.TemplateSupplier, consumeTemplate types.TemplateConsumer) int {
 	var err error
 
 	// Get the list of filesystem objects in the helpers directory
@@ -126,26 +149,4 @@ func VisitTemplatesFromDir(templatesDirPath string, getParentTemplate types.Temp
 	}
 
 	return numTemplates
-}
-
-// ExecuteTemplate executes a template given the template object and the values.
-func ExecuteTemplate(tmpl *template.Template, values interface{}) []byte {
-	var err error
-
-	// Create template object
-	if tmpl == nil {
-		logger.Default.Error.Panicln("The template to execute cannot be nil")
-	}
-
-	// Apply values to template
-	var outputByteBuffer = new(bytes.Buffer)
-	err = tmpl.Execute(outputByteBuffer, values)
-	if err != nil {
-		logger.Default.Error.Fatalln(err)
-	}
-
-	// Convert bytes to a string
-	var outputBytes = outputByteBuffer.Bytes()
-
-	return outputBytes
 }
