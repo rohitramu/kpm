@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"./common"
 	"./utils/constants"
 	"./utils/files"
 	"./utils/logger"
@@ -16,7 +17,11 @@ func ListCmd(kpmHomeDirArg *string) error {
 	var err error
 
 	// Get KPM home directory
-	var kpmHomeDir = files.GetAbsolutePathOrDefault(kpmHomeDirArg, files.GetDefaultKpmHomeDir())
+	var kpmHomeDir string
+	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirArg, common.GetDefaultKpmHomeDirPath)
+	if err != nil {
+		return err
+	}
 
 	// Get packages directory
 	var packageRepositoryDir = filepath.Join(kpmHomeDir, constants.PackageRepositoryDirName)
@@ -25,7 +30,7 @@ func ListCmd(kpmHomeDirArg *string) error {
 	var files []os.FileInfo
 	files, err = ioutil.ReadDir(packageRepositoryDir)
 	if err != nil {
-		logger.Default.Error.Fatalln(err)
+		return err
 	}
 
 	// Print directory names

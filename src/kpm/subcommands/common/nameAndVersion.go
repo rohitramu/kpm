@@ -16,6 +16,8 @@ func GetPackageFullName(packageName string, resolvedPackageVersion string) strin
 
 // ResolvePackageVersion returns the highest available package version that is compatible with a given wildcard package version.
 func ResolvePackageVersion(kpmHomeDir string, packageName string, wildcardPackageVersion string) (string, error) {
+	var err error
+
 	var packagesDir = GetPackageRepositoryDirPath(kpmHomeDir)
 
 	var resolvedPackageVersion string
@@ -27,7 +29,10 @@ func ResolvePackageVersion(kpmHomeDir string, packageName string, wildcardPackag
 		var availablePackagesAndVersions = getAvailablePackagesAndVersions(packagesDir)
 		if availableVersions, ok := availablePackagesAndVersions[packageName]; ok {
 			// Resolve wildcards if required
-			resolvedPackageVersion = resolveVersionNumber(wildcardPackageVersion, availableVersions)
+			resolvedPackageVersion, err = resolveVersionNumber(wildcardPackageVersion, availableVersions)
+			if err != nil {
+				return "", err
+			}
 		} else {
 			return "", fmt.Errorf("Unable to find template package in local KPM package repository: %s", packagesDir)
 		}
@@ -67,7 +72,7 @@ func getAvailablePackagesAndVersions(packagesDir string) map[string][]string {
 	return availablePackagesAndVersions
 }
 
-func resolveVersionNumber(wildcardVersion string, availableVersions []string) string {
+func resolveVersionNumber(wildcardVersion string, availableVersions []string) (string, error) {
 	// Make sure the version is valid
 	if err := validation.ValidatePackageVersion(wildcardVersion, true); err != nil {
 		logger.Default.Error.Panicln(err)
@@ -89,8 +94,8 @@ func resolveVersionNumber(wildcardVersion string, availableVersions []string) st
 	}
 
 	if highestVersion == nil {
-		logger.Default.Error.Fatalln(fmt.Sprintf("Unable to find a compatible version to resolve: %s", wildcardVersion))
+		return "", fmt.Errorf("Unable to find a compatible version to resolve: %s", wildcardVersion)
 	}
 
-	return *highestVersion
+	return *highestVersion, nil
 }

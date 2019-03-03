@@ -7,40 +7,73 @@ import (
 	"path/filepath"
 
 	"github.com/otiai10/copy"
-
-	"../constants"
-	"../logger"
 )
 
 // GetWorkingDir returns the current working directory.
-func GetWorkingDir() string {
+func GetWorkingDir() (string, error) {
 	var result, err = os.Getwd()
 	if err != nil {
-		logger.Default.Error.Fatalln(err)
+		return "", err
 	}
 
-	return result
+	return result, nil
 }
 
 // GetAbsolutePathOrDefault returns the absolute path of the provided path if
 // it is not null, otherwise the absolute path of the default path.
-func GetAbsolutePathOrDefault(path *string, defaultPath string) string {
-	if path == nil {
-		return GetAbsolutePath(defaultPath)
+func GetAbsolutePathOrDefault(path *string, defaultPath string) (string, error) {
+	return GetAbsolutePathOrDefaultFunc(path, func() (string, error) {
+		return defaultPath, nil
+	})
+}
+
+// GetAbsolutePathOrDefaultFunc returns the absolute path of the provided path if
+// it is not null, otherwise the absolute path of the default path which is supplied
+// by the default path function.
+func GetAbsolutePathOrDefaultFunc(path *string, defaultPathFunc func() (string, error)) (string, error) {
+	var err error
+
+	// Check if we can just use the provided path, otherwise we need to use the default
+	if path != nil {
+		// Get absolute path
+		var result string
+		result, err = GetAbsolutePath(*path)
+		if err != nil {
+			return "", err
+		}
+
+		return result, nil
 	}
 
-	return GetAbsolutePath(*path)
+	// Run provided supplier function
+	var defaultPath string
+	defaultPath, err = defaultPathFunc()
+	if err != nil {
+		return "", err
+	}
+
+	// Get absolute path of default value
+	var result string
+	result, err = GetAbsolutePath(defaultPath)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 }
 
 // GetAbsolutePath returns the absolute path of the provided path.
-func GetAbsolutePath(path string) string {
+func GetAbsolutePath(path string) (string, error) {
 	var err error
 
 	var outputPath = path
 
 	// Resolve "~" to the user's home directory if required
 	if pathSegments := filepath.SplitList(outputPath); len(pathSegments) > 0 && pathSegments[0] == "~" {
-		pathSegments[0] = GetUserHomeDir()
+		pathSegments[0], err = GetUserHomeDir()
+		if err != nil {
+			return "", err
+		}
 		outputPath = filepath.Join(pathSegments...)
 	}
 
@@ -51,49 +84,51 @@ func GetAbsolutePath(path string) string {
 
 		// Exit on error
 		if err != nil {
-			logger.Default.Error.Fatalln(err)
+			return "", err
 		}
 	}
 
-	return outputPath
+	return outputPath, nil
 }
 
 // GetUserHomeDir returns the path to the home directory of the current user.
-func GetUserHomeDir() string {
+func GetUserHomeDir() (string, error) {
 	var usr, err = user.Current()
 	if err != nil {
-		logger.Default.Error.Fatalln(err)
+		return "", err
 	}
 
-	return usr.HomeDir
-}
-
-// GetDefaultKpmHomeDir returns the path to the default KPM home directory for the current user.
-func GetDefaultKpmHomeDir() string {
-	return filepath.Join(GetUserHomeDir(), constants.KpmHomeDirName)
+	return usr.HomeDir, nil
 }
 
 // ReadFileToString returns the contents of the given file as a string.
-func ReadFileToString(filePath string) string {
-	var result = string(ReadFileToBytes(filePath))
+func ReadFileToString(filePath string) (string, error) {
+	var resultBytes, err = ReadFileToBytes(filePath)
+	if err != nil {
+		return "", err
+	}
 
-	return result
+	var resultString = string(resultBytes)
+
+	return resultString, nil
 }
 
 // ReadFileToBytes returns the contents of the given file as a byte array.
-func ReadFileToBytes(filePath string) []byte {
+func ReadFileToBytes(filePath string) ([]byte, error) {
 	var fileData, err = ioutil.ReadFile(filePath)
 	if err != nil {
-		logger.Default.Error.Fatalln(err)
+		return nil, err
 	}
 
-	return fileData
+	return fileData, nil
 }
 
 // CopyDir recursively copies a directory from source to destination.
-func CopyDir(source string, destination string) {
+func CopyDir(source string, destination string) error {
 	var err = copy.Copy(source, destination)
 	if err != nil {
-		logger.Default.Error.Fatalln(err)
+		return err
 	}
+
+	return nil
 }

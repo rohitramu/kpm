@@ -4,7 +4,23 @@ import (
 	"path/filepath"
 
 	"../utils/constants"
+	"../utils/files"
 )
+
+// GetDefaultKpmHomeDirPath returns the default location of the KPM home directory.
+func GetDefaultKpmHomeDirPath() (string, error) {
+	var err error
+
+	var userHomeDir string
+	userHomeDir, err = files.GetUserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	var result = filepath.Join(userHomeDir, constants.KpmHomeDirName)
+
+	return result, nil
+}
 
 // GetPackageRepositoryDirPath returns the location of the local package repository.
 func GetPackageRepositoryDirPath(kpmHomeDir string) string {

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"../logger"
 )
 
 // ValidatePackageName validates the given package's name.
@@ -14,7 +12,10 @@ func ValidatePackageName(packageName string) error {
 		return fmt.Errorf("Package name cannot be empty")
 	}
 
-	var isValid = CheckRegexMatch(packageName, "^[a-z](\\.?[a-z0-9])*$")
+	var isValid, err = CheckRegexMatch(packageName, "^[a-z](\\.?[a-z0-9])*$")
+	if err != nil {
+		return err
+	}
 
 	if !isValid {
 		return fmt.Errorf("Package name must consist of lowercase words which may be separated by dots: %s", packageName)
@@ -40,7 +41,15 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 		fullRegex = "^%s\\.%s\\.%s$"
 	}
 
-	var isValid = packageVersion != "0.0.0" && CheckRegexMatch(packageVersion, fmt.Sprintf(fullRegex, segmentRegex, segmentRegex, segmentRegex))
+	var zeroVersion = "0.0.0"
+	if packageVersion == zeroVersion {
+		return fmt.Errorf("Package version cannot be \"%s\"", zeroVersion)
+	}
+
+	var isValid, err = CheckRegexMatch(packageVersion, fmt.Sprintf(fullRegex, segmentRegex, segmentRegex, segmentRegex))
+	if err != nil {
+		return err
+	}
 
 	if !isValid {
 		return fmt.Errorf("Package version must solely consist of digits, be in the form \"major.minor.revision\" with no leading zeros, and be greater than \"0.0.0\": %s", packageVersion)
@@ -51,6 +60,12 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 
 // ValidateOutputName validates the output name when generating output.
 func ValidateOutputName(outputName string) error {
+	//TODO: Add validation
+	return nil
+}
+
+// ValidateDockerRepositoryPath validates the Docker repository path when pulling or pushing packages.
+func ValidateDockerRepositoryPath(dockerRepositoryPath string) error {
 	//TODO: Add validation
 	return nil
 }
@@ -82,13 +97,13 @@ func ExtractNameAndVersionFromFullPackageName(fullPackageName string) (packageNa
 }
 
 // CheckRegexMatch checks whether a string satisfies the given regex expression.
-func CheckRegexMatch(stringToCheck string, regex string) bool {
+func CheckRegexMatch(stringToCheck string, regex string) (bool, error) {
 	var isMatch, err = regexp.MatchString(regex, stringToCheck)
 	if err != nil {
-		logger.Default.Error.Fatalln(err)
+		return false, err
 	}
 
-	return isMatch
+	return isMatch, nil
 }
 
 // GetStringOrDefault returns testValue if it is not null, otherwise returns defaultValue.
@@ -100,11 +115,11 @@ func GetStringOrDefault(testValue *string, defaultValue string) string {
 	return *testValue
 }
 
-// GetStringOrFail returns testValue if it is not null, otherwise throws a fatal error.
-func GetStringOrFail(testValue *string, valueName string) string {
+// GetStringOrError returns testValue if it is not null, otherwise returns an error.
+func GetStringOrError(testValue *string, valueName string) (string, error) {
 	if testValue == nil {
-		logger.Default.Error.Fatalln(fmt.Sprintf("Value cannot be nil: %s", valueName))
+		return "", fmt.Errorf("Value cannot be nil: %s", valueName)
 	}
 
-	return *testValue
+	return *testValue, nil
 }

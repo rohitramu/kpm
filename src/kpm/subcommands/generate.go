@@ -15,23 +15,34 @@ import (
 	"./utils/validation"
 )
 
-// GenerateCmd creates Kubernetes configuration files from the
-// given template package directory and parameters file, and then
-// writes them to the given output directory.
+// GenerateCmd creates Kubernetes configuration files from
+// the given template package directory and parameters file,
+// and then writes them to the given output directory.
 func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputNameArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string) error {
 	var err error
 
-	// Validate string arguments
-	var (
-		packageName            = validation.GetStringOrFail(packageNameArg, "packageName")
-		wildcardPackageVersion = validation.GetStringOrDefault(packageVersionArg, "*")
-	)
-
 	// Resolve base paths
-	var (
-		workingDir = files.GetWorkingDir()
-		kpmHomeDir = files.GetAbsolutePathOrDefault(kpmHomeDirPathArg, files.GetDefaultKpmHomeDir())
-	)
+	var workingDir string
+	workingDir, err = files.GetWorkingDir()
+	if err != nil {
+		return err
+	}
+
+	var kpmHomeDir string
+	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, common.GetDefaultKpmHomeDirPath)
+	if err != nil {
+		return err
+	}
+
+	// Validate name
+	var packageName string
+	packageName, err = validation.GetStringOrError(packageNameArg, "packageName")
+	if err != nil {
+		return err
+	}
+
+	// Validate version
+	var wildcardPackageVersion = validation.GetStringOrDefault(packageVersionArg, "*")
 
 	// Check remote repository for newest matching versions of the package
 	var pulledVersion string
@@ -45,17 +56,24 @@ func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFi
 	// Resolve the package version
 	var resolvedPackageVersion string
 	if resolvedPackageVersion, err = common.ResolvePackageVersion(kpmHomeDir, packageName, wildcardPackageVersion); err != nil {
-		logger.Default.Error.Fatalln(err)
+		return err
 	}
 
 	// Resolve generation paths
-	var (
-		packageFullName    = common.GetPackageFullName(packageName, resolvedPackageVersion)
-		packageDirPath     = common.GetPackageDirPath(common.GetPackageRepositoryDirPath(kpmHomeDir), packageFullName)
-		outputName         = validation.GetStringOrDefault(outputNameArg, packageFullName)
-		outputDirPath      = common.GetOutputDirPath(files.GetAbsolutePathOrDefault(outputDirPathArg, workingDir), outputName)
-		parametersFilePath = files.GetAbsolutePathOrDefault(parametersFilePathArg, common.GetDefaultParametersFilePath(packageDirPath))
-	)
+	var packageFullName = common.GetPackageFullName(packageName, resolvedPackageVersion)
+	var packageDirPath = common.GetPackageDirPath(common.GetPackageRepositoryDirPath(kpmHomeDir), packageFullName)
+	var outputName = validation.GetStringOrDefault(outputNameArg, packageFullName)
+	var outputParentDir string
+	outputParentDir, err = files.GetAbsolutePathOrDefault(outputDirPathArg, workingDir)
+	if err != nil {
+		return err
+	}
+	var outputDirPath = common.GetOutputDirPath(outputParentDir, outputName)
+	var parametersFilePath string
+	parametersFilePath, err = files.GetAbsolutePathOrDefault(parametersFilePathArg, common.GetDefaultParametersFilePath(packageDirPath))
+	if err != nil {
+		return err
+	}
 
 	// Log resolved values
 	logger.Default.Verbose.Println("====")
@@ -68,17 +86,22 @@ func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFi
 	logger.Default.Verbose.Println("====")
 
 	// Get the dependency tree
-	var parameters = common.GetPackageParameters(parametersFilePath)
+	var parameters *types.GenericMap
+	parameters, err = common.GetPackageParameters(parametersFilePath)
+	if err != nil {
+		return err
+	}
 	var dependencyTree *common.DependencyTree
 	if dependencyTree, err = common.GetDependencyTree(outputName, kpmHomeDir, packageName, wildcardPackageVersion, parameters); err != nil {
-		logger.Default.Error.Fatalln(err)
+		return err
 	}
 
 	// Delete the output directory in case it isn't empty
 	os.RemoveAll(outputDirPath)
 
 	// Execute template packages in the dependency tree and write the output to the filesystem
-	dependencyTree.VisitNodesDepthFirst(func(pathSegments []string, executableTemplates []*template.Template, templateInput *types.GenericMap) {
+	var numPackages int
+	numPackages, err = dependencyTree.VisitNodesDepthFirst(func(pathSegments []string, executableTemplates []*template.Template, templateInput *types.GenericMap) error {
 		// Get the output directory
 		var outputDir = filepath.Join(outputDirPath, filepath.Join(pathSegments...))
 
@@ -88,14 +111,25 @@ func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFi
 		// Get the templates in the package
 		for _, tmpl := range executableTemplates {
 			// Execute the template with the provided input data
-			var templateOutput = templates.ExecuteTemplate(tmpl, templateInput)
+			var templateOutput []byte
+			templateOutput, err = templates.ExecuteTemplate(tmpl, templateInput)
+			if err != nil {
+				return err
+			}
 
 			// Write the data to the filesystem
 			var outputFilePath = filepath.Join(outputDir, tmpl.Name())
 			logger.Default.Verbose.Println(fmt.Sprintf("Output file path: %s", outputFilePath))
 			ioutil.WriteFile(outputFilePath, templateOutput, os.ModeAppend)
 		}
+
+		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	logger.Default.Verbose.Println(fmt.Sprintf("Executed %d packages", numPackages))
 
 	// Print status
 	logger.Default.Info.Println(fmt.Sprintf("SUCCESS - Generated output in directory: %s", outputDirPath))

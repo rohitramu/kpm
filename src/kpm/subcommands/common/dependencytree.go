@@ -35,7 +35,7 @@ type dependencyTreeNode struct {
 }
 
 // VisitNodesDepthFirst visits nodes in the tree in depth-first fashion, applying the given consumer function on each node.  It returns the number of nodes that were visited.
-func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(path []string, executableTemplates []*template.Template, templateInput *types.GenericMap)) int {
+func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(path []string, executableTemplates []*template.Template, templateInput *types.GenericMap) error) (int, error) {
 	var numVisitedNodes = 0
 	var toVisitStack = linkedliststack.New()
 	toVisitStack.Push(tree.root)
@@ -62,7 +62,9 @@ func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(path []string,
 				}
 
 				// Call the consuming function
-				consumeNode(nodePath, node.ExecutableTemplates, node.TemplateInput)
+				if err := consumeNode(nodePath, node.ExecutableTemplates, node.TemplateInput); err != nil {
+					return 0, err
+				}
 
 				for _, childNode := range node.Children {
 					toVisitStack.Push(childNode)
@@ -71,7 +73,7 @@ func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(path []string,
 		}
 	}
 
-	return numVisitedNodes
+	return numVisitedNodes, nil
 }
 
 // GetDependencyTree ensures that the dependency tree has no loops and then returns the dependency tree.
@@ -178,18 +180,29 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 			var packageDirPath = GetPackageDirPath(packageRepositoryDirPath, packageFullName)
 
 			// Create shared template (with common options, functions and helper templates for this package)
-			var sharedTemplate = GetSharedTemplate(packageDirPath)
+			var sharedTemplate *template.Template
+			sharedTemplate, err = GetSharedTemplate(packageDirPath)
+			if err != nil {
+				return nil, err
+			}
 
 			// Calculate values to be used as inputs to the templates in this package
-			var templateInput = GetTemplateInput(sharedTemplate, packageDirPath, parameters)
+			var templateInput *types.GenericMap
+			templateInput, err = GetTemplateInput(sharedTemplate, packageDirPath, parameters)
+			if err != nil {
+				return nil, err
+			}
 
 			// Get the dependency definition templates
 			var dependencyTemplates = GetDependencyDefinitionTemplates(sharedTemplate, packageDirPath)
 
 			// Save the package directory path, shared template and calculated values that can be used with this package in the node
 			currentNode.PackageDirPath = packageDirPath
-			currentNode.ExecutableTemplates = GetExecutableTemplates(sharedTemplate, packageDirPath)
 			currentNode.TemplateInput = templateInput
+			currentNode.ExecutableTemplates, err = GetExecutableTemplates(sharedTemplate, packageDirPath)
+			if err != nil {
+				return nil, err
+			}
 
 			// Evaluate dependencies
 			if len(dependencyTemplates) == 0 {
@@ -204,10 +217,19 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 					// Remove the file extension to get the dependency's output name
 					var dependencyOutputName = strings.TrimSuffix(templateFileName, filepath.Ext(templateFileName))
 
-					// Get the package info
-					var dependencyPackageDefinitionBytes = templates.ExecuteTemplate(dependencyTemplate, currentNode.TemplateInput)
+					// Get the package definition by running the template input through the package definition file
+					var dependencyPackageDefinitionBytes []byte
+					dependencyPackageDefinitionBytes, err = templates.ExecuteTemplate(dependencyTemplate, currentNode.TemplateInput)
+					if err != nil {
+						return nil, err
+					}
+
+					// Create an object from the package definition
 					var dependencyPackageDefinition = new(types.PackageDefinition)
-					yaml.BytesToObject(dependencyPackageDefinitionBytes, dependencyPackageDefinition)
+					err = yaml.BytesToObject(dependencyPackageDefinitionBytes, dependencyPackageDefinition)
+					if err != nil {
+						return nil, err
+					}
 
 					// Push new dependency node
 					var dependencyNode *dependencyTreeNode
