@@ -2,14 +2,14 @@ package subcommands
 
 import (
 	"fmt"
-	"log"
-	"os"
+
+	"./utils/logger"
 )
 
 // PullCmd pulls a template package from a Docker registry to the local filesystem.
-func PullCmd(packageName *string, kpmHomeDir *string) error {
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+func PullCmd(kpmHomeDirArg *string, dockerRegistryURLArg *string, dockerNamespaceArg *string, packageNameArg *string, packageVersionArg *string) error {
+	var err error
 
-	logger.Println(fmt.Sprintf("Package name: %s", *packageName))
-	return nil
+	logger.Default.Verbose.Println(fmt.Sprintf("Package name: %s", *packageNameArg))
+	return err
 }
