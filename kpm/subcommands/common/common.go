@@ -102,7 +102,7 @@ func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
 
 	// Get package info file content
 	var yamlBytes []byte
-	yamlBytes, err = files.ReadFileToBytes(packageInfoFilePath)
+	yamlBytes, err = files.ReadBytes(packageInfoFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func GetPackageParameters(parametersFilePath string) (*types.GenericMap, error) 
 		logger.Default.Warning.Println(fmt.Sprintf("Parameters file path does not point to a file: %s", parametersFilePath))
 	} else {
 		logger.Default.Verbose.Println(fmt.Sprintf("Found parameters file: %s", parametersFilePath))
-		parametersFileBytes, err = files.ReadFileToBytes(parametersFilePath)
+		parametersFileBytes, err = files.ReadBytes(parametersFilePath)
 		if err != nil {
 			return nil, err
 		}

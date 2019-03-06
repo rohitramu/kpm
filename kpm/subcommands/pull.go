@@ -1,6 +1,8 @@
 package subcommands
 
 import (
+	"fmt"
+
 	"./common"
 	"./utils/docker"
 	"./utils/files"
@@ -8,8 +10,8 @@ import (
 	"./utils/validation"
 )
 
-// PushCmd pushes the template package to a Docker registry.
-func PushCmd(kpmHomeDirPathArg *string, dockerRegistryURLArg *string, dockerNamespaceArg *string, packageNameArg *string, packageVersionArg *string) error {
+// PullCmd pulls a template package from a Docker registry to the local filesystem.
+func PullCmd(kpmHomeDirPathArg *string, dockerRegistryURLArg *string, dockerNamespaceArg *string, packageNameArg *string, packageVersionArg *string) error {
 	var err error
 
 	// Resolve KPM home directory
@@ -48,15 +50,6 @@ func PushCmd(kpmHomeDirPathArg *string, dockerRegistryURLArg *string, dockerName
 	// Get the package directory
 	var packageDir = common.GetPackageDirPath(common.GetPackageRepositoryDirPath(kpmHomeDir), packageFullName)
 
-	// Create the Dockerfile
-	var dockerfile = docker.GetDockerfile(kpmHomeDir, packageFullName)
-
-	// Get a Docker client
-	dockerContext, dockerClient, err := docker.GetClient(dockerRegistryURL)
-	if err != nil {
-		return err
-	}
-
 	// Create the image name
 	var imageName string
 	imageName, err = docker.GetImageName(dockerNamespace, packageName, resolvedPackageVersion)
@@ -64,22 +57,29 @@ func PushCmd(kpmHomeDirPathArg *string, dockerRegistryURLArg *string, dockerName
 		return err
 	}
 
-	// Build the Docker image
-	err = docker.BuildImage(dockerContext, dockerClient, dockerfile, packageDir, imageName)
+	// Pull the Docker image
+	logger.Default.Verbose.Println(fmt.Sprintf("Pulling Docker image \"%s\" from: %s", imageName, dockerRegistryURL))
+	err = docker.PullImage(dockerRegistryURL, imageName)
 	if err != nil {
 		return err
 	}
 
-	// Push the docker image
-	err = docker.PushImage(dockerContext, dockerClient, imageName)
-	if err != nil {
-		// Don't error out here, since we still want to try to clean up the created Docker images
-		logger.Default.Warning.Println(err)
-	}
+	// Delete the local image after we're done
+	defer func() {
+		logger.Default.Verbose.Println(fmt.Sprintf("Deleting image: %s", imageName))
+		var deleteErr = docker.DeleteImage(imageName)
+		if deleteErr != nil {
+			if err != nil {
+				err = fmt.Errorf("Failed to delete image:\n%s\n%s", deleteErr, err)
+			}
+		}
+	}()
 
-	// Delete the local image
-	err = docker.DeleteImage(dockerContext, dockerClient, imageName)
+	// Copy Docker image contents into the local package repository
+	logger.Default.Verbose.Println(fmt.Sprintf("Copying image contents to: %s", packageDir))
+	err = docker.CopyImageContents(imageName, packageFullName, packageDir)
 	if err != nil {
+		logger.Default.Error.Println("Failed to copy Docker image contents")
 		return err
 	}
 

@@ -50,7 +50,7 @@ func GetTemplateFromFile(parentTemplate *template.Template, templateName string,
 
 	// Get template file as string
 	var templateString string
-	templateString, err = files.ReadFileToString(filePath)
+	templateString, err = files.ReadString(filePath)
 	if err != nil {
 		return nil, err
 	}

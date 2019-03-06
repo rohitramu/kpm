@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/otiai10/copy"
 )
@@ -69,12 +70,13 @@ func GetAbsolutePath(path string) (string, error) {
 	var outputPath = path
 
 	// Resolve "~" to the user's home directory if required
-	if pathSegments := filepath.SplitList(outputPath); len(pathSegments) > 0 && pathSegments[0] == "~" {
-		pathSegments[0], err = GetUserHomeDir()
+	if strings.HasPrefix(outputPath, "~") {
+		var usrHomeDir string
+		usrHomeDir, err = GetUserHomeDir()
 		if err != nil {
 			return "", err
 		}
-		outputPath = filepath.Join(pathSegments...)
+		outputPath = usrHomeDir + strings.TrimPrefix(outputPath, "~")
 	}
 
 	// Check if path is already absolute
@@ -101,9 +103,9 @@ func GetUserHomeDir() (string, error) {
 	return usr.HomeDir, nil
 }
 
-// ReadFileToString returns the contents of the given file as a string.
-func ReadFileToString(filePath string) (string, error) {
-	var resultBytes, err = ReadFileToBytes(filePath)
+// ReadString returns the contents of the given file as a string.
+func ReadString(filePath string) (string, error) {
+	var resultBytes, err = ReadBytes(filePath)
 	if err != nil {
 		return "", err
 	}
@@ -113,8 +115,8 @@ func ReadFileToString(filePath string) (string, error) {
 	return resultString, nil
 }
 
-// ReadFileToBytes returns the contents of the given file as a byte array.
-func ReadFileToBytes(filePath string) ([]byte, error) {
+// ReadBytes returns the contents of the given file as a byte array.
+func ReadBytes(filePath string) ([]byte, error) {
 	var fileData, err = ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, err
