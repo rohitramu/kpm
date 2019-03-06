@@ -1,6 +1,7 @@
 package files
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -8,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/otiai10/copy"
+
+	"../logger"
 )
 
 // GetWorkingDir returns the current working directory.
@@ -131,6 +134,42 @@ func CopyDir(source string, destination string) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// FileExists checks whether a file exists and returns an error if it doesn't.
+func FileExists(absoluteFilePath string, lowercaseHumanFriendlyName string) error {
+	if fileInfo, err := os.Stat(absoluteFilePath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%s file does not exist: %s", strings.ToTitle(lowercaseHumanFriendlyName), absoluteFilePath)
+		}
+
+		// File may exist, but we had an unexpected failure
+		logger.Default.Error.Panicln(err)
+	} else if fileInfo.IsDir() {
+		return fmt.Errorf("%s file path does not point to a file: %s", strings.ToTitle(lowercaseHumanFriendlyName), absoluteFilePath)
+	}
+
+	logger.Default.Verbose.Println(fmt.Sprintf("Found %s file: %s", lowercaseHumanFriendlyName, absoluteFilePath))
+
+	return nil
+}
+
+// DirExists checks whether a directory exists and returns an error if it doesn't.
+func DirExists(absoluteDirPath string, lowercaseHumanFriendlyName string) error {
+	if fileInfo, err := os.Stat(absoluteDirPath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%s directory does not exist: %s", strings.ToTitle(lowercaseHumanFriendlyName), absoluteDirPath)
+		}
+
+		// Directory may exist, but we had an unexpected failure
+		logger.Default.Error.Panicln(err)
+	} else if !fileInfo.IsDir() {
+		return fmt.Errorf("%s directory path does not point to a directory: %s", strings.ToTitle(lowercaseHumanFriendlyName), absoluteDirPath)
+	}
+
+	logger.Default.Verbose.Println(fmt.Sprintf("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath))
 
 	return nil
 }

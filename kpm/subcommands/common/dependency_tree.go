@@ -194,7 +194,11 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 			}
 
 			// Get the dependency definition templates
-			var dependencyTemplates = GetDependencyDefinitionTemplates(sharedTemplate, packageDirPath)
+			var dependencyTemplates []*template.Template
+			dependencyTemplates, err = GetDependencyDefinitionTemplates(sharedTemplate, packageDirPath)
+			if err != nil {
+				return nil, err
+			}
 
 			// Save the package directory path, shared template and calculated values that can be used with this package in the node
 			currentNode.PackageDirPath = packageDirPath

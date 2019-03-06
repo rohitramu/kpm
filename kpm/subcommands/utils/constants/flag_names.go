@@ -1,9 +1,6 @@
 package constants
 
 var (
-	//PackageNameFlagName is the name of a template package.
-	PackageNameFlagName = "packageName"
-
 	//PackageVersionFlagName is the version of a template package.
 	PackageVersionFlagName = "packageVersion"
 

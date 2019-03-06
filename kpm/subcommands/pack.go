@@ -10,23 +10,25 @@ import (
 	"./utils/types"
 )
 
-// PackCmd packs a local template package so it available for use in the given KPM home directory.
+// PackCmd packs a local template package so it is available for use in the given local KPM repository.
 func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	var err error
 
-	// Resolve paths
+	// Package directory
 	var packageDirPath string
 	packageDirPath, err = files.GetAbsolutePathOrDefaultFunc(packageDirPathArg, files.GetWorkingDir)
 	if err != nil {
 		return err
 	}
 
+	// Get KPM home directory
 	var kpmHomeDirPath string
 	kpmHomeDirPath, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, common.GetDefaultKpmHomeDirPath)
 	if err != nil {
 		return err
 	}
 
+	// Get local package repository directory
 	var localPackageRepositoryDirPath = common.GetPackageRepositoryDirPath(kpmHomeDirPath)
 
 	// Log resolved paths

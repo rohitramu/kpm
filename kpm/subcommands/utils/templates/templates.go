@@ -65,9 +65,11 @@ func GetTemplateFromFile(parentTemplate *template.Template, templateName string,
 }
 
 // GetTemplatesFromDir returns an array containing all of the templates found in the given directory.
-func GetTemplatesFromDir(parentTemplate *template.Template, templatesDirPath string) []*template.Template {
+func GetTemplatesFromDir(parentTemplate *template.Template, templatesDirPath string) ([]*template.Template, error) {
+	var err error
+
 	var templates []*template.Template
-	visitTemplatesFromDir(templatesDirPath, func() *template.Template {
+	err = visitTemplatesFromDir(templatesDirPath, func() *template.Template {
 		// Use the same parent template each time
 		return parentTemplate
 	}, func(tmpl *template.Template) {
@@ -75,16 +77,26 @@ func GetTemplatesFromDir(parentTemplate *template.Template, templatesDirPath str
 		templates = append(templates, tmpl)
 	})
 
-	return templates
+	if err != nil {
+		return nil, err
+	}
+
+	return templates, nil
 }
 
 // ChainTemplatesFromDir returns a single template which contains all of the templates that were found in the given directory.
 func ChainTemplatesFromDir(parentTemplate *template.Template, templatesDirPath string) (*template.Template, int, error) {
+	var err error
+
 	var currentTemplate = parentTemplate
-	var numTemplates, err = visitTemplatesFromDir(templatesDirPath, func() *template.Template {
+	var numTemplates = 0
+	err = visitTemplatesFromDir(templatesDirPath, func() *template.Template {
 		// Use the current template as the parent
 		return currentTemplate
 	}, func(nextTemplate *template.Template) {
+		// Increment template count
+		numTemplates++
+
 		// Set the next template as current
 		currentTemplate = nextTemplate
 	})
@@ -118,21 +130,19 @@ func ExecuteTemplate(tmpl *template.Template, values *types.GenericMap) ([]byte,
 }
 
 // visitTemplatesFromDir visits each template found in the given directory, sets the parent using the given "getParentTemplate" function
-// and then consumes the template using the given "consumeTemplate" function.  Finally, this function returns a count of the number of
-// templates that were visited.
-func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.TemplateSupplier, consumeTemplate types.TemplateConsumer) (int, error) {
+// and then consumes the template using the given "consumeTemplate" function.
+func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.TemplateSupplier, consumeTemplate types.TemplateConsumer) error {
 	var err error
 
 	// Get the list of filesystem objects in the helpers directory
 	var filesystemObjects []os.FileInfo
 	filesystemObjects, err = ioutil.ReadDir(templatesDirPath)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	// Parse all templates in the given directory, ignoring sub-directories
 	logger.Default.Info.Println(fmt.Sprintf("Parsing templates in directory: %s", templatesDirPath))
-	var numTemplates = 0
 	for _, filesystemObject := range filesystemObjects {
 		var fileName = filesystemObject.Name()
 
@@ -147,17 +157,14 @@ func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.Temp
 			var tmpl *template.Template
 			tmpl, err = GetTemplateFromFile(getParentTemplate(), fileName, filePath)
 			if err != nil {
-				return 0, err
+				return err
 			}
 
 			// Consume template
 			logger.Default.Verbose.Println(fmt.Sprintf("Consuming template: %s", tmpl.Name()))
 			consumeTemplate(tmpl)
-
-			// Increment template count
-			numTemplates++
 		}
 	}
 
-	return numTemplates, nil
+	return nil
 }

@@ -29,11 +29,25 @@ func GetPackageRepositoryDirPath(kpmHomeDir string) string {
 	return packageRepositoryDir
 }
 
+// GetOutputDirPath returns the path of the output directory for generated files.
+func GetOutputDirPath(rootOutputDir string, outputName string) string {
+	var outputDirPath = filepath.Join(rootOutputDir, constants.GeneratedDirName, filepath.Base(outputName))
+
+	return outputDirPath
+}
+
 // GetPackageDirPath returns the location of a template package in the KPM home directory.
 func GetPackageDirPath(packageRepository string, packageFullName string) string {
 	var packageDir = filepath.Join(packageRepository, packageFullName)
 
 	return packageDir
+}
+
+// GetDependenciesDirPath returns the path of the dependency definition directory in a template package.
+func GetDependenciesDirPath(packageDirPath string) string {
+	var dependenciesDirPath = filepath.Join(packageDirPath, constants.DependenciesDirName)
+
+	return dependenciesDirPath
 }
 
 // GetHelpersDirPath returns the path of the "helpers" directory in a template package.
@@ -50,13 +64,6 @@ func GetTemplatesDirPath(packageDirPath string) string {
 	return templatesDirPath
 }
 
-// GetDependenciesDirPath returns the path of the dependency definition directory in a template package.
-func GetDependenciesDirPath(packageDirPath string) string {
-	var dependenciesDirPath = filepath.Join(packageDirPath, constants.DependenciesDirName)
-
-	return dependenciesDirPath
-}
-
 // GetDefaultParametersFilePath returns the path of the default parameters file in a template package.
 func GetDefaultParametersFilePath(packageDirPath string) string {
 	var parametersFilePath = filepath.Join(packageDirPath, constants.ParametersFileName)
@@ -64,9 +71,16 @@ func GetDefaultParametersFilePath(packageDirPath string) string {
 	return parametersFilePath
 }
 
-// GetOutputDirPath returns the path of the output directory for generated files.
-func GetOutputDirPath(rootOutputDir string, outputName string) string {
-	var outputDirPath = filepath.Join(rootOutputDir, constants.GeneratedDirName, filepath.Base(outputName))
+// GetInterfaceFilePath returns the path of the interface file in a template package.
+func GetInterfaceFilePath(packageDirPath string) string {
+	var interfaceFilePath = filepath.Join(packageDirPath, constants.InterfaceFileName)
 
-	return outputDirPath
+	return interfaceFilePath
+}
+
+// GetPackageInfoFilePath returns the path of the package information file in a template package.
+func GetPackageInfoFilePath(packageDirPath string) string {
+	var packageInfoFilePath = filepath.Join(packageDirPath, constants.PackageInfoFileName)
+
+	return packageInfoFilePath
 }

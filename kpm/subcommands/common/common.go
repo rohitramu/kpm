@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"text/template"
 
@@ -67,37 +66,21 @@ func GetSharedTemplate(packageDirPath string) (*template.Template, error) {
 	return sharedTemplate, nil
 }
 
-// GetPackageInfo returns the package info object for a given package.
+// GetPackageInfo returns the package info object for a given package and validates the package directory.
 func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
 	var err error
 
 	// Make sure that the package exists
-	if fileInfo, err := os.Stat(packageDirPath); err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("Package not found in directory: %s", packageDirPath)
-		}
-
-		// Package may exist, but we had an unexpected failure
-		logger.Default.Error.Panicln(err)
-	} else if !fileInfo.IsDir() {
-		return nil, fmt.Errorf("Package path does not point to a directory: %s", packageDirPath)
-	} else {
-		logger.Default.Verbose.Println(fmt.Sprintf("Found template package in directory: %s", packageDirPath))
+	err = files.DirExists(packageDirPath, "package")
+	if err != nil {
+		return nil, err
 	}
 
 	// Check that the package info file exists
 	var packageInfoFilePath = filepath.Join(packageDirPath, constants.PackageInfoFileName)
-	if fileInfo, err := os.Stat(packageInfoFilePath); err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("Package information file does not exist: %s", packageInfoFilePath)
-		}
-
-		// Package info may exist, but we had an unexpected failure
-		logger.Default.Error.Panicln(err)
-	} else if fileInfo.IsDir() {
-		return nil, fmt.Errorf("Package information file path does not point to a file: %s", packageInfoFilePath)
-	} else {
-		logger.Default.Verbose.Println(fmt.Sprintf("Found package information file: %s", packageInfoFilePath))
+	err = files.FileExists(packageInfoFilePath, "package information")
+	if err != nil {
+		return nil, err
 	}
 
 	// Get package info file content
@@ -126,6 +109,20 @@ func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
 		return nil, err
 	}
 
+	// Make sure that the interface file exists
+	var interfaceFilePath = filepath.Join(packageDirPath, constants.InterfaceFileName)
+	err = files.FileExists(interfaceFilePath, "interface")
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure that the parameters file exists
+	var parametersFilePath = GetDefaultParametersFilePath(packageDirPath)
+	err = files.FileExists(parametersFilePath, "parameters")
+	if err != nil {
+		return nil, err
+	}
+
 	return packageInfo, nil
 }
 
@@ -133,23 +130,17 @@ func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
 func GetPackageParameters(parametersFilePath string) (*types.GenericMap, error) {
 	var err error
 
+	// Make sure that the parameters file exists
+	err = files.FileExists(parametersFilePath, "parameters")
+	if err != nil {
+		return nil, err
+	}
+
 	// Get parameters file content as bytes
 	var parametersFileBytes []byte
-	if fileInfo, err := os.Stat(parametersFilePath); err != nil {
-		if os.IsNotExist(err) {
-			logger.Default.Warning.Println(fmt.Sprintf("Parameters file does not exist: %s", parametersFilePath))
-		} else {
-			// File may exist, but we had an unexpected error
-			return nil, err
-		}
-	} else if fileInfo.IsDir() {
-		logger.Default.Warning.Println(fmt.Sprintf("Parameters file path does not point to a file: %s", parametersFilePath))
-	} else {
-		logger.Default.Verbose.Println(fmt.Sprintf("Found parameters file: %s", parametersFilePath))
-		parametersFileBytes, err = files.ReadBytes(parametersFilePath)
-		if err != nil {
-			return nil, err
-		}
+	parametersFileBytes, err = files.ReadBytes(parametersFilePath)
+	if err != nil {
+		return nil, err
 	}
 
 	// Get parameters
@@ -164,47 +155,44 @@ func GetPackageParameters(parametersFilePath string) (*types.GenericMap, error) 
 
 // GetExecutableTemplates returns all executable templates in a template package.
 func GetExecutableTemplates(parentTemplate *template.Template, packageDirPath string) ([]*template.Template, error) {
+	var err error
+
 	// Get the templates directory
 	var executableTemplatesDir = GetTemplatesDirPath(packageDirPath)
-	if fileInfo, err := os.Stat(executableTemplatesDir); err != nil {
-		if os.IsNotExist(err) {
-			logger.Default.Warning.Println(fmt.Sprintf("Template directory does not exist: %s", executableTemplatesDir))
-		} else {
-			// Template directory may exist, but we hit an unexpected error
-			logger.Default.Error.Panicln(err)
-		}
-	} else if !fileInfo.IsDir() {
-		logger.Default.Warning.Println(fmt.Sprintf("Template directory path does not point to a directory: %s", executableTemplatesDir))
+	err = files.FileExists(executableTemplatesDir, "templates")
+	if err != nil {
+		return nil, err
 	}
 
 	// Return the templates in the directory
 	logger.Default.Verbose.Println(fmt.Sprintf("Found template directory: %s", executableTemplatesDir))
-	var result = templates.GetTemplatesFromDir(parentTemplate, executableTemplatesDir)
+	var result []*template.Template
+	result, err = templates.GetTemplatesFromDir(parentTemplate, executableTemplatesDir)
+	if err != nil {
+		return nil, err
+	}
 
 	return result, nil
 }
 
 // GetDependencyDefinitionTemplates returns the templates for all dependency definition templates in a template package.
-func GetDependencyDefinitionTemplates(parentTemplate *template.Template, packageDirPath string) []*template.Template {
-	var dependencyTemplates []*template.Template
+func GetDependencyDefinitionTemplates(parentTemplate *template.Template, packageDirPath string) ([]*template.Template, error) {
+	var err error
 
 	// Get the dependencies directory
 	var dependenciesDir = GetDependenciesDirPath(packageDirPath)
-	if fileInfo, err := os.Stat(dependenciesDir); err != nil {
-		if os.IsNotExist(err) {
-			logger.Default.Warning.Println(fmt.Sprintf("Dependency template directory does not exist: %s", dependenciesDir))
-		} else {
-			logger.Default.Error.Panicln(err)
-		}
-	} else if !fileInfo.IsDir() {
-		logger.Default.Warning.Println(fmt.Sprintf("Dependency template directory path does not point to a directory: %s", dependenciesDir))
-	} else {
-		logger.Default.Verbose.Println(fmt.Sprintf("Found dependency template directory: %s", dependenciesDir))
-
-		dependencyTemplates = templates.GetTemplatesFromDir(parentTemplate, dependenciesDir)
+	err = files.DirExists(dependenciesDir, "dependencies")
+	if err != nil {
+		return nil, err
 	}
 
-	return dependencyTemplates
+	var dependencyTemplates []*template.Template
+	dependencyTemplates, err = templates.GetTemplatesFromDir(parentTemplate, dependenciesDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return dependencyTemplates, nil
 }
 
 // getValuesFromInterface creates the values which can be used as input to templates by executing the interface with parameters.

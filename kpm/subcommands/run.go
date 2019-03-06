@@ -15,10 +15,9 @@ import (
 	"./utils/validation"
 )
 
-// GenerateCmd creates Kubernetes configuration files from
-// the given template package directory and parameters file,
-// and then writes them to the given output directory.
-func GenerateCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputNameArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string) error {
+// RunCmd runs the given template package directory and parameters file,
+// and then writes the output files to the given output directory.
+func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputNameArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string) error {
 	var err error
 
 	// Resolve base paths
