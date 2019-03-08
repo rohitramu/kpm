@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"./common"
+	"./utils/constants"
 	"./utils/files"
 	"./utils/logger"
 	"./utils/templates"
@@ -28,7 +29,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	}
 
 	var kpmHomeDir string
-	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, common.GetDefaultKpmHomeDirPath)
+	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, constants.GetDefaultKpmHomeDirPath)
 	if err != nil {
 		return err
 	}
@@ -59,17 +60,17 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	}
 
 	// Resolve generation paths
-	var packageFullName = common.GetPackageFullName(packageName, resolvedPackageVersion)
-	var packageDirPath = common.GetPackageDirPath(common.GetPackageRepositoryDirPath(kpmHomeDir), packageFullName)
-	var outputName = validation.GetStringOrDefault(outputNameArg, packageFullName)
+	var packageFullName = constants.GetPackageFullName(packageName, resolvedPackageVersion)
+	var packageDirPath = constants.GetPackageDirPath(constants.GetPackageRepositoryDirPath(kpmHomeDir), packageFullName)
+	var outputName = validation.GetStringOrDefault(outputNameArg, packageName)
 	var outputParentDir string
 	outputParentDir, err = files.GetAbsolutePathOrDefault(outputDirPathArg, workingDir)
 	if err != nil {
 		return err
 	}
-	var outputDirPath = common.GetOutputDirPath(outputParentDir, outputName)
+	var outputDirPath = constants.GetOutputDirPath(outputParentDir, outputName)
 	var parametersFilePath string
-	parametersFilePath, err = files.GetAbsolutePathOrDefault(parametersFilePathArg, common.GetDefaultParametersFilePath(packageDirPath))
+	parametersFilePath, err = files.GetAbsolutePathOrDefault(parametersFilePathArg, constants.GetDefaultParametersFilePath(packageDirPath))
 	if err != nil {
 		return err
 	}

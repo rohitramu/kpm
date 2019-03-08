@@ -12,7 +12,8 @@ import (
 	"../../logger"
 )
 
-type dockerConfig struct {
+// DockerConfig represents the structure of the Docker ~/.docker/config.json file.
+type DockerConfig struct {
 	Auths      *map[string]dockerConfigAuth `json:"auths"`
 	CredsStore *string                      `json:"credsStore"`
 }
@@ -25,31 +26,29 @@ type dockerConfigAuth struct {
 
 type credentialManagers map[string]dockerCreds.Helper
 
-// GetCredentialsFromConfig retrieves credentials from the ~/.docker/config.json file.
-func GetCredentialsFromConfig(dockerRegistryURL string) (string, error) {
+// GetRegistryURLs returns all of the Docker registry URLs in the Docker configuration file.
+func (config *DockerConfig) GetRegistryURLs() ([]string, error) {
+	// See if there are any Docker credentials at all
+	var auths map[string]dockerConfigAuth
+	if config.Auths == nil {
+		return nil, fmt.Errorf("No Docker credentials found in Docker configuration")
+	}
+	auths = *config.Auths
+
+	var registryURLs = make([]string, len(auths))
+	var i = 0
+	for key := range auths {
+		registryURLs[i] = key
+		i++
+	}
+
+	return registryURLs, nil
+}
+
+// GetCredentials retrieves credentials from a Docker config.
+func (config *DockerConfig) GetCredentials(dockerRegistryURL string) (string, error) {
 	var err error
 	var ok bool
-
-	// Get absolute path of Docker config file
-	var path string
-	path, err = files.GetAbsolutePath("~/.docker/config.json")
-	if err != nil {
-		return "", err
-	}
-
-	// Read the Docker config file
-	var configJSON []byte
-	configJSON, err = files.ReadBytes(path)
-	if err != nil {
-		return "", err
-	}
-
-	// Parse the Docker config file
-	var config = new(dockerConfig)
-	err = json.Unmarshal(configJSON, config)
-	if err != nil {
-		return "", fmt.Errorf("Failed to deserialize Docker config file: %s", err)
-	}
 
 	// See if there are any Docker credentials at all
 	var auths map[string]dockerConfigAuth
@@ -79,7 +78,37 @@ func GetCredentialsFromConfig(dockerRegistryURL string) (string, error) {
 	}
 	var authString = base64.URLEncoding.EncodeToString(encodedJSON)
 
+	logger.Default.Verbose.Println("Auth:\n" + string(encodedJSON))
+
 	return authString, nil
+}
+
+// GetDockerConfig retrieves the Docker configuration from the ~/.docker/config.json file.
+func GetDockerConfig() (*DockerConfig, error) {
+	var err error
+
+	// Get absolute path of Docker config file
+	var path string
+	path, err = files.GetAbsolutePath("~/.docker/config.json")
+	if err != nil {
+		return nil, err
+	}
+
+	// Read the Docker config file
+	var configJSON []byte
+	configJSON, err = files.ReadBytes(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the Docker config file
+	var config = new(DockerConfig)
+	err = json.Unmarshal(configJSON, config)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to deserialize Docker config file: %s", err)
+	}
+
+	return config, nil
 }
 
 func getAuthConfig(dockerRegistryURL string, credsStoreTypeArg *string, auth dockerConfigAuth) (dockerTypes.AuthConfig, error) {
@@ -87,7 +116,7 @@ func getAuthConfig(dockerRegistryURL string, credsStoreTypeArg *string, auth doc
 
 	// Create the result object
 	var result = dockerTypes.AuthConfig{
-		ServerAddress: dockerRegistryURL,
+		// ServerAddress: dockerRegistryURL,
 	}
 
 	// If the auth token was provided, use the details in the Docker config file
@@ -122,10 +151,15 @@ func getAuthConfig(dockerRegistryURL string, credsStoreTypeArg *string, auth doc
 	}
 
 	// Get credential from the credential store
-	result.Username, result.Password, err = credsStore.Get(dockerRegistryURL)
+	var username string
+	var password string
+	username, password, err = credsStore.Get(dockerRegistryURL)
 	if err != nil {
 		return result, err
 	}
+
+	result.Username = username
+	result.Password = password
 
 	return result, nil
 }

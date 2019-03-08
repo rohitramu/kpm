@@ -9,6 +9,7 @@ import (
 	"github.com/emirpasic/gods/maps/linkedhashmap"
 	"github.com/emirpasic/gods/stacks/linkedliststack"
 
+	"../utils/constants"
 	"../utils/logger"
 	"../utils/templates"
 	"../utils/types"
@@ -86,7 +87,7 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 	}
 
 	// Get the package repository location
-	var packageRepositoryDirPath = GetPackageRepositoryDirPath(kpmHomeDir)
+	var packageRepositoryDirPath = constants.GetPackageRepositoryDirPath(kpmHomeDir)
 
 	// Create the package definition for the root node
 	var rootNodePackageDefinition = &types.PackageDefinition{
@@ -149,7 +150,7 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 				return nil, err
 			}
 			// Get the package's full name
-			var packageFullName = GetPackageFullName(packageName, resolvedPackageVersion)
+			var packageFullName = constants.GetPackageFullName(packageName, resolvedPackageVersion)
 
 			// Check if there is a loop in the dependency tree
 			if _, exists := currentPathNodes.Get(packageFullName); exists {
@@ -177,7 +178,7 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 			currentPathNodes.Put(packageFullName, currentNode)
 
 			// Get the package directory
-			var packageDirPath = GetPackageDirPath(packageRepositoryDirPath, packageFullName)
+			var packageDirPath = constants.GetPackageDirPath(packageRepositoryDirPath, packageFullName)
 
 			// Create shared template (with common options, functions and helper templates for this package)
 			var sharedTemplate *template.Template

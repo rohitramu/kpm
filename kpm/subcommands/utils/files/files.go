@@ -142,13 +142,13 @@ func CopyDir(source string, destination string) error {
 func FileExists(absoluteFilePath string, lowercaseHumanFriendlyName string) error {
 	if fileInfo, err := os.Stat(absoluteFilePath); err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("%s file does not exist: %s", strings.ToTitle(lowercaseHumanFriendlyName), absoluteFilePath)
+			return fmt.Errorf("%s file does not exist: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteFilePath)
 		}
 
 		// File may exist, but we had an unexpected failure
 		logger.Default.Error.Panicln(err)
 	} else if fileInfo.IsDir() {
-		return fmt.Errorf("%s file path does not point to a file: %s", strings.ToTitle(lowercaseHumanFriendlyName), absoluteFilePath)
+		return fmt.Errorf("%s file path does not point to a file: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteFilePath)
 	}
 
 	logger.Default.Verbose.Println(fmt.Sprintf("Found %s file: %s", lowercaseHumanFriendlyName, absoluteFilePath))
@@ -160,16 +160,20 @@ func FileExists(absoluteFilePath string, lowercaseHumanFriendlyName string) erro
 func DirExists(absoluteDirPath string, lowercaseHumanFriendlyName string) error {
 	if fileInfo, err := os.Stat(absoluteDirPath); err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("%s directory does not exist: %s", strings.ToTitle(lowercaseHumanFriendlyName), absoluteDirPath)
+			return fmt.Errorf("%s directory does not exist: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteDirPath)
 		}
 
 		// Directory may exist, but we had an unexpected failure
 		logger.Default.Error.Panicln(err)
 	} else if !fileInfo.IsDir() {
-		return fmt.Errorf("%s directory path does not point to a directory: %s", strings.ToTitle(lowercaseHumanFriendlyName), absoluteDirPath)
+		return fmt.Errorf("%s directory path does not point to a directory: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteDirPath)
 	}
 
 	logger.Default.Verbose.Println(fmt.Sprintf("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath))
 
 	return nil
+}
+
+func toTitleCase(text string) string {
+	return strings.ToUpper(string(text[0])) + text[1:]
 }

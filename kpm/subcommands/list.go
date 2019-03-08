@@ -1,10 +1,8 @@
 package subcommands
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
+	"strings"
 
 	"./common"
 	"./utils/constants"
@@ -18,25 +16,23 @@ func ListCmd(kpmHomeDirArg *string) error {
 
 	// Get KPM home directory
 	var kpmHomeDir string
-	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirArg, common.GetDefaultKpmHomeDirPath)
+	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirArg, constants.GetDefaultKpmHomeDirPath)
 	if err != nil {
 		return err
 	}
 
-	// Get packages directory
+	// Get the packages directory
 	var packageRepositoryDir = filepath.Join(kpmHomeDir, constants.PackageRepositoryDirName)
 
-	// Get all entries in this directory
-	var files []os.FileInfo
-	files, err = ioutil.ReadDir(packageRepositoryDir)
+	var packages []string
+	packages, err = common.GetPackageNamesFromLocalRepository(packageRepositoryDir)
 	if err != nil {
 		return err
 	}
 
 	// Print directory names
-	for i, file := range files {
-		logger.Default.Info.Println(fmt.Sprintf("%d:\t%s", i, file.Name()))
-	}
+	var output = strings.Join(packages, "\n")
+	logger.Default.Info.Println("Packages:\n" + output)
 
 	return nil
 }

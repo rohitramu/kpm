@@ -5,16 +5,19 @@ import (
 	"io"
 	"strings"
 
-	"../logger"
-	"./credentials"
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/term"
+
+	"../logger"
+	"./credentials"
 )
 
 // PullImage pulls a Docker image from a remote Docker registry.
 func PullImage(dockerRegistryURL string, imageName string) error {
 	var err error
+
+	logger.Default.Info.Println(fmt.Sprintf("Pulling Docker image \"%s\" from: %s", imageName, dockerRegistryURL))
 
 	// Get Docker client
 	var docker dockerConnection
@@ -23,9 +26,16 @@ func PullImage(dockerRegistryURL string, imageName string) error {
 		return err
 	}
 
+	// Get Docker config
+	var config *credentials.DockerConfig
+	config, err = credentials.GetDockerConfig()
+	if err != nil {
+		return err
+	}
+
 	// Get Docker credentials
 	var authString string
-	authString, err = credentials.GetCredentialsFromConfig(dockerRegistryURL)
+	authString, err = config.GetCredentials(dockerRegistryURL)
 	if err != nil {
 		return err
 	}

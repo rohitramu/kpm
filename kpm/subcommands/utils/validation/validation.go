@@ -1,24 +1,47 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"../logger"
 )
 
 // ValidatePackageName validates the given package's name.
 func ValidatePackageName(packageName string) error {
+	var err error
+
 	if len(strings.TrimSpace(packageName)) == 0 {
 		return fmt.Errorf("Package name cannot be empty")
 	}
 
-	var isValid, err = CheckRegexMatch(packageName, "^[a-z](\\.?[a-z0-9])*$")
-	if err != nil {
-		return err
+	// Check namespace segments
+	var nameSegments = strings.Split(packageName, "/")
+	for i, namespaceSegment := range nameSegments {
+		// The final segment is the unqualified name, so don't check if it is a valid namespace segment
+		if i+1 < len(nameSegments) {
+			err = ValidateNamespaceSegment(namespaceSegment)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
+	// Final name segment is the unqualified package name
+	var unqualifiedName = nameSegments[len(nameSegments)-1]
+
+	// Check the unqualified name
+	var isValid bool
+	isValid, err = CheckRegexMatch(unqualifiedName, "^[a-z](\\.?[a-z0-9])*$")
+	if err != nil {
+		logger.Default.Error.Panicln(err)
+	}
+
+	// Return an error if the name is not valid
 	if !isValid {
-		return fmt.Errorf("Package name must consist of lowercase words which may be separated by dots: %s", packageName)
+		return fmt.Errorf("The unqualified package name (i.e. ignoring the namespace) must consist of lowercase words which may be separated by dots: %s", packageName)
 	}
 
 	return nil
@@ -26,8 +49,22 @@ func ValidatePackageName(packageName string) error {
 
 // ValidatePackageVersion validates the given package version.
 func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
+	var err error
+
+	// Check for empty string
 	if len(strings.TrimSpace(packageVersion)) == 0 {
 		return fmt.Errorf("Package version string cannot be empty")
+	}
+
+	// Check for wildcards
+	if !allowWildcards && strings.ContainsRune(packageVersion, '*') {
+		return fmt.Errorf("Package version cannot contain wildcards: %s", packageVersion)
+	}
+
+	// Check for zero version
+	var zeroVersion = "0.0.0"
+	if packageVersion == zeroVersion {
+		return fmt.Errorf("Package version cannot be \"%s\"", zeroVersion)
 	}
 
 	// Regex for each segment that has a valid integer
@@ -41,18 +78,16 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 		fullRegex = "^%s\\.%s\\.%s$"
 	}
 
-	var zeroVersion = "0.0.0"
-	if packageVersion == zeroVersion {
-		return fmt.Errorf("Package version cannot be \"%s\"", zeroVersion)
-	}
-
-	var isValid, err = CheckRegexMatch(packageVersion, fmt.Sprintf(fullRegex, segmentRegex, segmentRegex, segmentRegex))
+	// Check whether the version string satisfies the regex
+	var isValid bool
+	isValid, err = CheckRegexMatch(packageVersion, fmt.Sprintf(fullRegex, segmentRegex, segmentRegex, segmentRegex))
 	if err != nil {
-		return err
+		logger.Default.Error.Panicln(err)
 	}
 
+	// Return error if the version string did not satisfy the regex
 	if !isValid {
-		return fmt.Errorf("Package version must solely consist of digits, be in the form \"major.minor.revision\" with no leading zeros, and be greater than \"0.0.0\": %s", packageVersion)
+		return fmt.Errorf("Package version must solely consist of digits, be in the form \"major.minor.revision\" with no leading zeros in any segment, and be greater than \"0.0.0\": %s", packageVersion)
 	}
 
 	return nil
@@ -64,9 +99,30 @@ func ValidateOutputName(outputName string) error {
 	return nil
 }
 
-// ValidateDockerRepositoryPath validates the Docker repository path when pulling or pushing packages.
-func ValidateDockerRepositoryPath(dockerRepositoryPath string) error {
-	//TODO: Add validation
+// ValidateNamespaceSegment validates an image namespace's segment.
+func ValidateNamespaceSegment(namespaceSegment string) error {
+	var err error
+
+	// Check for empty string
+	if namespaceSegment == "" {
+		return errors.New("Namespace segment cannot be empty")
+	}
+
+	// Build the regex
+	var regex = "^[a-z0-9]+$"
+
+	// Check if the value satisfies the regex
+	var isValid bool
+	isValid, err = CheckRegexMatch(namespaceSegment, regex)
+	if err != nil {
+		logger.Default.Error.Panicln(err)
+	}
+
+	// Return an error if the value doesn't satisfy the regex
+	if !isValid {
+		return fmt.Errorf("Invalid namespace segment: %s", namespaceSegment)
+	}
+
 	return nil
 }
 

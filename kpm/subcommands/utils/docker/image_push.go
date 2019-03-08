@@ -16,6 +16,8 @@ import (
 func PushImage(dockerRegistryURL string, imageName string) error {
 	var err error
 
+	logger.Default.Info.Println(fmt.Sprintf("Pushing image: %s", imageName))
+
 	// Get Docker client
 	var docker dockerConnection
 	docker, err = getClient()
@@ -23,9 +25,16 @@ func PushImage(dockerRegistryURL string, imageName string) error {
 		return err
 	}
 
+	// Get Docker config
+	var config *credentials.DockerConfig
+	config, err = credentials.GetDockerConfig()
+	if err != nil {
+		return err
+	}
+
 	// Get Docker credentials
 	var authString string
-	authString, err = credentials.GetCredentialsFromConfig(dockerRegistryURL)
+	authString, err = config.GetCredentials(dockerRegistryURL)
 	if err != nil {
 		return err
 	}

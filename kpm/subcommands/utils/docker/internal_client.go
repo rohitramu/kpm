@@ -29,7 +29,7 @@ func getClient() (dockerConnection, error) {
 
 	// Get Docker client
 	var docker *client.Client
-	docker, err = client.NewEnvClient()
+	docker, err = client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return result, err
 	}

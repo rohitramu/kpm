@@ -15,6 +15,8 @@ import (
 func BuildImage(imageName string, dockerfile string, dirToCopy string) error {
 	var err error
 
+	logger.Default.Info.Println(fmt.Sprintf("Building image: %s", imageName))
+
 	// Get Docker client
 	var docker dockerConnection
 	docker, err = getClient()
@@ -35,7 +37,7 @@ func BuildImage(imageName string, dockerfile string, dirToCopy string) error {
 
 	// Create in-memory tar file to use as the body in the request to the docker daemon
 	var buildRequestBytes *bytes.Buffer
-	buildRequestBytes, err = createTar(dockerfileName, dockerfile, dirToCopy)
+	buildRequestBytes, err = createTar(dockerfile, dirToCopy)
 	if err != nil {
 		return err
 	}

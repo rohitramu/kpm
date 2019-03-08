@@ -2,8 +2,14 @@ package common
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
+	"reflect"
 	"text/template"
+
+	"github.com/emirpasic/gods/sets/treeset"
+	"github.com/emirpasic/gods/stacks/linkedliststack"
 
 	"../utils/constants"
 	"../utils/files"
@@ -24,7 +30,7 @@ func PullPackage(packageName string, packageVersion string) (string, error) {
 	//TODO: Download the template package of the resolved version into the local package repository
 	//TODO: Delete the existing package first if it already exists
 
-	return "", fmt.Errorf("Could not find a compatible version for package in remote repository: %s", GetPackageFullName(packageName, packageVersion))
+	return "", fmt.Errorf("Could not find a compatible version for package in remote repository: %s", constants.GetPackageFullName(packageName, packageVersion))
 }
 
 // GetTemplateInput creates the input values for a template by combining the interface, parameters and package info.
@@ -51,7 +57,7 @@ func GetSharedTemplate(packageDirPath string) (*template.Template, error) {
 	var err error
 
 	// Get the directory which contains the helper templates
-	var helpersDirPath = GetHelpersDirPath(packageDirPath)
+	var helpersDirPath = constants.GetHelpersDirPath(packageDirPath)
 
 	// Create a template which includes the helper template definitions
 	var sharedTemplate *template.Template
@@ -66,7 +72,7 @@ func GetSharedTemplate(packageDirPath string) (*template.Template, error) {
 	return sharedTemplate, nil
 }
 
-// GetPackageInfo returns the package info object for a given package and validates the package directory.
+// GetPackageInfo validates the package directory and returns the package info object for a given package.
 func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
 	var err error
 
@@ -117,7 +123,7 @@ func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
 	}
 
 	// Make sure that the parameters file exists
-	var parametersFilePath = GetDefaultParametersFilePath(packageDirPath)
+	var parametersFilePath = constants.GetDefaultParametersFilePath(packageDirPath)
 	err = files.FileExists(parametersFilePath, "parameters")
 	if err != nil {
 		return nil, err
@@ -158,8 +164,8 @@ func GetExecutableTemplates(parentTemplate *template.Template, packageDirPath st
 	var err error
 
 	// Get the templates directory
-	var executableTemplatesDir = GetTemplatesDirPath(packageDirPath)
-	err = files.FileExists(executableTemplatesDir, "templates")
+	var executableTemplatesDir = constants.GetTemplatesDirPath(packageDirPath)
+	err = files.DirExists(executableTemplatesDir, "templates")
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +186,7 @@ func GetDependencyDefinitionTemplates(parentTemplate *template.Template, package
 	var err error
 
 	// Get the dependencies directory
-	var dependenciesDir = GetDependenciesDirPath(packageDirPath)
+	var dependenciesDir = constants.GetDependenciesDirPath(packageDirPath)
 	err = files.DirExists(dependenciesDir, "dependencies")
 	if err != nil {
 		return nil, err
@@ -223,4 +229,90 @@ func getValuesFromInterface(parentTemplate *template.Template, packageDirPath st
 	}
 
 	return result, nil
+}
+
+// GetPackageNamesFromLocalRepository returns the list of package names in the local KPM package repository.
+func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, error) {
+	var err error
+	var ok bool
+
+	// Exit early if the packages directory doesn't exist
+	err = files.DirExists(packageRepositoryDir, "packages repository")
+	if err != nil {
+		return nil, err
+	}
+
+	// Traverse the packages directory
+	var packages = treeset.NewWithStringComparator()
+	var toVisit = linkedliststack.New()
+	toVisit.Push(packageRepositoryDir)
+	for currentPathObj, ok := toVisit.Pop(); ok; currentPathObj, ok = toVisit.Pop() {
+		// Assert type as string
+		var currentPath string
+		currentPath, ok = currentPathObj.(string)
+		if !ok {
+			// We should never fail here since we are providing the values
+			logger.Default.Error.Panicln(fmt.Sprintf("Unexpected object when string was expected: %s", reflect.TypeOf(currentPathObj)))
+		}
+
+		// Get the file info
+		var fileInfo os.FileInfo
+		fileInfo, err = os.Stat(currentPath)
+		if err != nil {
+			// We should never fail here since we are providing the values
+			logger.Default.Error.Panicln(err)
+		}
+
+		// Ignore files
+		if !fileInfo.IsDir() {
+			continue
+		}
+
+		// Check if this is a valid package directory
+		_, err = GetPackageInfo(currentPath)
+		if err == nil {
+			// Found a valid package, so add it to the list of found packages
+			packages.Add(currentPath)
+
+			// We don't want to add subdirectories, since packages cannot be nested
+			continue
+		}
+
+		// Since this is not a valid package directory, visit all subdirectories if this is the root directory or the directory's name is a valid namespace name
+		if currentPath == packageRepositoryDir || validation.ValidateNamespaceSegment(filepath.Base(currentPath)) == nil {
+			var subdirectories []os.FileInfo
+			subdirectories, err = ioutil.ReadDir(currentPath)
+			if err != nil {
+				return nil, err
+			}
+			for _, dir := range subdirectories {
+				var dirName = dir.Name()
+				if dir.IsDir() {
+					toVisit.Push(filepath.Join(currentPath, dirName))
+				}
+			}
+		}
+	}
+
+	// Compile the list of results
+	var results = make([]string, packages.Size())
+	for it := packages.Iterator(); it.Next(); {
+		var path string
+		path, ok = it.Value().(string)
+		if !ok {
+			logger.Default.Error.Panicln(fmt.Sprintf("Unexpected type found when getting list of string package names: %s", reflect.TypeOf(it.Value())))
+		}
+
+		// Get the relative path
+		path, err = filepath.Rel(packageRepositoryDir, path)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get the image name by using forward slashes instead of backward slashes (if on a Windows machine)
+		var imageName = filepath.ToSlash(path)
+		results[it.Index()] = imageName
+	}
+
+	return results, nil
 }

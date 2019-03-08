@@ -9,18 +9,19 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/mholt/archiver"
+
 	"../logger"
 	"../types"
-	"github.com/mholt/archiver"
 )
 
 // createTar creates a new in-memory Docker tar file which can be used to build Docker images by
 // making a request to the Docker daemon.
-func createTar(dockerfileName string, dockerfile string, dirToCopy string) (*bytes.Buffer, error) {
+func createTar(dockerfile string, dirToCopy string) (*bytes.Buffer, error) {
 	var err error
 
 	// Get the base name of the directory to copy so we can use it as the parent directory at the destination
-	var dirToCopyBaseName = filepath.Base(dirToCopy)
+	var dirToCopyBaseName = "/" + DockerTarFileRootDir
 
 	// Create byte stream
 	var byteStream = new(bytes.Buffer)
@@ -38,6 +39,7 @@ func createTar(dockerfileName string, dockerfile string, dirToCopy string) (*byt
 	defer tarFile.Close()
 
 	// Add Dockerfile
+	var dockerfileName = "Dockerfile"
 	err = tarFile.Write(archiver.File{
 		FileInfo: archiver.FileInfo{
 			FileInfo: types.MockFileInfo{
@@ -114,17 +116,18 @@ func createTar(dockerfileName string, dockerfile string, dirToCopy string) (*byt
 
 	logger.Default.Verbose.Println(fmt.Sprintf("Tar file size: %d bytes", len(byteStream.Bytes())))
 
-	var tempOutputDir = filepath.Join(os.TempDir(), "kpm")
-	err = os.MkdirAll(tempOutputDir, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-	var tempOutputPath = filepath.Join(tempOutputDir, fmt.Sprintf("%s.tar", dirToCopyBaseName))
-	err = ioutil.WriteFile(tempOutputPath, byteStream.Bytes(), os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-	logger.Default.Verbose.Println(fmt.Sprintf("Wrote temp file to: %s", tempOutputPath))
+	// // Temp file output for debugging
+	// var tempOutputDir = filepath.Join(os.TempDir(), "kpm")
+	// err = os.MkdirAll(tempOutputDir, os.ModePerm)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// var tempOutputPath = filepath.Join(tempOutputDir, fmt.Sprintf("%s.tar", dirToCopyBaseName))
+	// err = ioutil.WriteFile(tempOutputPath, byteStream.Bytes(), os.ModePerm)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// logger.Default.Verbose.Println(fmt.Sprintf("Wrote temp file to: %s", tempOutputPath))
 
 	return byteStream, nil
 }

@@ -2,39 +2,42 @@ package common
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strings"
 
+	"../utils/constants"
 	"../utils/logger"
 	"../utils/validation"
 )
 
-// GetPackageFullName returns the full package name with version.
-func GetPackageFullName(packageName string, resolvedPackageVersion string) string {
-	return fmt.Sprintf("%s-%s", packageName, resolvedPackageVersion)
-}
+type packageNamesAndVersions map[string][]string
 
-// ResolvePackageVersion returns the highest available package version that is compatible with a given wildcard package version.
+// ResolvePackageVersion returns the highest available package version found in the local KPM repository, which is compatible with a given wildcard package version.
 func ResolvePackageVersion(kpmHomeDir string, packageName string, wildcardPackageVersion string) (string, error) {
 	var err error
 
-	var packagesDir = GetPackageRepositoryDirPath(kpmHomeDir)
+	var packagesDir = constants.GetPackageRepositoryDirPath(kpmHomeDir)
 
 	var resolvedPackageVersion string
 	if !strings.Contains(wildcardPackageVersion, "*") {
 		// Since this version doesn't have any wildcards, just use it as-is
 		resolvedPackageVersion = wildcardPackageVersion
 	} else {
-		// Get the names of all available versions of the package
-		var availablePackagesAndVersions = getAvailablePackagesAndVersions(packagesDir)
-		if availableVersions, ok := availablePackagesAndVersions[packageName]; ok {
+		// Get all available package names and versions
+		var availablePackagesAndVersions packageNamesAndVersions
+		availablePackagesAndVersions, err = getAvailablePackagesAndVersions(packagesDir)
+		if err != nil {
+			return "", err
+		}
+
+		// For each version, resolve the version number
+		if availableVersions, found := availablePackagesAndVersions[packageName]; found {
 			// Resolve wildcards if required
 			resolvedPackageVersion, err = resolveVersionNumber(wildcardPackageVersion, availableVersions)
 			if err != nil {
 				return "", err
 			}
 		} else {
-			return "", fmt.Errorf("Unable to find template package in local KPM package repository: %s", packagesDir)
+			return "", fmt.Errorf("Unable to find template package \"%s\" (version: %s) in local KPM package repository: %s", packageName, wildcardPackageVersion, packagesDir)
 		}
 	}
 
@@ -42,34 +45,36 @@ func ResolvePackageVersion(kpmHomeDir string, packageName string, wildcardPackag
 }
 
 // getAvailablePackagesAndVersions retrieves the list of available packages and their versions.
-func getAvailablePackagesAndVersions(packagesDir string) map[string][]string {
-	var availablePackagesAndVersions = map[string][]string{}
-	if files, err := ioutil.ReadDir(packagesDir); err != nil {
-		logger.Default.Error.Panicln(err)
-	} else {
-		for _, file := range files {
-			var fileName = file.Name()
+func getAvailablePackagesAndVersions(packagesDir string) (packageNamesAndVersions, error) {
+	var err error
 
-			// Ensure that we are looking at a directory
-			if file.IsDir() {
-				currentPackageName, currentPackageVersion, err := validation.ExtractNameAndVersionFromFullPackageName(fileName)
-				if err != nil {
-					logger.Default.Verbose.Println(fmt.Sprintf("Found non-package directory \"%s\": %s", fileName, err))
-				} else {
-					// If an entry doesn't exist yet for this package version, create it
-					var versionsForPackage, ok = availablePackagesAndVersions[currentPackageName]
-					if !ok {
-						versionsForPackage = []string{}
-					}
-
-					// Add the current version to the list of versions for the current package
-					availablePackagesAndVersions[currentPackageName] = append(versionsForPackage, currentPackageVersion)
-				}
-			}
-		}
+	// Get the full list of package names
+	var packagesList []string
+	packagesList, err = GetPackageNamesFromLocalRepository(packagesDir)
+	if err != nil {
+		return nil, err
 	}
 
-	return availablePackagesAndVersions
+	// Iterate over the package full names
+	var availablePackagesAndVersions = packageNamesAndVersions{}
+	for _, currentPackage := range packagesList {
+		// Extract name and version
+		currentPackageName, currentPackageVersion, err := validation.ExtractNameAndVersionFromFullPackageName(currentPackage)
+		if err != nil {
+			return nil, err
+		}
+
+		// If an entry doesn't exist yet for this package version, create it
+		var versionsForPackage, ok = availablePackagesAndVersions[currentPackageName]
+		if !ok {
+			versionsForPackage = []string{}
+		}
+
+		// Add the current version to the list of versions for the current package
+		availablePackagesAndVersions[currentPackageName] = append(versionsForPackage, currentPackageVersion)
+	}
+
+	return availablePackagesAndVersions, nil
 }
 
 func resolveVersionNumber(wildcardVersion string, availableVersions []string) (string, error) {

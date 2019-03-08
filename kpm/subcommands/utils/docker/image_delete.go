@@ -11,6 +11,8 @@ import (
 func DeleteImage(imageName string) error {
 	var err error
 
+	logger.Default.Info.Println(fmt.Sprintf("Deleting image: %s", imageName))
+
 	// Get Docker client
 	var docker dockerConnection
 	docker, err = getClient()

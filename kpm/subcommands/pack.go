@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"./common"
+	"./utils/constants"
 	"./utils/files"
 	"./utils/logger"
 	"./utils/types"
@@ -23,13 +24,13 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 
 	// Get KPM home directory
 	var kpmHomeDirPath string
-	kpmHomeDirPath, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, common.GetDefaultKpmHomeDirPath)
+	kpmHomeDirPath, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, constants.GetDefaultKpmHomeDirPath)
 	if err != nil {
 		return err
 	}
 
 	// Get local package repository directory
-	var localPackageRepositoryDirPath = common.GetPackageRepositoryDirPath(kpmHomeDirPath)
+	var localPackageRepositoryDirPath = constants.GetPackageRepositoryDirPath(kpmHomeDirPath)
 
 	// Log resolved paths
 	logger.Default.Verbose.Println("====")
@@ -46,8 +47,8 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	}
 
 	// Get package name with version and output path
-	var packageNameWithVersion = common.GetPackageFullName(packageInfo.Name, packageInfo.Version)
-	var outputDirPath = common.GetPackageDirPath(localPackageRepositoryDirPath, packageNameWithVersion)
+	var packageNameWithVersion = constants.GetPackageFullName(packageInfo.Name, packageInfo.Version)
+	var outputDirPath = constants.GetPackageDirPath(localPackageRepositoryDirPath, packageNameWithVersion)
 
 	// Delete the output directory in case it isn't empty
 	os.RemoveAll(outputDirPath)

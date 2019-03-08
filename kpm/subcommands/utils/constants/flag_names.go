@@ -4,9 +4,6 @@ var (
 	//PackageVersionFlagName is the version of a template package.
 	PackageVersionFlagName = "packageVersion"
 
-	// PackageDirFlagName is the directory where a template package exists.
-	PackageDirFlagName = "packageDir"
-
 	// ParametersFileFlagName is the file that contains the parameters for a template.
 	ParametersFileFlagName = "parametersFile"
 
