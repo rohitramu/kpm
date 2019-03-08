@@ -11,7 +11,7 @@ import (
 )
 
 // PullCmd pulls a template package from a Docker registry to the local filesystem.
-func PullCmd(dockerRegistryURLArg *string, packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string) error {
+func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string) error {
 	var err error
 
 	// Resolve KPM home directory
@@ -22,7 +22,7 @@ func PullCmd(dockerRegistryURLArg *string, packageNameArg *string, packageVersio
 	}
 
 	// Get Docker registry URL
-	var dockerRegistryURL = validation.GetStringOrDefault(dockerRegistryURLArg, docker.DefaultDockerRegistryURL)
+	var dockerRegistry = validation.GetStringOrDefault(dockerRegistryArg, docker.DefaultDockerRegistry)
 
 	// Get package name
 	var packageName string
@@ -54,10 +54,10 @@ func PullCmd(dockerRegistryURLArg *string, packageNameArg *string, packageVersio
 	var packageRepositoryDir = constants.GetPackageRepositoryDirPath(kpmHomeDir)
 
 	// Get the image name
-	var imageName = docker.GetImageName(packageName, resolvedPackageVersion)
+	var imageName = docker.GetImageName(dockerRegistry, packageName, resolvedPackageVersion)
 
 	// Pull the Docker image
-	err = docker.PullImage(dockerRegistryURL, imageName)
+	err = docker.PullImage(imageName)
 	if err != nil {
 		return err
 	}

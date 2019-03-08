@@ -2,33 +2,52 @@ package docker
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"../files"
 	"../logger"
 )
 
-// DefaultDockerRegistryURL is the default registry URL (Docker Hub).
-const DefaultDockerRegistryURL = "https://index.docker.io/v1/"
+// DefaultDockerRegistry is the default registry to use (Docker Hub).
+const DefaultDockerRegistry = "docker.io"
 
-// DockerTarFileRootDir is the root directory to use when building or copying from a Docker image.
-const DockerTarFileRootDir = ".kpm"
+// DockerfileRootDir is the root directory to use when building or copying from a Docker image.
+const DockerfileRootDir = ".kpm"
 
 // GetImageName creates a new image name based on the Docker repository, package name and resolved package version.
-func GetImageName(packageName string, resolvedPackageVersion string) string {
-	var imageName = packageName + ":" + resolvedPackageVersion
+func GetImageName(dockerRegistry string, packageName string, resolvedPackageVersion string) string {
+	var imageName = fmt.Sprintf("%s:%s", packageName, resolvedPackageVersion)
+	if dockerRegistry != DefaultDockerRegistry {
+		imageName = fmt.Sprintf("%s/%s", DefaultDockerRegistry, imageName)
+	}
 
 	return imageName
 }
 
-// GetDockerfile returns the string contents of a Dockerfile
-func GetDockerfile() string {
-	// Create Dockerfile string
-	var dockerfile = strings.TrimSpace(fmt.Sprintf(`
+// GetDockerfilePath returns the path of the Dockerfile to use.
+func GetDockerfilePath(kpmHomeDir string) string {
+	var dockerfilePath = filepath.Join(kpmHomeDir, "Dockerfile")
+
+	// If the file doesn't exist, create it
+	if err := files.FileExists(dockerfilePath, "Dockerfile"); err != nil {
+		// Create Dockerfile string
+		var dockerfile = strings.TrimSpace(fmt.Sprintf(`
 FROM scratch
-COPY %s/ /%s
-`, DockerTarFileRootDir, DockerTarFileRootDir))
+COPY ./ /%s
+CMD ""
+`, DockerfileRootDir))
 
-	logger.Default.Verbose.Println(fmt.Sprintf("Generated Dockerfile:\n%s", dockerfile))
+		// Write to file
+		err = ioutil.WriteFile(dockerfilePath, []byte(dockerfile), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
 
-	return dockerfile
+		logger.Default.Verbose.Println(fmt.Sprintf("Generated Dockerfile:\n%s", dockerfile))
+	}
+
+	return dockerfilePath
 }

@@ -11,7 +11,7 @@ import (
 )
 
 // PushCmd pushes the template package to a Docker registry.
-func PushCmd(dockerRegistryURLArg *string, packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string) error {
+func PushCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string) error {
 	var err error
 
 	// Resolve KPM home directory
@@ -21,8 +21,8 @@ func PushCmd(dockerRegistryURLArg *string, packageNameArg *string, packageVersio
 		return err
 	}
 
-	// Get Docker registry URL
-	var dockerRegistryURL = validation.GetStringOrDefault(dockerRegistryURLArg, docker.DefaultDockerRegistryURL)
+	// Get Docker registry name
+	var dockerRegistry = validation.GetStringOrDefault(dockerRegistryArg, docker.DefaultDockerRegistry)
 
 	// Get package name
 	var packageName string
@@ -69,13 +69,13 @@ func PushCmd(dockerRegistryURLArg *string, packageNameArg *string, packageVersio
 	}
 
 	// Create the image name
-	var imageName = docker.GetImageName(packageName, resolvedPackageVersion)
+	var imageName = docker.GetImageName(dockerRegistry, packageName, resolvedPackageVersion)
 
 	// Create the Dockerfile
-	var dockerfile = docker.GetDockerfile()
+	var dockerfilePath = docker.GetDockerfilePath(kpmHomeDir)
 
 	// Build the Docker image
-	err = docker.BuildImage(imageName, dockerfile, packageDir)
+	err = docker.BuildImage(imageName, dockerfilePath, packageDir)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func PushCmd(dockerRegistryURLArg *string, packageNameArg *string, packageVersio
 	}()
 
 	// Push the Docker image
-	err = docker.PushImage(dockerRegistryURL, imageName)
+	err = docker.PushImage(imageName)
 	if err != nil {
 		return err
 	}
