@@ -21,7 +21,7 @@ const DockerfileRootDir = ".kpm"
 func GetImageName(dockerRegistry string, packageName string, resolvedPackageVersion string) string {
 	var imageName = fmt.Sprintf("%s:%s", packageName, resolvedPackageVersion)
 	if dockerRegistry != DefaultDockerRegistry {
-		imageName = fmt.Sprintf("%s/%s", DefaultDockerRegistry, imageName)
+		imageName = fmt.Sprintf("%s/%s", dockerRegistry, imageName)
 	}
 
 	return imageName
