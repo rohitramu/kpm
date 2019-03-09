@@ -168,7 +168,7 @@ func main() {
 			var parsedLevel log.Level
 			parsedLevel, err = log.Parse(*logLevel)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			log.SetLevel(parsedLevel)
@@ -180,7 +180,7 @@ func main() {
 	// Start the app
 	err = app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("%s", err)
 	}
 }
 
@@ -208,7 +208,7 @@ func getStringFlag(c *cli.Context, flagName string) *string {
 
 func getStringArg(c *cli.Context, index int) *string {
 	if index < 0 {
-		log.Panic(fmt.Sprintf("Index cannot be negative: %d", index))
+		log.Panic("Index cannot be negative: %d", index)
 	}
 
 	if c.NArg() <= index {

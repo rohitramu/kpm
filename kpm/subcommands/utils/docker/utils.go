@@ -34,19 +34,20 @@ func GetDockerfilePath(kpmHomeDir string) string {
 	// If the file doesn't exist, create it
 	if err := files.FileExists(dockerfilePath, "Dockerfile"); err != nil {
 		// Create Dockerfile string
-		var dockerfile = strings.TrimSpace(fmt.Sprintf(`
+		var dockerfile = fmt.Sprintf(`
 FROM scratch
 COPY ./ /%s
 CMD ""
-`, DockerfileRootDir))
+`, DockerfileRootDir)
+		dockerfile = strings.TrimSpace(dockerfile)
 
 		// Write to file
 		err = ioutil.WriteFile(dockerfilePath, []byte(dockerfile), os.ModePerm)
 		if err != nil {
-			log.Panic(err)
+			log.Panic("Failed to write dockerfile: %s", err)
 		}
 
-		log.Verbose(fmt.Sprintf("Generated Dockerfile:\n%s", dockerfile))
+		log.Verbose("Generated Dockerfile:\n%s", dockerfile)
 	}
 
 	return dockerfilePath

@@ -1,7 +1,6 @@
 package subcommands
 
 import (
-	"fmt"
 	"os"
 
 	"./common"
@@ -34,8 +33,8 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 
 	// Log resolved paths
 	log.Info("====")
-	log.Info(fmt.Sprintf("Package directory:             %s", packageDirPath))
-	log.Info(fmt.Sprintf("Package repository directory:  %s", localPackageRepositoryDirPath))
+	log.Info("Package directory:             %s", packageDirPath)
+	log.Info("Package repository directory:  %s", localPackageRepositoryDirPath)
 	log.Info("====")
 
 	// Validate package and get package info
@@ -54,13 +53,13 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	os.RemoveAll(outputDirPath)
 
 	// Copy package to output directory
-	log.Verbose(fmt.Sprintf("Copying package to: %s", outputDirPath))
+	log.Verbose("Copying package to: %s", outputDirPath)
 	files.CopyDir(packageDirPath, outputDirPath)
 
-	log.Info(fmt.Sprintf("Template package name:    %s", packageInfo.Name))
-	log.Info(fmt.Sprintf("Template package version: %s", packageInfo.Version))
+	log.Info("Template package name:    %s", packageInfo.Name)
+	log.Info("Template package version: %s", packageInfo.Version)
 
-	log.Verbose(fmt.Sprintf("Repository directory:     %s", outputDirPath))
+	log.Verbose("Repository directory:     %s", outputDirPath)
 
 	return nil
 }

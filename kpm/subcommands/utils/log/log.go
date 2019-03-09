@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"log"
 	stdLog "log"
 	"os"
 	"strings"
@@ -81,7 +82,7 @@ func Parse(logLevelString string) (Level, error) {
 	var ok bool
 	result, ok = levelObj.(Level)
 	if !ok {
-		Panic(fmt.Sprintf("Unexpected log level key in log level names map: %s", levelObj))
+		Panic("Unexpected log level key in log level names map: %s", levelObj)
 	}
 
 	return result, nil
@@ -101,7 +102,7 @@ func (logLevel Level) String() (string, error) {
 	var ok bool
 	result, ok = levelStringObj.(string)
 	if !ok {
-		Panic(fmt.Sprintf("Unexpected log level string in log level names map: %s", levelStringObj))
+		Panic("Unexpected log level string in log level names map: %s", levelStringObj)
 	}
 
 	return result, nil
@@ -124,37 +125,49 @@ func SetLevel(level Level) {
 }
 
 // Panic logs the formatted message as an error, and then panics.
-func Panic(toLog ...interface{}) {
-	internalLog(LevelError, toLog...)
+func Panic(format string, toLog ...interface{}) {
+	checkAndLog(LevelError, func(logger *log.Logger) {
+		logger.Panicln(fmt.Sprintf(format, toLog...))
+	})
 }
 
 // Fatal logs the formatted message as an error, and then exits.
-func Fatal(toLog ...interface{}) {
-	internalLog(LevelError, toLog...)
+func Fatal(format string, toLog ...interface{}) {
+	checkAndLog(LevelError, func(logger *log.Logger) {
+		logger.Fatalln(fmt.Sprintf(format, toLog...))
+	})
 }
 
 // Error logs the formatted message as an error.
-func Error(toLog ...interface{}) {
-	internalLog(LevelError, toLog...)
+func Error(format string, toLog ...interface{}) {
+	checkAndLog(LevelError, func(logger *log.Logger) {
+		logger.Println(fmt.Sprintf(format, toLog...))
+	})
 }
 
 // Warning logs the formatted message as a warning.
-func Warning(toLog ...interface{}) {
-	internalLog(LevelWarning, toLog...)
+func Warning(format string, toLog ...interface{}) {
+	checkAndLog(LevelWarning, func(logger *log.Logger) {
+		logger.Println(fmt.Sprintf(format, toLog...))
+	})
 }
 
 // Info logs the formatted message as an informational message.
-func Info(toLog ...interface{}) {
-	internalLog(LevelInfo, toLog...)
+func Info(format string, toLog ...interface{}) {
+	checkAndLog(LevelInfo, func(logger *log.Logger) {
+		logger.Println(fmt.Sprintf(format, toLog...))
+	})
 }
 
 // Verbose logs the formatted message as a verbose message.
-func Verbose(toLog ...interface{}) {
-	internalLog(LevelVerbose, toLog...)
+func Verbose(format string, toLog ...interface{}) {
+	checkAndLog(LevelVerbose, func(logger *log.Logger) {
+		logger.Println(fmt.Sprintf(format, toLog...))
+	})
 }
 
-func internalLog(level Level, toLog ...interface{}) {
+func checkAndLog(level Level, doLog func(logger *log.Logger)) {
 	if currentLogLevel >= level {
-		loggers[level].Println(toLog...)
+		doLog(loggers[level])
 	}
 }

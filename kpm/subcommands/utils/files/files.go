@@ -146,12 +146,12 @@ func FileExists(absoluteFilePath string, lowercaseHumanFriendlyName string) erro
 		}
 
 		// File may exist, but we had an unexpected failure
-		log.Panic(err)
+		log.Panic("Failed to search for file: %s", err)
 	} else if fileInfo.IsDir() {
 		return fmt.Errorf("%s file path does not point to a file: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteFilePath)
 	}
 
-	log.Verbose(fmt.Sprintf("Found %s file: %s", lowercaseHumanFriendlyName, absoluteFilePath))
+	log.Verbose("Found %s file: %s", lowercaseHumanFriendlyName, absoluteFilePath)
 
 	return nil
 }
@@ -164,12 +164,12 @@ func DirExists(absoluteDirPath string, lowercaseHumanFriendlyName string) error 
 		}
 
 		// Directory may exist, but we had an unexpected failure
-		log.Panic(err)
+		log.Panic("Failed to search for directory: %s", err)
 	} else if !fileInfo.IsDir() {
 		return fmt.Errorf("%s directory path does not point to a directory: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteDirPath)
 	}
 
-	log.Verbose(fmt.Sprintf("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath))
+	log.Verbose("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath)
 
 	return nil
 }

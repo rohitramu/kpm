@@ -118,7 +118,7 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 		if currentNode, ok := currentNodeObj.(*dependencyTreeNode); !ok {
 			log.Panic("Object on \"toVisit\" list is not a tree node")
 		} else {
-			log.Verbose(fmt.Sprintf("Visiting node: %s", currentNode.OutputName))
+			log.Verbose("Visiting node: %s", currentNode.OutputName)
 
 			outputName = currentNode.OutputName
 			packageName = currentNode.packageDefinition.Package.Name
@@ -157,7 +157,7 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 				var dependencyLoop = make([]string, currentPathNodes.Size()+1)
 				for i, keyObj := range currentPathNodes.Keys() {
 					if valueObj, found := currentPathNodes.Get(keyObj); !found {
-						log.Panic(fmt.Sprintf("Failed to find value in path nodes map for key: %s", keyObj))
+						log.Panic("Failed to find value in path nodes map for key: %s", keyObj)
 					} else {
 						if value, ok := valueObj.(*dependencyTreeNode); !ok {
 							log.Panic("Found value in path nodes map which is not a node")

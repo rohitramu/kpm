@@ -36,10 +36,11 @@ func ValidatePackageName(packageName string) error {
 	var unqualifiedName = nameSegments[len(nameSegments)-1]
 
 	// Check the unqualified name
+	var regex = "^[a-z](\\.?[a-z0-9])*$"
 	var isValid bool
-	isValid, err = CheckRegexMatch(unqualifiedName, "^[a-z](\\.?[a-z0-9])*$")
+	isValid, err = regexp.MatchString(regex, unqualifiedName)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("Regex execution failed: %s", err)
 	}
 
 	// Return an error if the name is not valid
@@ -83,9 +84,9 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 
 	// Check whether the version string satisfies the regex
 	var isValid bool
-	isValid, err = CheckRegexMatch(packageVersion, fmt.Sprintf(fullRegex, segmentRegex, segmentRegex, segmentRegex))
+	isValid, err = regexp.MatchString(fmt.Sprintf(fullRegex, segmentRegex, segmentRegex, segmentRegex), packageVersion)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("Regex execution failed: %s", err)
 	}
 
 	// Return error if the version string did not satisfy the regex
@@ -116,7 +117,7 @@ func ValidateOutputName(outputName string) error {
 	var matched bool
 	matched, err = regexp.MatchString(regex, outputName)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("Regex execution failed: %s", err)
 	}
 	if !matched {
 		return fmt.Errorf("Output name must only consist of letters and numbers, optionally separated by dashes and/or underscores")
@@ -139,9 +140,9 @@ func ValidateNamespaceSegment(namespaceSegment string) error {
 
 	// Check if the value satisfies the regex
 	var isValid bool
-	isValid, err = CheckRegexMatch(namespaceSegment, regex)
+	isValid, err = regexp.MatchString(regex, namespaceSegment)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("Failed to execute regex: %s", err)
 	}
 
 	// Return an error if the value doesn't satisfy the regex
@@ -176,16 +177,6 @@ func ExtractNameAndVersionFromFullPackageName(fullPackageName string) (packageNa
 	}
 
 	return packageName, packageVersion, nil
-}
-
-// CheckRegexMatch checks whether a string satisfies the given regex expression.
-func CheckRegexMatch(stringToCheck string, regex string) (bool, error) {
-	var isMatch, err = regexp.MatchString(regex, stringToCheck)
-	if err != nil {
-		return false, err
-	}
-
-	return isMatch, nil
 }
 
 // GetStringOrDefault returns testValue if it is not null, otherwise returns defaultValue.

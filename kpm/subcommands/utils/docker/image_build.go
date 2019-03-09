@@ -9,7 +9,7 @@ import (
 
 // BuildImage builds a new docker image by making a call to the Docker daemon.
 func BuildImage(imageName string, dockerfilePath string, dirToCopy string) error {
-	log.Info(fmt.Sprintf("Building image: %s", imageName))
+	log.Info("Building image: %s", imageName)
 
 	var exe = "docker"
 	var args = []string{"build", "--force-rm", "--file", dockerfilePath, "--tag", imageName, dirToCopy}

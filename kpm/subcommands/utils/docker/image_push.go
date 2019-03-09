@@ -11,7 +11,7 @@ import (
 func PushImage(imageName string) error {
 	var err error
 
-	log.Info(fmt.Sprintf("Pushing image: %s", imageName))
+	log.Info("Pushing image: %s", imageName)
 
 	var exe = "docker"
 	var args = []string{"push", imageName}

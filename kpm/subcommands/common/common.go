@@ -66,7 +66,7 @@ func GetSharedTemplate(packageDirPath string) (*template.Template, error) {
 		return nil, err
 	}
 
-	log.Verbose(fmt.Sprintf("Found %d template(s) in directory: %s", numHelpers, helpersDirPath))
+	log.Verbose("Found %d template(s) in directory: %s", numHelpers, helpersDirPath)
 
 	return sharedTemplate, nil
 }
@@ -170,7 +170,7 @@ func GetExecutableTemplates(parentTemplate *template.Template, packageDirPath st
 	}
 
 	// Return the templates in the directory
-	log.Verbose(fmt.Sprintf("Found template directory: %s", executableTemplatesDir))
+	log.Verbose("Found template directory: %s", executableTemplatesDir)
 	var result []*template.Template
 	result, err = templates.GetTemplatesFromDir(parentTemplate, executableTemplatesDir)
 	if err != nil {
@@ -251,7 +251,7 @@ func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, 
 		currentPath, ok = currentPathObj.(string)
 		if !ok {
 			// We should never fail here since we are providing the values
-			log.Panic(fmt.Sprintf("Unexpected object when string was expected: %s", reflect.TypeOf(currentPathObj)))
+			log.Panic("Unexpected object when string was expected: %s", reflect.TypeOf(currentPathObj))
 		}
 
 		// Get the file info
@@ -259,7 +259,7 @@ func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, 
 		fileInfo, err = os.Stat(currentPath)
 		if err != nil {
 			// We should never fail here since we are providing the values
-			log.Panic(err)
+			log.Panic("Unexpected file path: %s", err)
 		}
 
 		// Ignore files
@@ -299,7 +299,7 @@ func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, 
 		var path string
 		path, ok = it.Value().(string)
 		if !ok {
-			log.Panic(fmt.Sprintf("Unexpected type found when getting list of string package names: %s", reflect.TypeOf(it.Value())))
+			log.Panic("Unexpected type found when getting list of string package names: %s", reflect.TypeOf(it.Value()))
 		}
 
 		// Get the relative path

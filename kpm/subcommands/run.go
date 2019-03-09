@@ -1,7 +1,6 @@
 package subcommands
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -77,12 +76,12 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 
 	// Log resolved values
 	log.Info("====")
-	log.Info(fmt.Sprintf("Package name:      %s", packageName))
-	log.Info(fmt.Sprintf("Package version:   %s", resolvedPackageVersion))
-	log.Info(fmt.Sprintf("Package directory: %s", packageDirPath))
-	log.Info(fmt.Sprintf("Parameters file:   %s", parametersFilePath))
-	log.Info(fmt.Sprintf("Output name:       %s", outputName))
-	log.Info(fmt.Sprintf("Output directory:  %s", outputDirPath))
+	log.Info("Package name:      %s", packageName)
+	log.Info("Package version:   %s", resolvedPackageVersion)
+	log.Info("Package directory: %s", packageDirPath)
+	log.Info("Parameters file:   %s", parametersFilePath)
+	log.Info("Output name:       %s", outputName)
+	log.Info("Output directory:  %s", outputDirPath)
 	log.Info("====")
 
 	// Get the dependency tree
@@ -119,7 +118,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 
 			// Write the data to the filesystem
 			var outputFilePath = filepath.Join(outputDir, tmpl.Name())
-			log.Verbose(fmt.Sprintf("Output file path: %s", outputFilePath))
+			log.Verbose("Output file path: %s", outputFilePath)
 			ioutil.WriteFile(outputFilePath, templateOutput, os.ModeAppend)
 		}
 
@@ -129,7 +128,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 		return err
 	}
 
-	log.Verbose(fmt.Sprintf("Executed %d packages", numPackages))
+	log.Verbose("Executed %d packages", numPackages)
 
 	return nil
 }

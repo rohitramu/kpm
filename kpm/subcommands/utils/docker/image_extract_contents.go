@@ -20,7 +20,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Create a container using the image
 	{
-		log.Info(fmt.Sprintf("Creating container \"%s\" from image: %s", containerName, imageName))
+		log.Info("Creating container \"%s\" from image: %s", containerName, imageName)
 
 		var args = []string{"create", "--name", containerName, imageName}
 		_, err = cmd.Exec(exe, args...)
@@ -31,7 +31,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Delete container after we're done
 	defer func() {
-		log.Info(fmt.Sprintf("Deleting container: %s", containerName))
+		log.Info("Deleting container: %s", containerName)
 
 		var args = []string{"rm", "--force", containerName}
 		var deleteErr error
@@ -51,12 +51,12 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 	var imageNameWithoutColon = strings.Replace(imageName, ":", "-", -1)
 	var tempDir = filepath.Join(os.TempDir(), ".kpm", imageNameWithoutColon)
 	{
-		log.Verbose(fmt.Sprintf("Extracting contents from container \"%s\" to temporary directory: %s", containerName, tempDir))
+		log.Verbose("Extracting contents from container \"%s\" to temporary directory: %s", containerName, tempDir)
 
 		// Remove temporary directory to clear it
 		err = os.RemoveAll(tempDir)
 		if err != nil {
-			log.Panic(err)
+			log.Panic("Failed to remove directory: %s", err)
 		}
 
 		// Recreate temporary directory
@@ -75,12 +75,12 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Copy data to destination directory
 	{
-		log.Info(fmt.Sprintf("Copying contents of container \"%s\" to destination directory: %s", containerName, destinationDir))
+		log.Info("Copying contents of container \"%s\" to destination directory: %s", containerName, destinationDir)
 
 		// Remove destination directory to clear it
 		err = os.RemoveAll(tempDir)
 		if err != nil {
-			log.Panic(err)
+			log.Panic("Failed to remove directory: %s", err)
 		}
 
 		// Recreate destination directory
@@ -98,7 +98,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Delete temporary directory
 	{
-		log.Verbose(fmt.Sprintf("Deleting temporary directory: %s", tempDir))
+		log.Verbose("Deleting temporary directory: %s", tempDir)
 		err = os.RemoveAll(tempDir)
 		if err != nil {
 			return fmt.Errorf("Failed to delete temporary directory: %s", err)

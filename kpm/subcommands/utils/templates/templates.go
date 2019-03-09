@@ -2,7 +2,6 @@ package templates
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -142,15 +141,15 @@ func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.Temp
 	}
 
 	// Parse all templates in the given directory, ignoring sub-directories
-	log.Verbose(fmt.Sprintf("Parsing templates in directory: %s", templatesDirPath))
+	log.Verbose("Parsing templates in directory: %s", templatesDirPath)
 	for _, filesystemObject := range filesystemObjects {
 		var fileName = filesystemObject.Name()
 
 		// Ignore directories
 		if filesystemObject.IsDir() {
-			log.Warning(fmt.Sprintf("Ignoring sub-directory: %s", fileName))
+			log.Warning("Ignoring sub-directory: %s", fileName)
 		} else {
-			log.Verbose(fmt.Sprintf("Parsing template: %s", fileName))
+			log.Verbose("Parsing template: %s", fileName)
 
 			// Create a template object from the file
 			var filePath = filepath.Join(templatesDirPath, fileName)
@@ -161,7 +160,7 @@ func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.Temp
 			}
 
 			// Consume template
-			log.Verbose(fmt.Sprintf("Consuming template: %s", tmpl.Name()))
+			log.Verbose("Consuming template: %s", tmpl.Name())
 			consumeTemplate(tmpl)
 		}
 	}
