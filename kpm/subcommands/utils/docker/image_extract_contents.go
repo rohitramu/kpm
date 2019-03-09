@@ -2,8 +2,12 @@ package docker
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"../cmd"
+	"../files"
 	"../log"
 )
 
@@ -16,7 +20,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Create a container using the image
 	{
-		log.Info(fmt.Sprintf("Creating container from image: %s", imageName))
+		log.Info(fmt.Sprintf("Creating container \"%s\" from image: %s", containerName, imageName))
 
 		var args = []string{"create", "--name", containerName, imageName}
 		_, err = cmd.Exec(exe, args...)
@@ -42,13 +46,60 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 	}()
 
 	// Extract contents of container to a temporary directory
+	var imageNameWithoutColon = strings.Replace(imageName, ":", "-", -1)
+	var tempDir = filepath.Join(os.TempDir(), ".kpm", imageNameWithoutColon)
 	{
-		log.Info(fmt.Sprintf("Extracting contents from container: %s", containerName))
+		log.Verbose(fmt.Sprintf("Extracting contents from container \"%s\" to temporary directory: %s", containerName, tempDir))
 
-		var args = []string{"cp", fmt.Sprintf("%s:/%s", containerName, DockerfileRootDir), destinationDir}
+		// Remove temporary directory to clear it
+		err = os.RemoveAll(tempDir)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		// Recreate temporary directory
+		err = os.MkdirAll(tempDir, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("Failed to make temporary directory for extracting files: %s\n%s", tempDir, err)
+		}
+
+		// Extract data to temporary directory
+		var args = []string{"cp", fmt.Sprintf("%s:/%s", containerName, DockerfileRootDir), tempDir}
 		_, err = cmd.Exec(exe, args...)
 		if err != nil {
 			return fmt.Errorf("Failed to extract data from container: %s\n%s", containerName, err)
+		}
+	}
+
+	// Copy data to destination directory
+	{
+		log.Info(fmt.Sprintf("Copying contents of container \"%s\" to destination directory: %s", containerName, destinationDir))
+
+		// Remove destination directory to clear it
+		err = os.RemoveAll(tempDir)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		// Recreate destination directory
+		err = os.MkdirAll(tempDir, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("Failed to make destination directory for saving data: %s\n%s", destinationDir, err)
+		}
+
+		// Copy data to destination directory
+		err = files.CopyDir(tempDir, destinationDir)
+		if err != nil {
+			return fmt.Errorf("Failed to copy data from temporary directory to destination directory: %s -> %s\n%s", tempDir, destinationDir, err)
+		}
+	}
+
+	// Delete temporary directory
+	{
+		log.Verbose(fmt.Sprintf("Deleting temporary directory: %s", tempDir))
+		err = os.RemoveAll(tempDir)
+		if err != nil {
+			return fmt.Errorf("Failed to delete temporary directory: %s", err)
 		}
 	}
 

@@ -19,9 +19,7 @@ func Exec(exe string, args ...string) (string, error) {
 	var output []byte
 	output, err = cmd.CombinedOutput()
 
-	log.Verbose(fmt.Sprintf("%s %s:\n%s", exe, strings.Join(args, " "), string(output)))
-
-	//TODO: Make sure we don't lose error output when the command fails
+	log.Verbose(fmt.Sprintf("%s %s\n%s", exe, strings.Join(args, " "), string(output)))
 
 	return string(output), err
 }
