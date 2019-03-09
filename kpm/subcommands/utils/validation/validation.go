@@ -9,6 +9,9 @@ import (
 	"../log"
 )
 
+// MaxOutputNameLength is the maximum number of characters allowed in the output name.
+const MaxOutputNameLength = 64
+
 // ValidatePackageName validates the given package's name.
 func ValidatePackageName(packageName string) error {
 	var err error
@@ -95,7 +98,30 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 
 // ValidateOutputName validates the output name when generating output.
 func ValidateOutputName(outputName string) error {
-	//TODO: Add validation
+	var err error
+
+	// Check for empty string
+	if outputName == "" {
+		return fmt.Errorf("Output name cannot be empty")
+	}
+
+	// Check length
+	if len(outputName) > MaxOutputNameLength {
+		return fmt.Errorf("Output name cannot be longer than %d characters: %s", MaxOutputNameLength, outputName)
+	}
+
+	var alphaNumeric = "[a-zA-Z0-9]"
+	var symbols = "[-_]"
+	var regex = fmt.Sprintf("^%s+(%s?%s)+$", alphaNumeric, symbols, alphaNumeric)
+	var matched bool
+	matched, err = regexp.MatchString(regex, outputName)
+	if err != nil {
+		log.Panic(err)
+	}
+	if !matched {
+		return fmt.Errorf("Output name must only consist of letters and numbers, optionally separated by dashes and/or underscores")
+	}
+
 	return nil
 }
 

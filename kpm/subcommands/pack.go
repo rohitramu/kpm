@@ -33,10 +33,10 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	var localPackageRepositoryDirPath = constants.GetPackageRepositoryDirPath(kpmHomeDirPath)
 
 	// Log resolved paths
-	log.Verbose("====")
-	log.Verbose(fmt.Sprintf("Package directory:             %s", packageDirPath))
-	log.Verbose(fmt.Sprintf("Package repository directory:  %s", localPackageRepositoryDirPath))
-	log.Verbose("====")
+	log.Info("====")
+	log.Info(fmt.Sprintf("Package directory:             %s", packageDirPath))
+	log.Info(fmt.Sprintf("Package repository directory:  %s", localPackageRepositoryDirPath))
+	log.Info("====")
 
 	// Validate package and get package info
 	log.Verbose("Getting package info")
@@ -60,7 +60,7 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	log.Info(fmt.Sprintf("Template package name:    %s", packageInfo.Name))
 	log.Info(fmt.Sprintf("Template package version: %s", packageInfo.Version))
 
-	log.Info(fmt.Sprintf("SUCCESS - Pack command created package in directory: %s", outputDirPath))
+	log.Verbose(fmt.Sprintf("Repository directory:     %s", outputDirPath))
 
 	return nil
 }

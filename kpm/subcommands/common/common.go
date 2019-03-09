@@ -22,15 +22,14 @@ import (
 
 // PullPackage retrieves a remote template package and makes it available for use.  If a package
 // was successfully retrieved, this function returns the retrieved version number.
-func PullPackage(packageName string, packageVersion string) (string, error) {
+func PullPackage(packageName string, wildcardPackageVersion string) (string, error) {
 	//TODO: Get list of versions in remote repository
 
 	//TODO: Resolve version to the highest that is compatible with the requested version
 
 	//TODO: Download the template package of the resolved version into the local package repository
-	//TODO: Delete the existing package first if it already exists
 
-	return "", fmt.Errorf("Could not find a compatible version for package in remote repository: %s", constants.GetPackageFullName(packageName, packageVersion))
+	return "", fmt.Errorf("Could not find version matching \"%s\" in remote repository for package: %s", wildcardPackageVersion, packageName)
 }
 
 // GetTemplateInput creates the input values for a template by combining the interface, parameters and package info.

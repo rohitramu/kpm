@@ -142,7 +142,7 @@ func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.Temp
 	}
 
 	// Parse all templates in the given directory, ignoring sub-directories
-	log.Info(fmt.Sprintf("Parsing templates in directory: %s", templatesDirPath))
+	log.Verbose(fmt.Sprintf("Parsing templates in directory: %s", templatesDirPath))
 	for _, filesystemObject := range filesystemObjects {
 		var fileName = filesystemObject.Name()
 

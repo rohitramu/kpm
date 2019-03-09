@@ -137,12 +137,12 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 				return nil, fmt.Errorf("Invalid version for package \"%s\": %s", currentNode.OutputName, err)
 			}
 
-			// Check remote repository for newest matching versions of the package
-			if pulledVersion, err := PullPackage(packageName, wildcardPackageVersion); err != nil {
-				log.Warning(err)
-			} else {
-				wildcardPackageVersion = pulledVersion
-			}
+			// // Check remote repository for newest matching versions of the package
+			// if pulledVersion, err := PullPackage(packageName, wildcardPackageVersion); err != nil {
+			// 	log.Warning(err)
+			// } else {
+			// 	wildcardPackageVersion = pulledVersion
+			// }
 
 			// Resolve the package version
 			var resolvedPackageVersion string

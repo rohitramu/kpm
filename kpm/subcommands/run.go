@@ -44,14 +44,14 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	// Validate version
 	var wildcardPackageVersion = validation.GetStringOrDefault(packageVersionArg, "*")
 
-	// Check remote repository for newest matching versions of the package
-	var pulledVersion string
-	pulledVersion, err = common.PullPackage(packageName, wildcardPackageVersion)
-	if err != nil {
-		log.Warning(err)
-	} else {
-		wildcardPackageVersion = pulledVersion
-	}
+	// // Check remote repository for newest matching versions of the package
+	// var pulledVersion string
+	// pulledVersion, err = common.PullPackage(packageName, wildcardPackageVersion)
+	// if err != nil {
+	// 	log.Warning(err)
+	// } else {
+	// 	wildcardPackageVersion = pulledVersion
+	// }
 
 	// Resolve the package version
 	var resolvedPackageVersion string
@@ -76,14 +76,14 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	}
 
 	// Log resolved values
-	log.Verbose("====")
-	log.Verbose(fmt.Sprintf("Package name:      %s", packageName))
-	log.Verbose(fmt.Sprintf("Package version:   %s", resolvedPackageVersion))
-	log.Verbose(fmt.Sprintf("Package directory: %s", packageDirPath))
-	log.Verbose(fmt.Sprintf("Parameters file:   %s", parametersFilePath))
-	log.Verbose(fmt.Sprintf("Output name:       %s", outputName))
-	log.Verbose(fmt.Sprintf("Output directory:  %s", outputDirPath))
-	log.Verbose("====")
+	log.Info("====")
+	log.Info(fmt.Sprintf("Package name:      %s", packageName))
+	log.Info(fmt.Sprintf("Package version:   %s", resolvedPackageVersion))
+	log.Info(fmt.Sprintf("Package directory: %s", packageDirPath))
+	log.Info(fmt.Sprintf("Parameters file:   %s", parametersFilePath))
+	log.Info(fmt.Sprintf("Output name:       %s", outputName))
+	log.Info(fmt.Sprintf("Output directory:  %s", outputDirPath))
+	log.Info("====")
 
 	// Get the dependency tree
 	var parameters *types.GenericMap
@@ -130,9 +130,6 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	}
 
 	log.Verbose(fmt.Sprintf("Executed %d packages", numPackages))
-
-	// Print status
-	log.Info(fmt.Sprintf("SUCCESS - Generated output in directory: %s", outputDirPath))
 
 	return nil
 }

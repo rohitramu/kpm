@@ -32,7 +32,7 @@ func ListCmd(kpmHomeDirArg *string) error {
 
 	// Print directory names
 	var output = strings.Join(packages, "\n")
-	log.Info("Packages:\n" + output)
+	log.Info("Available template packages:\n" + output)
 
 	return nil
 }

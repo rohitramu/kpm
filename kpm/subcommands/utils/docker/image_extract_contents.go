@@ -31,6 +31,8 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Delete container after we're done
 	defer func() {
+		log.Info(fmt.Sprintf("Deleting container: %s", containerName))
+
 		var args = []string{"rm", "--force", containerName}
 		var deleteErr error
 		_, deleteErr = cmd.Exec(exe, args...)
