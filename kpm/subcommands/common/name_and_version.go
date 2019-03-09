@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"../utils/constants"
-	"../utils/logger"
+	"../utils/log"
 	"../utils/validation"
 )
 
@@ -80,7 +80,7 @@ func getAvailablePackagesAndVersions(packagesDir string) (packageNamesAndVersion
 func resolveVersionNumber(wildcardVersion string, availableVersions []string) (string, error) {
 	// Make sure the version is valid
 	if err := validation.ValidatePackageVersion(wildcardVersion, true); err != nil {
-		logger.Default.Error.Panicln(err)
+		log.Panic(err)
 	}
 
 	// If the version has a wildcard, get the version up until (and not including) the wildcard character

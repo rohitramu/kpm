@@ -1,7 +1,10 @@
 package constants
 
 var (
-	//PackageVersionFlagName is the version of a template package.
+	// LogLevelFlagName is the minimum severity log level to output.
+	LogLevelFlagName = "logLevel"
+
+	// PackageVersionFlagName is the version of a template package.
 	PackageVersionFlagName = "packageVersion"
 
 	// ParametersFileFlagName is the file that contains the parameters for a template.

@@ -6,7 +6,7 @@ import (
 	"./utils/constants"
 	"./utils/docker"
 	"./utils/files"
-	"./utils/logger"
+	"./utils/log"
 	"./utils/validation"
 )
 
@@ -67,7 +67,7 @@ func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 		var deleteErr = docker.DeleteImage(imageName)
 		if deleteErr != nil {
 			if err != nil {
-				err = fmt.Errorf("Failed to delete image:\n%s\n%s", deleteErr, err)
+				err = fmt.Errorf("Failed to delete image: %s\n%s\n%s", imageName, deleteErr, err)
 			}
 		}
 	}()
@@ -81,7 +81,7 @@ func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 	// Extract Docker image contents into the local package repository
 	err = docker.ExtractImageContents(imageName, packageDir)
 	if err != nil {
-		logger.Default.Error.Println("Failed to copy Docker image contents")
+		log.Error("Failed to copy Docker image contents")
 		return err
 	}
 

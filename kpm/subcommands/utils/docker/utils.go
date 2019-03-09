@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"../files"
-	"../logger"
+	"../log"
 )
 
 // DefaultDockerRegistry is the default registry to use (Docker Hub).
@@ -43,10 +43,10 @@ CMD ""
 		// Write to file
 		err = ioutil.WriteFile(dockerfilePath, []byte(dockerfile), os.ModePerm)
 		if err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 
-		logger.Default.Verbose.Println(fmt.Sprintf("Generated Dockerfile:\n%s", dockerfile))
+		log.Verbose(fmt.Sprintf("Generated Dockerfile:\n%s", dockerfile))
 	}
 
 	return dockerfilePath

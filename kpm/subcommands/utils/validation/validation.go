@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"../logger"
+	"../log"
 )
 
 // ValidatePackageName validates the given package's name.
@@ -36,7 +36,7 @@ func ValidatePackageName(packageName string) error {
 	var isValid bool
 	isValid, err = CheckRegexMatch(unqualifiedName, "^[a-z](\\.?[a-z0-9])*$")
 	if err != nil {
-		logger.Default.Error.Panicln(err)
+		log.Panic(err)
 	}
 
 	// Return an error if the name is not valid
@@ -82,7 +82,7 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 	var isValid bool
 	isValid, err = CheckRegexMatch(packageVersion, fmt.Sprintf(fullRegex, segmentRegex, segmentRegex, segmentRegex))
 	if err != nil {
-		logger.Default.Error.Panicln(err)
+		log.Panic(err)
 	}
 
 	// Return error if the version string did not satisfy the regex
@@ -115,7 +115,7 @@ func ValidateNamespaceSegment(namespaceSegment string) error {
 	var isValid bool
 	isValid, err = CheckRegexMatch(namespaceSegment, regex)
 	if err != nil {
-		logger.Default.Error.Panicln(err)
+		log.Panic(err)
 	}
 
 	// Return an error if the value doesn't satisfy the regex

@@ -10,7 +10,7 @@ import (
 
 	"github.com/otiai10/copy"
 
-	"../logger"
+	"../log"
 )
 
 // GetWorkingDir returns the current working directory.
@@ -146,12 +146,12 @@ func FileExists(absoluteFilePath string, lowercaseHumanFriendlyName string) erro
 		}
 
 		// File may exist, but we had an unexpected failure
-		logger.Default.Error.Panicln(err)
+		log.Panic(err)
 	} else if fileInfo.IsDir() {
 		return fmt.Errorf("%s file path does not point to a file: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteFilePath)
 	}
 
-	logger.Default.Verbose.Println(fmt.Sprintf("Found %s file: %s", lowercaseHumanFriendlyName, absoluteFilePath))
+	log.Verbose(fmt.Sprintf("Found %s file: %s", lowercaseHumanFriendlyName, absoluteFilePath))
 
 	return nil
 }
@@ -164,12 +164,12 @@ func DirExists(absoluteDirPath string, lowercaseHumanFriendlyName string) error 
 		}
 
 		// Directory may exist, but we had an unexpected failure
-		logger.Default.Error.Panicln(err)
+		log.Panic(err)
 	} else if !fileInfo.IsDir() {
 		return fmt.Errorf("%s directory path does not point to a directory: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteDirPath)
 	}
 
-	logger.Default.Verbose.Println(fmt.Sprintf("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath))
+	log.Verbose(fmt.Sprintf("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath))
 
 	return nil
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/Masterminds/sprig"
 
 	"../files"
-	"../logger"
+	"../log"
 	"../templatefuncs"
 	"../types"
 )
@@ -113,7 +113,7 @@ func ExecuteTemplate(tmpl *template.Template, values *types.GenericMap) ([]byte,
 
 	// Create template object
 	if tmpl == nil {
-		logger.Default.Error.Panicln("The template to execute cannot be nil")
+		log.Panic("The template to execute cannot be nil")
 	}
 
 	// Apply values to template
@@ -142,15 +142,15 @@ func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.Temp
 	}
 
 	// Parse all templates in the given directory, ignoring sub-directories
-	logger.Default.Info.Println(fmt.Sprintf("Parsing templates in directory: %s", templatesDirPath))
+	log.Info(fmt.Sprintf("Parsing templates in directory: %s", templatesDirPath))
 	for _, filesystemObject := range filesystemObjects {
 		var fileName = filesystemObject.Name()
 
 		// Ignore directories
 		if filesystemObject.IsDir() {
-			logger.Default.Warning.Println(fmt.Sprintf("Ignoring sub-directory: %s", fileName))
+			log.Warning(fmt.Sprintf("Ignoring sub-directory: %s", fileName))
 		} else {
-			logger.Default.Verbose.Println(fmt.Sprintf("Parsing template: %s", fileName))
+			log.Verbose(fmt.Sprintf("Parsing template: %s", fileName))
 
 			// Create a template object from the file
 			var filePath = filepath.Join(templatesDirPath, fileName)
@@ -161,7 +161,7 @@ func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.Temp
 			}
 
 			// Consume template
-			logger.Default.Verbose.Println(fmt.Sprintf("Consuming template: %s", tmpl.Name()))
+			log.Verbose(fmt.Sprintf("Consuming template: %s", tmpl.Name()))
 			consumeTemplate(tmpl)
 		}
 	}

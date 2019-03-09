@@ -7,7 +7,7 @@ import (
 	"./common"
 	"./utils/constants"
 	"./utils/files"
-	"./utils/logger"
+	"./utils/log"
 )
 
 // ListCmd lists all packages that are available for use in the given KPM home directory.
@@ -32,7 +32,7 @@ func ListCmd(kpmHomeDirArg *string) error {
 
 	// Print directory names
 	var output = strings.Join(packages, "\n")
-	logger.Default.Info.Println("Packages:\n" + output)
+	log.Info("Packages:\n" + output)
 
 	return nil
 }

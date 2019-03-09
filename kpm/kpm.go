@@ -8,11 +8,17 @@ import (
 
 	"./subcommands"
 	"./subcommands/utils/constants"
-	"./subcommands/utils/logger"
+	"./subcommands/utils/log"
 )
 
 // Flags
 var (
+	// Log level
+	logLevelFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, log", constants.LogLevelFlagName),
+		Usage: "The minimum severity log level to output - severities are in the following order: \"verbose\", \"info\" (default), \"warning\", \"error\", \"none\"",
+	}
+
 	// Package version
 	packageVersionFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, v", constants.PackageVersionFlagName),
@@ -52,11 +58,18 @@ var (
 
 // Entrypoint
 func main() {
+	var err error
+
 	// CLI app details
 	app := cli.NewApp()
 	app.Name = "kpm"
 	app.Usage = "Kubernetes Package Manager"
 	app.Version = "1.0.0"
+
+	// Global flags
+	app.Flags = []cli.Flag{
+		logLevelFlag,
+	}
 
 	// Sub-commands
 	app.Commands = []cli.Command{
@@ -146,16 +159,43 @@ func main() {
 		},
 	}
 
+	// Do setup
+	app.Before = func(c *cli.Context) error {
+		// Set log level
+		var logLevel = getGlobalStringFlag(c, constants.LogLevelFlagName)
+		if logLevel != nil {
+			// Parse the log level string
+			var parsedLevel log.Level
+			parsedLevel, err = log.Parse(*logLevel)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			log.SetLevel(parsedLevel)
+		}
+
+		return nil
+	}
+
 	// Start the app
-	err := app.Run(os.Args)
+	err = app.Run(os.Args)
 	if err != nil {
-		logger.Default.Error.Fatalln(err)
+		log.Fatal(err)
 	}
 }
 
 // +---------+
 // | HELPERS |
 // +---------+
+
+func getGlobalStringFlag(c *cli.Context, flagName string) *string {
+	if !c.GlobalIsSet(flagName) {
+		return nil
+	}
+
+	var result = c.GlobalString(flagName)
+	return &result
+}
 
 func getStringFlag(c *cli.Context, flagName string) *string {
 	if !c.IsSet(flagName) {
@@ -168,7 +208,7 @@ func getStringFlag(c *cli.Context, flagName string) *string {
 
 func getStringArg(c *cli.Context, index int) *string {
 	if index < 0 {
-		logger.Default.Error.Panicln(fmt.Sprintf("Index cannot be negative: %d", index))
+		log.Panic(fmt.Sprintf("Index cannot be negative: %d", index))
 	}
 
 	if c.NArg() <= index {

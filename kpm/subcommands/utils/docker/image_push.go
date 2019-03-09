@@ -2,22 +2,22 @@ package docker
 
 import (
 	"fmt"
-	"strings"
 
 	"../cmd"
-	"../logger"
+	"../log"
 )
 
 // PushImage pushes a Docker image to a remote Docker registry.
 func PushImage(imageName string) error {
-	logger.Default.Info.Println(fmt.Sprintf("Pushing image: %s", imageName))
+	var err error
+
+	log.Info(fmt.Sprintf("Pushing image: %s", imageName))
 
 	var exe = "docker"
 	var args = []string{"push", imageName}
-	var output, err = cmd.Exec(exe, args...)
-	logger.Default.Verbose.Println(fmt.Sprintf("%s %s\n%s", exe, strings.Join(args, " "), string(output)))
+	_, err = cmd.Exec(exe, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to push image: %s\n%s", imageName, err)
 	}
 
 	return nil

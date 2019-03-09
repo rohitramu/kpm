@@ -10,7 +10,7 @@ import (
 	"github.com/emirpasic/gods/stacks/linkedliststack"
 
 	"../utils/constants"
-	"../utils/logger"
+	"../utils/log"
 	"../utils/templates"
 	"../utils/types"
 	"../utils/validation"
@@ -42,10 +42,10 @@ func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(path []string,
 	toVisitStack.Push(tree.root)
 	for !toVisitStack.Empty() {
 		if nodeObj, ok := toVisitStack.Pop(); !ok {
-			logger.Default.Error.Panicln("Failed to get next node")
+			log.Panic("Failed to get next node")
 		} else {
 			if node, ok := nodeObj.(*dependencyTreeNode); !ok {
-				logger.Default.Error.Panicln("Failed to cast item in stack to node object")
+				log.Panic("Failed to cast item in stack to node object")
 			} else {
 				numVisitedNodes++
 
@@ -116,9 +116,9 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 	var i = 0
 	for currentNodeObj, notEmpty := toVisitStack.Pop(); notEmpty; currentNodeObj, notEmpty = toVisitStack.Pop() {
 		if currentNode, ok := currentNodeObj.(*dependencyTreeNode); !ok {
-			logger.Default.Error.Panicln("Object on \"toVisit\" list is not a tree node")
+			log.Panic("Object on \"toVisit\" list is not a tree node")
 		} else {
-			logger.Default.Verbose.Println(fmt.Sprintf("Visiting node: %s", currentNode.OutputName))
+			log.Verbose(fmt.Sprintf("Visiting node: %s", currentNode.OutputName))
 
 			outputName = currentNode.OutputName
 			packageName = currentNode.packageDefinition.Package.Name
@@ -139,7 +139,7 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 
 			// Check remote repository for newest matching versions of the package
 			if pulledVersion, err := PullPackage(packageName, wildcardPackageVersion); err != nil {
-				logger.Default.Warning.Println(err)
+				log.Warning(err)
 			} else {
 				wildcardPackageVersion = pulledVersion
 			}
@@ -157,13 +157,13 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 				var dependencyLoop = make([]string, currentPathNodes.Size()+1)
 				for i, keyObj := range currentPathNodes.Keys() {
 					if valueObj, found := currentPathNodes.Get(keyObj); !found {
-						logger.Default.Error.Panicln(fmt.Sprintf("Failed to find value in path nodes map for key: %s", keyObj))
+						log.Panic(fmt.Sprintf("Failed to find value in path nodes map for key: %s", keyObj))
 					} else {
 						if value, ok := valueObj.(*dependencyTreeNode); !ok {
-							logger.Default.Error.Panicln("Found value in path nodes map which is not a node")
+							log.Panic("Found value in path nodes map which is not a node")
 						} else {
 							if key, ok := keyObj.(string); !ok {
-								logger.Default.Error.Panicln("Found key in path nodes map which is not a string")
+								log.Panic("Found key in path nodes map which is not a string")
 							} else {
 								dependencyLoop[i] = fmt.Sprintf("%s (%s)", key, value.OutputName)
 							}
@@ -251,14 +251,14 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 			for pathIt.End(); pathIt.Prev() && !found; {
 				// Get this node's children
 				if pathNode, pathNodeIsCorrectType := pathIt.Value().(*dependencyTreeNode); !pathNodeIsCorrectType {
-					logger.Default.Error.Panicln("Path object is not a tree node")
+					log.Panic("Path object is not a tree node")
 				} else {
 					for _, childNode := range pathNode.Children {
 						// Check if the "toVisit" stack contains this child node
 						var stackIt = toVisitStack.Iterator()
 						for stackIt.Begin(); stackIt.Next() && !found; {
 							if stackNode, ok := stackIt.Value().(*dependencyTreeNode); !ok {
-								logger.Default.Error.Panicln("Stack object is not a tree node")
+								log.Panic("Stack object is not a tree node")
 							} else if stackNode == childNode {
 								found = true
 							}

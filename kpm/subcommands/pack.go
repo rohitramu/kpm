@@ -7,7 +7,7 @@ import (
 	"./common"
 	"./utils/constants"
 	"./utils/files"
-	"./utils/logger"
+	"./utils/log"
 	"./utils/types"
 )
 
@@ -33,13 +33,13 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	var localPackageRepositoryDirPath = constants.GetPackageRepositoryDirPath(kpmHomeDirPath)
 
 	// Log resolved paths
-	logger.Default.Verbose.Println("====")
-	logger.Default.Verbose.Println(fmt.Sprintf("Package directory:             %s", packageDirPath))
-	logger.Default.Verbose.Println(fmt.Sprintf("Package repository directory:  %s", localPackageRepositoryDirPath))
-	logger.Default.Verbose.Println("====")
+	log.Verbose("====")
+	log.Verbose(fmt.Sprintf("Package directory:             %s", packageDirPath))
+	log.Verbose(fmt.Sprintf("Package repository directory:  %s", localPackageRepositoryDirPath))
+	log.Verbose("====")
 
 	// Validate package and get package info
-	logger.Default.Verbose.Println("Getting package info")
+	log.Verbose("Getting package info")
 	var packageInfo *types.PackageInfo
 	packageInfo, err = common.GetPackageInfo(packageDirPath)
 	if err != nil {
@@ -54,13 +54,13 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	os.RemoveAll(outputDirPath)
 
 	// Copy package to output directory
-	logger.Default.Verbose.Println(fmt.Sprintf("Copying package to: %s", outputDirPath))
+	log.Verbose(fmt.Sprintf("Copying package to: %s", outputDirPath))
 	files.CopyDir(packageDirPath, outputDirPath)
 
-	logger.Default.Info.Println(fmt.Sprintf("Template package name:    %s", packageInfo.Name))
-	logger.Default.Info.Println(fmt.Sprintf("Template package version: %s", packageInfo.Version))
+	log.Info(fmt.Sprintf("Template package name:    %s", packageInfo.Name))
+	log.Info(fmt.Sprintf("Template package version: %s", packageInfo.Version))
 
-	logger.Default.Info.Println(fmt.Sprintf("SUCCESS - Pack command created package in directory: %s", outputDirPath))
+	log.Info(fmt.Sprintf("SUCCESS - Pack command created package in directory: %s", outputDirPath))
 
 	return nil
 }

@@ -85,7 +85,7 @@ func PushCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 		var deleteErr = docker.DeleteImage(imageName)
 		if deleteErr != nil {
 			if err != nil {
-				err = fmt.Errorf("Failed to clean up image:\n%s\n%s", deleteErr, err)
+				err = fmt.Errorf("Failed to clean up image: %s\n%s\n%s", imageName, deleteErr, err)
 			} else {
 				err = deleteErr
 			}

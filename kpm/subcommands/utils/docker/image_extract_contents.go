@@ -2,10 +2,9 @@ package docker
 
 import (
 	"fmt"
-	"strings"
 
 	"../cmd"
-	"../logger"
+	"../log"
 )
 
 // ExtractImageContents extracts files and directories from a Docker image, and copies them to the local KPM repository.
@@ -17,43 +16,39 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Create a container using the image
 	{
-		logger.Default.Info.Println(fmt.Sprintf("Creating container from image: %s", imageName))
+		log.Info(fmt.Sprintf("Creating container from image: %s", imageName))
 
 		var args = []string{"create", "--name", containerName, imageName}
-		var output string
-		output, err = cmd.Exec(exe, args...)
-		logger.Default.Verbose.Println(fmt.Sprintf("%s %s\n%s", exe, strings.Join(args, " "), string(output)))
+		_, err = cmd.Exec(exe, args...)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to create container from image: %s\n%s", imageName, err)
 		}
 	}
 
 	// Delete container after we're done
 	defer func() {
 		var args = []string{"rm", "--force", containerName}
-		var output string
 		var deleteErr error
-		output, deleteErr = cmd.Exec(exe, args...)
-		logger.Default.Verbose.Println(fmt.Sprintf("%s %s\n%s", exe, strings.Join(args, " "), string(output)))
+		_, deleteErr = cmd.Exec(exe, args...)
 		if deleteErr != nil {
 			if err != nil {
-				err = fmt.Errorf("Failed to delete container:\n%s\n%s", deleteErr, err)
+				err = fmt.Errorf("%s\n%s", deleteErr, err)
 			} else {
 				err = deleteErr
 			}
+
+			err = fmt.Errorf("Failed to delete container: %s\n%s", containerName, err)
 		}
 	}()
 
 	// Extract contents of container to a temporary directory
 	{
-		logger.Default.Info.Println(fmt.Sprintf("Extracting contents from container: %s", containerName))
+		log.Info(fmt.Sprintf("Extracting contents from container: %s", containerName))
 
 		var args = []string{"cp", fmt.Sprintf("%s:/%s", containerName, DockerfileRootDir), destinationDir}
-		var output string
-		output, err = cmd.Exec(exe, args...)
-		logger.Default.Verbose.Println(fmt.Sprintf("%s %s\n%s", exe, strings.Join(args, " "), string(output)))
+		_, err = cmd.Exec(exe, args...)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to extract data from container: %s\n%s", containerName, err)
 		}
 	}
 

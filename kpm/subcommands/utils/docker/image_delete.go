@@ -2,22 +2,22 @@ package docker
 
 import (
 	"fmt"
-	"strings"
 
 	"../cmd"
-	"../logger"
+	"../log"
 )
 
 // DeleteImage deletes a local Docker image.
 func DeleteImage(imageName string) error {
-	logger.Default.Info.Println(fmt.Sprintf("Deleting image: %s", imageName))
+	var err error
+
+	log.Info(fmt.Sprintf("Deleting image: %s", imageName))
 
 	var exe = "docker"
 	var args = []string{"image", "rm", "--force", imageName}
-	var output, err = cmd.Exec(exe, args...)
-	logger.Default.Verbose.Println(fmt.Sprintf("%s %s\n%s", exe, strings.Join(args, " "), string(output)))
+	_, err = cmd.Exec(exe, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to delete image: %s\n%s", imageName, err)
 	}
 
 	return nil

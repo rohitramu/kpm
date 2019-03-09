@@ -13,7 +13,7 @@ import (
 
 	"../utils/constants"
 	"../utils/files"
-	"../utils/logger"
+	"../utils/log"
 	"../utils/templates"
 	"../utils/types"
 	"../utils/validation"
@@ -67,7 +67,7 @@ func GetSharedTemplate(packageDirPath string) (*template.Template, error) {
 		return nil, err
 	}
 
-	logger.Default.Verbose.Println(fmt.Sprintf("Found %d template(s) in directory: %s", numHelpers, helpersDirPath))
+	log.Verbose(fmt.Sprintf("Found %d template(s) in directory: %s", numHelpers, helpersDirPath))
 
 	return sharedTemplate, nil
 }
@@ -171,7 +171,7 @@ func GetExecutableTemplates(parentTemplate *template.Template, packageDirPath st
 	}
 
 	// Return the templates in the directory
-	logger.Default.Verbose.Println(fmt.Sprintf("Found template directory: %s", executableTemplatesDir))
+	log.Verbose(fmt.Sprintf("Found template directory: %s", executableTemplatesDir))
 	var result []*template.Template
 	result, err = templates.GetTemplatesFromDir(parentTemplate, executableTemplatesDir)
 	if err != nil {
@@ -252,7 +252,7 @@ func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, 
 		currentPath, ok = currentPathObj.(string)
 		if !ok {
 			// We should never fail here since we are providing the values
-			logger.Default.Error.Panicln(fmt.Sprintf("Unexpected object when string was expected: %s", reflect.TypeOf(currentPathObj)))
+			log.Panic(fmt.Sprintf("Unexpected object when string was expected: %s", reflect.TypeOf(currentPathObj)))
 		}
 
 		// Get the file info
@@ -260,7 +260,7 @@ func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, 
 		fileInfo, err = os.Stat(currentPath)
 		if err != nil {
 			// We should never fail here since we are providing the values
-			logger.Default.Error.Panicln(err)
+			log.Panic(err)
 		}
 
 		// Ignore files
@@ -300,7 +300,7 @@ func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, 
 		var path string
 		path, ok = it.Value().(string)
 		if !ok {
-			logger.Default.Error.Panicln(fmt.Sprintf("Unexpected type found when getting list of string package names: %s", reflect.TypeOf(it.Value())))
+			log.Panic(fmt.Sprintf("Unexpected type found when getting list of string package names: %s", reflect.TypeOf(it.Value())))
 		}
 
 		// Get the relative path

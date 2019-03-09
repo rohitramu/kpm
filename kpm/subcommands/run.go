@@ -10,7 +10,7 @@ import (
 	"./common"
 	"./utils/constants"
 	"./utils/files"
-	"./utils/logger"
+	"./utils/log"
 	"./utils/templates"
 	"./utils/types"
 	"./utils/validation"
@@ -48,7 +48,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	var pulledVersion string
 	pulledVersion, err = common.PullPackage(packageName, wildcardPackageVersion)
 	if err != nil {
-		logger.Default.Warning.Println(err)
+		log.Warning(err)
 	} else {
 		wildcardPackageVersion = pulledVersion
 	}
@@ -76,14 +76,14 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	}
 
 	// Log resolved values
-	logger.Default.Verbose.Println("====")
-	logger.Default.Verbose.Println(fmt.Sprintf("Package name:      %s", packageName))
-	logger.Default.Verbose.Println(fmt.Sprintf("Package version:   %s", resolvedPackageVersion))
-	logger.Default.Verbose.Println(fmt.Sprintf("Package directory: %s", packageDirPath))
-	logger.Default.Verbose.Println(fmt.Sprintf("Parameters file:   %s", parametersFilePath))
-	logger.Default.Verbose.Println(fmt.Sprintf("Output name:       %s", outputName))
-	logger.Default.Verbose.Println(fmt.Sprintf("Output directory:  %s", outputDirPath))
-	logger.Default.Verbose.Println("====")
+	log.Verbose("====")
+	log.Verbose(fmt.Sprintf("Package name:      %s", packageName))
+	log.Verbose(fmt.Sprintf("Package version:   %s", resolvedPackageVersion))
+	log.Verbose(fmt.Sprintf("Package directory: %s", packageDirPath))
+	log.Verbose(fmt.Sprintf("Parameters file:   %s", parametersFilePath))
+	log.Verbose(fmt.Sprintf("Output name:       %s", outputName))
+	log.Verbose(fmt.Sprintf("Output directory:  %s", outputDirPath))
+	log.Verbose("====")
 
 	// Get the dependency tree
 	var parameters *types.GenericMap
@@ -119,7 +119,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 
 			// Write the data to the filesystem
 			var outputFilePath = filepath.Join(outputDir, tmpl.Name())
-			logger.Default.Verbose.Println(fmt.Sprintf("Output file path: %s", outputFilePath))
+			log.Verbose(fmt.Sprintf("Output file path: %s", outputFilePath))
 			ioutil.WriteFile(outputFilePath, templateOutput, os.ModeAppend)
 		}
 
@@ -129,10 +129,10 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 		return err
 	}
 
-	logger.Default.Verbose.Println(fmt.Sprintf("Executed %d packages", numPackages))
+	log.Verbose(fmt.Sprintf("Executed %d packages", numPackages))
 
 	// Print status
-	logger.Default.Info.Println(fmt.Sprintf("SUCCESS - Generated output in directory: %s", outputDirPath))
+	log.Info(fmt.Sprintf("SUCCESS - Generated output in directory: %s", outputDirPath))
 
 	return nil
 }
