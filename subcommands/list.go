@@ -1,7 +1,6 @@
 package subcommands
 
 import (
-	"path/filepath"
 	"strings"
 
 	"./common"
@@ -21,11 +20,8 @@ func ListCmd(kpmHomeDirArg *string) error {
 		return err
 	}
 
-	// Get the packages directory
-	var packageRepositoryDir = filepath.Join(kpmHomeDir, constants.PackageRepositoryDirName)
-
 	var packages []string
-	packages, err = common.GetPackageNamesFromLocalRepository(packageRepositoryDir)
+	packages, err = common.GetPackageNamesFromLocalRepository(kpmHomeDir)
 	if err != nil {
 		return err
 	}

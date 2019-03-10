@@ -273,8 +273,31 @@ func GetPackageNamesFromLocalRepository(kpmHomeDir string) ([]string, error) {
 		}
 
 		// Check if this is a valid package directory
-		_, err = GetPackageInfo(kpmHomeDir, currentPath)
+		var packageInfo *types.PackageInfo
+		packageInfo, err = GetPackageInfo(kpmHomeDir, currentPath)
 		if err == nil {
+			// Get the package's full name
+			var packageFullName = constants.GetPackageFullName(packageInfo.Name, packageInfo.Version)
+
+			// Calculate what the full name of the package should be
+			var packageFullNameFromPath string
+			packageFullNameFromPath, err = filepath.Rel(packageRepositoryDir, currentPath)
+			if err != nil {
+				log.Panic("Failed to get relative path: %s -> %s", packageRepositoryDir, currentPath)
+			}
+
+			// We always expect forward slashes for namespaces
+			packageFullNameFromPath = filepath.ToSlash(packageFullNameFromPath)
+
+			// Check that the name of the directory matches the package's full name
+			if packageFullNameFromPath != packageFullName {
+				// Log a warning
+				log.Warning("Found corrupted package in local repository (directory name does not match package name): %s", currentPath)
+
+				// Don't return this package, just continue looking for other packages
+				continue
+			}
+
 			// Found a valid package, so add it to the list of found packages
 			packages.Add(currentPath)
 
