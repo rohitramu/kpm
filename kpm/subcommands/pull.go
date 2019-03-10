@@ -16,7 +16,7 @@ func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 
 	// Resolve KPM home directory
 	var kpmHomeDir string
-	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, constants.GetDefaultKpmHomeDirPath)
+	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, constants.GetDefaultKpmHomeDir)
 	if err != nil {
 		return err
 	}
@@ -32,8 +32,8 @@ func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 	}
 
 	// Get version
-	var resolvedPackageVersion string
-	resolvedPackageVersion, err = validation.GetStringOrError(packageVersionArg, "packageVersion")
+	var packageVersion string
+	packageVersion, err = validation.GetStringOrError(packageVersionArg, "packageVersion")
 	if err != nil {
 		return err
 	}
@@ -45,16 +45,13 @@ func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 	}
 
 	// Validate package version
-	err = validation.ValidatePackageVersion(resolvedPackageVersion, false)
+	err = validation.ValidatePackageVersion(packageVersion)
 	if err != nil {
 		return err
 	}
 
-	// Get the package repository directory
-	var packageRepositoryDir = constants.GetPackageRepositoryDirPath(kpmHomeDir)
-
 	// Get the image name
-	var imageName = docker.GetImageName(dockerRegistry, packageName, resolvedPackageVersion)
+	var imageName = docker.GetImageName(dockerRegistry, packageName, packageVersion)
 
 	// Pull the Docker image
 	err = docker.PullImage(imageName)
@@ -73,10 +70,10 @@ func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 	}()
 
 	// Get the package's full name
-	var packageFullName = constants.GetPackageFullName(packageName, resolvedPackageVersion)
+	var packageFullName = constants.GetPackageFullName(packageName, packageVersion)
 
 	// Get the package directory
-	var packageDir = constants.GetPackageDirPath(packageRepositoryDir, packageFullName)
+	var packageDir = constants.GetPackageDir(kpmHomeDir, packageFullName)
 
 	// Extract Docker image contents into the local package repository
 	err = docker.ExtractImageContents(imageName, packageDir)
@@ -85,5 +82,5 @@ func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 		return err
 	}
 
-	return err
+	return nil
 }

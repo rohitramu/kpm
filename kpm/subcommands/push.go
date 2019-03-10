@@ -7,6 +7,8 @@ import (
 	"./utils/constants"
 	"./utils/docker"
 	"./utils/files"
+	"./utils/log"
+	"./utils/types"
 	"./utils/validation"
 )
 
@@ -16,7 +18,7 @@ func PushCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 
 	// Resolve KPM home directory
 	var kpmHomeDir string
-	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, constants.GetDefaultKpmHomeDirPath)
+	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, constants.GetDefaultKpmHomeDir)
 	if err != nil {
 		return err
 	}
@@ -31,45 +33,57 @@ func PushCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 		return err
 	}
 
-	// Get version
-	var wildcardPackageVersion = validation.GetStringOrDefault(packageVersionArg, "*")
-
 	// Validate package name
 	err = validation.ValidatePackageName(packageName)
 	if err != nil {
 		return err
 	}
 
+	// Get package version
+	var packageVersion string
+	packageVersion, err = validation.GetStringOrError(packageVersionArg, "packageVersion")
+	if err != nil {
+		// Since the package version was not provided, check the local repository for the highest version
+		if packageVersion, err = common.GetHighestPackageVersion(kpmHomeDir, packageName); err != nil {
+			return err
+		}
+	}
+
 	// Validate package version
-	err = validation.ValidatePackageVersion(wildcardPackageVersion, true)
+	err = validation.ValidatePackageVersion(packageVersion)
 	if err != nil {
 		return err
 	}
-
-	// Resolve the package version
-	var resolvedPackageVersion string
-	resolvedPackageVersion, err = common.ResolvePackageVersion(kpmHomeDir, packageName, wildcardPackageVersion)
-	if err != nil {
-		return err
-	}
-
-	// Get the package repository directory
-	var packageRepositoryDir = constants.GetPackageRepositoryDirPath(kpmHomeDir)
 
 	// Get the package full name
-	var packageFullName = constants.GetPackageFullName(packageName, resolvedPackageVersion)
+	var packageFullName = constants.GetPackageFullName(packageName, packageVersion)
 
 	// Get the package directory
-	var packageDir = constants.GetPackageDirPath(packageRepositoryDir, packageFullName)
+	var packageDir = constants.GetPackageDir(kpmHomeDir, packageFullName)
 
-	// Validate the package
-	_, err = common.GetPackageInfo(packageDir)
+	log.Info("Validating package: %s", packageDir)
+
+	// Get package information
+	_, err = common.GetPackageInfo(kpmHomeDir, packageDir)
+	if err != nil {
+		return err
+	}
+
+	// Get the default parameters
+	var packageParameters *types.GenericMap
+	packageParameters, err = common.GetPackageParameters(constants.GetDefaultParametersFile(packageDir))
+	if err != nil {
+		return err
+	}
+
+	// Ensure that the dependency tree can be calculated without errors using the default parameters
+	_, err = common.GetDependencyTree(packageFullName, kpmHomeDir, packageName, packageVersion, packageParameters)
 	if err != nil {
 		return err
 	}
 
 	// Create the image name
-	var imageName = docker.GetImageName(dockerRegistry, packageName, resolvedPackageVersion)
+	var imageName = docker.GetImageName(dockerRegistry, packageName, packageVersion)
 
 	// Create the Dockerfile
 	var dockerfilePath = docker.GetDockerfilePath(kpmHomeDir)

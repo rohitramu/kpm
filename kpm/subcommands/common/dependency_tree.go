@@ -78,22 +78,20 @@ func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(path []string,
 }
 
 // GetDependencyTree ensures that the dependency tree has no loops and then returns the dependency tree.
-func GetDependencyTree(outputName string, kpmHomeDir string, packageName string, wildcardPackageVersion string, parameters *types.GenericMap) (*DependencyTree, error) {
+func GetDependencyTree(outputName string, kpmHomeDir string, packageName string, packageVersion string, parameters *types.GenericMap) (*DependencyTree, error) {
 	var err error
+	var ok bool
 
 	// Validate output name
 	if err := validation.ValidateOutputName(outputName); err != nil {
 		return nil, err
 	}
 
-	// Get the package repository location
-	var packageRepositoryDirPath = constants.GetPackageRepositoryDirPath(kpmHomeDir)
-
 	// Create the package definition for the root node
 	var rootNodePackageDefinition = &types.PackageDefinition{
 		Package: &types.PackageInfo{
 			Name:    packageName,
-			Version: wildcardPackageVersion,
+			Version: packageVersion,
 		},
 		Parameters: parameters,
 	}
@@ -115,153 +113,150 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 	toVisitStack.Push(rootNode)
 	var i = 0
 	for currentNodeObj, notEmpty := toVisitStack.Pop(); notEmpty; currentNodeObj, notEmpty = toVisitStack.Pop() {
-		if currentNode, ok := currentNodeObj.(*dependencyTreeNode); !ok {
+		var currentNode *dependencyTreeNode
+		currentNode, ok = currentNodeObj.(*dependencyTreeNode)
+		if !ok {
 			log.Panic("Object on \"toVisit\" list is not a tree node")
-		} else {
-			log.Verbose("Visiting node: %s", currentNode.OutputName)
+		}
 
-			outputName = currentNode.OutputName
-			packageName = currentNode.packageDefinition.Package.Name
-			wildcardPackageVersion = currentNode.packageDefinition.Package.Version
-			parameters = currentNode.packageDefinition.Parameters
+		log.Verbose("Visiting node: %s", currentNode.OutputName)
 
-			// Validate package name
-			err = validation.ValidatePackageName(packageName)
-			if err != nil {
-				return nil, fmt.Errorf("Invalid name for package \"%s\": %s", currentNode.OutputName, err)
-			}
+		var currentOutputName = currentNode.OutputName
+		var currentPackageName = currentNode.packageDefinition.Package.Name
+		var currentPackageVersion = currentNode.packageDefinition.Package.Version
+		var currentParameters = currentNode.packageDefinition.Parameters
 
-			// Validate package version
-			err = validation.ValidatePackageVersion(wildcardPackageVersion, true)
-			if err != nil {
-				return nil, fmt.Errorf("Invalid version for package \"%s\": %s", currentNode.OutputName, err)
-			}
+		// Validate package name
+		err = validation.ValidatePackageName(currentPackageName)
+		if err != nil {
+			return nil, fmt.Errorf("Invalid name for package \"%s\": %s", currentOutputName, err)
+		}
 
-			// // Check remote repository for newest matching versions of the package
-			// if pulledVersion, err := PullPackage(packageName, wildcardPackageVersion); err != nil {
-			// 	log.Warning(err)
-			// } else {
-			// 	wildcardPackageVersion = pulledVersion
-			// }
+		// Validate package version
+		err = validation.ValidatePackageVersion(currentPackageVersion)
+		if err != nil {
+			return nil, fmt.Errorf("Invalid version for package \"%s\": %s", currentOutputName, err)
+		}
 
-			// Resolve the package version
-			var resolvedPackageVersion string
-			if resolvedPackageVersion, err = ResolvePackageVersion(kpmHomeDir, packageName, wildcardPackageVersion); err != nil {
-				return nil, err
-			}
-			// Get the package's full name
-			var packageFullName = constants.GetPackageFullName(packageName, resolvedPackageVersion)
+		// // Check remote repository for newest matching versions of the package
+		// if pulledVersion, err := PullPackage(currentPackageName, currentPackageVersion); err != nil {
+		// 	log.Warning(err)
+		// } else {
+		// 	currentPackageVersion = pulledVersion
+		// }
 
-			// Check if there is a loop in the dependency tree
-			if _, exists := currentPathNodes.Get(packageFullName); exists {
-				var dependencyLoop = make([]string, currentPathNodes.Size()+1)
-				for i, keyObj := range currentPathNodes.Keys() {
-					if valueObj, found := currentPathNodes.Get(keyObj); !found {
-						log.Panic("Failed to find value in path nodes map for key: %s", keyObj)
+		// Get the package's full name
+		var currentPackageFullName = constants.GetPackageFullName(currentPackageName, currentPackageVersion)
+
+		// Check if there is a loop in the dependency tree
+		if _, exists := currentPathNodes.Get(currentPackageFullName); exists {
+			var dependencyLoop = make([]string, currentPathNodes.Size()+1)
+			for i, keyObj := range currentPathNodes.Keys() {
+				if valueObj, found := currentPathNodes.Get(keyObj); !found {
+					log.Panic("Failed to find value in path nodes map for key: %s", keyObj)
+				} else {
+					if value, ok := valueObj.(*dependencyTreeNode); !ok {
+						log.Panic("Found value in path nodes map which is not a node")
 					} else {
-						if value, ok := valueObj.(*dependencyTreeNode); !ok {
-							log.Panic("Found value in path nodes map which is not a node")
+						if key, ok := keyObj.(string); !ok {
+							log.Panic("Found key in path nodes map which is not a string")
 						} else {
-							if key, ok := keyObj.(string); !ok {
-								log.Panic("Found key in path nodes map which is not a string")
-							} else {
-								dependencyLoop[i] = fmt.Sprintf("%s (%s)", key, value.OutputName)
-							}
+							dependencyLoop[i] = fmt.Sprintf("%s (%s)", key, value.OutputName)
 						}
 					}
 				}
-				dependencyLoop[len(dependencyLoop)-1] = fmt.Sprintf("%s (%s)", packageFullName, outputName)
-				return nil, fmt.Errorf("Found loop in dependency tree: %s", strings.Join(dependencyLoop, "->"))
 			}
+			dependencyLoop[len(dependencyLoop)-1] = fmt.Sprintf("%s (%s)", currentPackageFullName, currentOutputName)
+			return nil, fmt.Errorf("Found loop in dependency tree: %s", strings.Join(dependencyLoop, "->"))
+		}
 
-			// Add this node to the map which is tracking the current path
-			currentPathNodes.Put(packageFullName, currentNode)
+		// Add this node to the map which is tracking the current path
+		currentPathNodes.Put(currentPackageFullName, currentNode)
 
-			// Get the package directory
-			var packageDirPath = constants.GetPackageDirPath(packageRepositoryDirPath, packageFullName)
+		// Get the package directory
+		var currentPackageDirPath = constants.GetPackageDir(kpmHomeDir, currentPackageFullName)
 
-			// Create shared template (with common options, functions and helper templates for this package)
-			var sharedTemplate *template.Template
-			sharedTemplate, err = GetSharedTemplate(packageDirPath)
-			if err != nil {
-				return nil, err
-			}
+		// Create shared template (with common options, functions and helper templates for this package)
+		var sharedTemplate *template.Template
+		sharedTemplate, err = GetSharedTemplate(currentPackageDirPath)
+		if err != nil {
+			return nil, err
+		}
 
-			// Calculate values to be used as inputs to the templates in this package
-			var templateInput *types.GenericMap
-			templateInput, err = GetTemplateInput(sharedTemplate, packageDirPath, parameters)
-			if err != nil {
-				return nil, err
-			}
+		// Calculate values to be used as inputs to the templates in this package
+		var templateInput *types.GenericMap
+		templateInput, err = GetTemplateInput(kpmHomeDir, currentPackageFullName, sharedTemplate, currentParameters)
+		if err != nil {
+			return nil, err
+		}
 
-			// Get the dependency definition templates
-			var dependencyTemplates []*template.Template
-			dependencyTemplates, err = GetDependencyDefinitionTemplates(sharedTemplate, packageDirPath)
-			if err != nil {
-				return nil, err
-			}
+		// Get the dependency definition templates
+		var dependencyTemplates []*template.Template
+		dependencyTemplates, err = GetDependencyDefinitionTemplates(sharedTemplate, currentPackageDirPath)
+		if err != nil {
+			return nil, err
+		}
 
-			// Save the package directory path, shared template and calculated values that can be used with this package in the node
-			currentNode.PackageDirPath = packageDirPath
-			currentNode.TemplateInput = templateInput
-			currentNode.ExecutableTemplates, err = GetExecutableTemplates(sharedTemplate, packageDirPath)
-			if err != nil {
-				return nil, err
-			}
+		// Save the package directory path, shared template and calculated values that can be used with this package in the node
+		currentNode.PackageDirPath = currentPackageDirPath
+		currentNode.TemplateInput = templateInput
+		currentNode.ExecutableTemplates, err = GetExecutableTemplates(sharedTemplate, currentPackageDirPath)
+		if err != nil {
+			return nil, err
+		}
 
-			// Evaluate dependencies
-			if len(dependencyTemplates) == 0 {
-				// If this node has no children, remove it from the current path
-				currentPathNodes.Remove(packageFullName)
-			} else {
-				// Execute the dependency definition templates to get the concrete dependency definitions
-				for _, dependencyTemplate := range dependencyTemplates {
-					// Get the dependency template's file name
-					var templateFileName = dependencyTemplate.Name()
+		// Evaluate dependencies
+		if len(dependencyTemplates) == 0 {
+			// If this node has no children, remove it from the current path
+			currentPathNodes.Remove(currentPackageFullName)
+		} else {
+			// Execute the dependency definition templates to get the concrete dependency definitions
+			for _, dependencyTemplate := range dependencyTemplates {
+				// Get the dependency template's file name
+				var templateFileName = dependencyTemplate.Name()
 
-					// Remove the file extension to get the dependency's output name
-					var dependencyOutputName = strings.TrimSuffix(templateFileName, filepath.Ext(templateFileName))
+				// Remove the file extension to get the dependency's output name
+				var dependencyOutputName = strings.TrimSuffix(templateFileName, filepath.Ext(templateFileName))
 
-					// Get the package definition by running the template input through the package definition file
-					var dependencyPackageDefinitionBytes []byte
-					dependencyPackageDefinitionBytes, err = templates.ExecuteTemplate(dependencyTemplate, currentNode.TemplateInput)
-					if err != nil {
-						return nil, err
-					}
-
-					// Create an object from the package definition
-					var dependencyPackageDefinition = new(types.PackageDefinition)
-					err = yaml.BytesToObject(dependencyPackageDefinitionBytes, dependencyPackageDefinition)
-					if err != nil {
-						return nil, err
-					}
-
-					// Push new dependency node
-					var dependencyNode *dependencyTreeNode
-					if dependencyNode, err = getPackageNode(currentNode, dependencyPackageDefinition, dependencyOutputName, ""); err != nil {
-						return nil, err
-					}
-					toVisitStack.Push(dependencyNode)
+				// Get the package definition by running the template input through the package definition file
+				var dependencyPackageDefinitionBytes []byte
+				dependencyPackageDefinitionBytes, err = templates.ExecuteTemplate(dependencyTemplate, currentNode.TemplateInput)
+				if err != nil {
+					return nil, err
 				}
-			}
 
-			// Make sure to clean up all of the nodes that will no longer be in the path on the next iteration
-			var pathIt = currentPathNodes.Iterator()
-			var found = false
-			for pathIt.End(); pathIt.Prev() && !found; {
-				// Get this node's children
-				if pathNode, pathNodeIsCorrectType := pathIt.Value().(*dependencyTreeNode); !pathNodeIsCorrectType {
-					log.Panic("Path object is not a tree node")
-				} else {
-					for _, childNode := range pathNode.Children {
-						// Check if the "toVisit" stack contains this child node
-						var stackIt = toVisitStack.Iterator()
-						for stackIt.Begin(); stackIt.Next() && !found; {
-							if stackNode, ok := stackIt.Value().(*dependencyTreeNode); !ok {
-								log.Panic("Stack object is not a tree node")
-							} else if stackNode == childNode {
-								found = true
-							}
+				// Create an object from the package definition
+				var dependencyPackageDefinition = new(types.PackageDefinition)
+				err = yaml.BytesToObject(dependencyPackageDefinitionBytes, dependencyPackageDefinition)
+				if err != nil {
+					return nil, err
+				}
+
+				// Push new dependency node
+				var dependencyNode *dependencyTreeNode
+				if dependencyNode, err = getPackageNode(currentNode, dependencyPackageDefinition, dependencyOutputName, ""); err != nil {
+					return nil, err
+				}
+				toVisitStack.Push(dependencyNode)
+			}
+		}
+
+		// Make sure to clean up all of the nodes that will no longer be in the path on the next iteration
+		var pathIt = currentPathNodes.Iterator()
+		var found = false
+		for pathIt.End(); pathIt.Prev() && !found; {
+			// Get this node's children
+			if pathNode, pathNodeIsCorrectType := pathIt.Value().(*dependencyTreeNode); !pathNodeIsCorrectType {
+				log.Panic("Path object is not a tree node")
+			} else {
+				for _, childNode := range pathNode.Children {
+					// Check if the "toVisit" stack contains this child node
+					var stackIt = toVisitStack.Iterator()
+					for stackIt.Begin(); stackIt.Next() && !found; {
+						if stackNode, ok := stackIt.Value().(*dependencyTreeNode); !ok {
+							log.Panic("Stack object is not a tree node")
+						} else if stackNode == childNode {
+							found = true
 						}
 					}
 				}

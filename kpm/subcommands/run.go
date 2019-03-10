@@ -27,21 +27,41 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 		return err
 	}
 
+	// Get KPM home directory
 	var kpmHomeDir string
-	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, constants.GetDefaultKpmHomeDirPath)
+	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirPathArg, constants.GetDefaultKpmHomeDir)
 	if err != nil {
 		return err
 	}
 
-	// Validate name
+	// Get package name
 	var packageName string
 	packageName, err = validation.GetStringOrError(packageNameArg, "packageName")
 	if err != nil {
 		return err
 	}
 
-	// Validate version
-	var wildcardPackageVersion = validation.GetStringOrDefault(packageVersionArg, "*")
+	// Validate package name
+	err = validation.ValidatePackageName(packageName)
+	if err != nil {
+		return err
+	}
+
+	// Get package version
+	var packageVersion string
+	packageVersion, err = validation.GetStringOrError(packageVersionArg, "packageVersion")
+	if err != nil {
+		// Since the package version was not provided, check the local repository for the highest version
+		if packageVersion, err = common.GetHighestPackageVersion(kpmHomeDir, packageName); err != nil {
+			return err
+		}
+	}
+
+	// Validate package version
+	err = validation.ValidatePackageVersion(packageVersion)
+	if err != nil {
+		return err
+	}
 
 	// // Check remote repository for newest matching versions of the package
 	// var pulledVersion string
@@ -52,24 +72,18 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	// 	wildcardPackageVersion = pulledVersion
 	// }
 
-	// Resolve the package version
-	var resolvedPackageVersion string
-	if resolvedPackageVersion, err = common.ResolvePackageVersion(kpmHomeDir, packageName, wildcardPackageVersion); err != nil {
-		return err
-	}
-
 	// Resolve generation paths
-	var packageFullName = constants.GetPackageFullName(packageName, resolvedPackageVersion)
-	var packageDirPath = constants.GetPackageDirPath(constants.GetPackageRepositoryDirPath(kpmHomeDir), packageFullName)
+	var packageFullName = constants.GetPackageFullName(packageName, packageVersion)
+	var packageDirPath = constants.GetPackageDir(kpmHomeDir, packageFullName)
 	var outputName = validation.GetStringOrDefault(outputNameArg, packageName)
 	var outputParentDir string
 	outputParentDir, err = files.GetAbsolutePathOrDefault(outputDirPathArg, workingDir)
 	if err != nil {
 		return err
 	}
-	var outputDirPath = constants.GetOutputDirPath(outputParentDir, outputName)
+	var outputDirPath = constants.GetOutputDir(outputParentDir, outputName)
 	var parametersFilePath string
-	parametersFilePath, err = files.GetAbsolutePathOrDefault(parametersFilePathArg, constants.GetDefaultParametersFilePath(packageDirPath))
+	parametersFilePath, err = files.GetAbsolutePathOrDefault(parametersFilePathArg, constants.GetDefaultParametersFile(packageDirPath))
 	if err != nil {
 		return err
 	}
@@ -77,7 +91,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	// Log resolved values
 	log.Info("====")
 	log.Info("Package name:      %s", packageName)
-	log.Info("Package version:   %s", resolvedPackageVersion)
+	log.Info("Package version:   %s", packageVersion)
 	log.Info("Package directory: %s", packageDirPath)
 	log.Info("Parameters file:   %s", parametersFilePath)
 	log.Info("Output name:       %s", outputName)
@@ -91,7 +105,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 		return err
 	}
 	var dependencyTree *common.DependencyTree
-	if dependencyTree, err = common.GetDependencyTree(outputName, kpmHomeDir, packageName, wildcardPackageVersion, parameters); err != nil {
+	if dependencyTree, err = common.GetDependencyTree(outputName, kpmHomeDir, packageName, packageVersion, parameters); err != nil {
 		return err
 	}
 

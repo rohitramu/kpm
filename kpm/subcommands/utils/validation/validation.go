@@ -27,7 +27,7 @@ func ValidatePackageName(packageName string) error {
 		if i+1 < len(nameSegments) {
 			err = ValidateNamespaceSegment(namespaceSegment)
 			if err != nil {
-				return err
+				return fmt.Errorf("Invalid namespace in package name: %s\n%s", packageName, err)
 			}
 		}
 	}
@@ -52,17 +52,12 @@ func ValidatePackageName(packageName string) error {
 }
 
 // ValidatePackageVersion validates the given package version.
-func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
+func ValidatePackageVersion(packageVersion string) error {
 	var err error
 
 	// Check for empty string
 	if len(strings.TrimSpace(packageVersion)) == 0 {
 		return fmt.Errorf("Package version string cannot be empty")
-	}
-
-	// Check for wildcards
-	if !allowWildcards && strings.ContainsRune(packageVersion, '*') {
-		return fmt.Errorf("Package version cannot contain wildcards: %s", packageVersion)
 	}
 
 	// Check for zero version
@@ -71,16 +66,11 @@ func ValidatePackageVersion(packageVersion string, allowWildcards bool) error {
 		return fmt.Errorf("Package version cannot be \"%s\"", zeroVersion)
 	}
 
-	// Regex for each segment that has a valid integer
+	// Regex for each segment that has a valid integer (don't allow leading zeros in any segment)
 	var segmentRegex = "(0|[1-9][0-9]*)"
 
-	// Overall regex - pick one depending on whether wildcards are allowed or not
-	var fullRegex string
-	if allowWildcards {
-		fullRegex = "^(\\*|%s\\.(\\*|%s\\.(\\*|%s)))$"
-	} else {
-		fullRegex = "^%s\\.%s\\.%s$"
-	}
+	// Overall regex
+	var fullRegex = "^%s\\.%s\\.%s$"
 
 	// Check whether the version string satisfies the regex
 	var isValid bool
@@ -112,7 +102,7 @@ func ValidateOutputName(outputName string) error {
 	}
 
 	var alphaNumeric = "[a-zA-Z0-9]"
-	var symbols = "[-_]"
+	var symbols = "[.\\-_/]"
 	var regex = fmt.Sprintf("^%s+(%s?%s)+$", alphaNumeric, symbols, alphaNumeric)
 	var matched bool
 	matched, err = regexp.MatchString(regex, outputName)
@@ -120,7 +110,7 @@ func ValidateOutputName(outputName string) error {
 		log.Panic("Regex execution failed: %s", err)
 	}
 	if !matched {
-		return fmt.Errorf("Output name must only consist of letters and numbers, optionally separated by dashes and/or underscores")
+		return fmt.Errorf("Output name must only consist of letters and numbers, optionally separated by forward slashes, dots, dashes and/or underscores")
 	}
 
 	return nil
@@ -147,7 +137,7 @@ func ValidateNamespaceSegment(namespaceSegment string) error {
 
 	// Return an error if the value doesn't satisfy the regex
 	if !isValid {
-		return fmt.Errorf("Invalid namespace segment: %s", namespaceSegment)
+		return fmt.Errorf("Namespace segments must solely consist of lowercase characters and/or digits: %s", namespaceSegment)
 	}
 
 	return nil
@@ -172,7 +162,7 @@ func ExtractNameAndVersionFromFullPackageName(fullPackageName string) (packageNa
 	}
 
 	// Validate the package version
-	if err := ValidatePackageVersion(packageVersion, false); err != nil {
+	if err := ValidatePackageVersion(packageVersion); err != nil {
 		return "", "", err
 	}
 

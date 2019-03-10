@@ -33,16 +33,18 @@ func PullPackage(packageName string, wildcardPackageVersion string) (string, err
 }
 
 // GetTemplateInput creates the input values for a template by combining the interface, parameters and package info.
-func GetTemplateInput(parentTemplate *template.Template, packageDirPath string, parameters *types.GenericMap) (*types.GenericMap, error) {
+func GetTemplateInput(kpmHomeDir string, packageFullName string, parentTemplate *template.Template, parameters *types.GenericMap) (*types.GenericMap, error) {
 	var err error
+
+	var packageDir = constants.GetPackageDir(kpmHomeDir, packageFullName)
 
 	// Add top-level objects
 	var result = types.GenericMap{}
-	result[constants.TemplateFieldPackage], err = GetPackageInfo(packageDirPath)
+	result[constants.TemplateFieldPackage], err = GetPackageInfo(kpmHomeDir, packageDir)
 	if err != nil {
 		return nil, err
 	}
-	result[constants.TemplateFieldValues], err = getValuesFromInterface(parentTemplate, packageDirPath, parameters)
+	result[constants.TemplateFieldValues], err = getValuesFromInterface(parentTemplate, packageDir, parameters)
 	if err != nil {
 		return nil, err
 	}
@@ -52,45 +54,45 @@ func GetTemplateInput(parentTemplate *template.Template, packageDirPath string, 
 
 // GetSharedTemplate creates a template which contains default options, functions and
 // helper template definitions defined in the given package.
-func GetSharedTemplate(packageDirPath string) (*template.Template, error) {
+func GetSharedTemplate(packageDir string) (*template.Template, error) {
 	var err error
 
 	// Get the directory which contains the helper templates
-	var helpersDirPath = constants.GetHelpersDirPath(packageDirPath)
+	var helpersDir = constants.GetHelpersDir(packageDir)
 
 	// Create a template which includes the helper template definitions
 	var sharedTemplate *template.Template
 	var numHelpers int
-	sharedTemplate, numHelpers, err = templates.ChainTemplatesFromDir(templates.GetRootTemplate(), helpersDirPath)
+	sharedTemplate, numHelpers, err = templates.ChainTemplatesFromDir(templates.GetRootTemplate(), helpersDir)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Verbose("Found %d template(s) in directory: %s", numHelpers, helpersDirPath)
+	log.Verbose("Found %d template(s) in directory: %s", numHelpers, helpersDir)
 
 	return sharedTemplate, nil
 }
 
 // GetPackageInfo validates the package directory and returns the package info object for a given package.
-func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
+func GetPackageInfo(kpmHomeDir string, packageDir string) (*types.PackageInfo, error) {
 	var err error
 
 	// Make sure that the package exists
-	err = files.DirExists(packageDirPath, "package")
+	err = files.DirExists(packageDir, "package")
 	if err != nil {
 		return nil, err
 	}
 
 	// Check that the package info file exists
-	var packageInfoFilePath = filepath.Join(packageDirPath, constants.PackageInfoFileName)
-	err = files.FileExists(packageInfoFilePath, "package information")
+	var packageInfoFile = constants.GetPackageInfoFile(packageDir)
+	err = files.FileExists(packageInfoFile, "package information")
 	if err != nil {
 		return nil, err
 	}
 
 	// Get package info file content
 	var yamlBytes []byte
-	yamlBytes, err = files.ReadBytes(packageInfoFilePath)
+	yamlBytes, err = files.ReadBytes(packageInfoFile)
 	if err != nil {
 		return nil, err
 	}
@@ -103,27 +105,29 @@ func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
 	}
 
 	// Validate package name
-	err = validation.ValidatePackageName(packageInfo.Name)
+	var packageName = packageInfo.Name
+	err = validation.ValidatePackageName(packageName)
 	if err != nil {
 		return nil, err
 	}
 
 	// Validate package version
-	err = validation.ValidatePackageVersion(packageInfo.Version, false)
+	var packageVersion = packageInfo.Version
+	err = validation.ValidatePackageVersion(packageVersion)
 	if err != nil {
 		return nil, err
 	}
 
 	// Make sure that the interface file exists
-	var interfaceFilePath = filepath.Join(packageDirPath, constants.InterfaceFileName)
+	var interfaceFilePath = constants.GetInterfaceFile(packageDir)
 	err = files.FileExists(interfaceFilePath, "interface")
 	if err != nil {
 		return nil, err
 	}
 
 	// Make sure that the parameters file exists
-	var parametersFilePath = constants.GetDefaultParametersFilePath(packageDirPath)
-	err = files.FileExists(parametersFilePath, "parameters")
+	var parametersFile = constants.GetDefaultParametersFile(packageDir)
+	err = files.FileExists(parametersFile, "parameters")
 	if err != nil {
 		return nil, err
 	}
@@ -132,18 +136,18 @@ func GetPackageInfo(packageDirPath string) (*types.PackageInfo, error) {
 }
 
 // GetPackageParameters returns the parameters in a file as an object which can be used as input to the interface template in a package.
-func GetPackageParameters(parametersFilePath string) (*types.GenericMap, error) {
+func GetPackageParameters(parametersFile string) (*types.GenericMap, error) {
 	var err error
 
 	// Make sure that the parameters file exists
-	err = files.FileExists(parametersFilePath, "parameters")
+	err = files.FileExists(parametersFile, "parameters")
 	if err != nil {
 		return nil, err
 	}
 
 	// Get parameters file content as bytes
 	var parametersFileBytes []byte
-	parametersFileBytes, err = files.ReadBytes(parametersFilePath)
+	parametersFileBytes, err = files.ReadBytes(parametersFile)
 	if err != nil {
 		return nil, err
 	}
@@ -159,11 +163,11 @@ func GetPackageParameters(parametersFilePath string) (*types.GenericMap, error) 
 }
 
 // GetExecutableTemplates returns all executable templates in a template package.
-func GetExecutableTemplates(parentTemplate *template.Template, packageDirPath string) ([]*template.Template, error) {
+func GetExecutableTemplates(parentTemplate *template.Template, packageDir string) ([]*template.Template, error) {
 	var err error
 
 	// Get the templates directory
-	var executableTemplatesDir = constants.GetTemplatesDirPath(packageDirPath)
+	var executableTemplatesDir = constants.GetTemplatesDir(packageDir)
 	err = files.DirExists(executableTemplatesDir, "templates")
 	if err != nil {
 		return nil, err
@@ -181,11 +185,11 @@ func GetExecutableTemplates(parentTemplate *template.Template, packageDirPath st
 }
 
 // GetDependencyDefinitionTemplates returns the templates for all dependency definition templates in a template package.
-func GetDependencyDefinitionTemplates(parentTemplate *template.Template, packageDirPath string) ([]*template.Template, error) {
+func GetDependencyDefinitionTemplates(parentTemplate *template.Template, packageDir string) ([]*template.Template, error) {
 	var err error
 
 	// Get the dependencies directory
-	var dependenciesDir = constants.GetDependenciesDirPath(packageDirPath)
+	var dependenciesDir = constants.GetDependenciesDir(packageDir)
 	err = files.DirExists(dependenciesDir, "dependencies")
 	if err != nil {
 		return nil, err
@@ -201,14 +205,13 @@ func GetDependencyDefinitionTemplates(parentTemplate *template.Template, package
 }
 
 // getValuesFromInterface creates the values which can be used as input to templates by executing the interface with parameters.
-func getValuesFromInterface(parentTemplate *template.Template, packageDirPath string, parameters *types.GenericMap) (*types.GenericMap, error) {
+func getValuesFromInterface(parentTemplate *template.Template, packageDir string, parameters *types.GenericMap) (*types.GenericMap, error) {
 	var err error
 
 	// Create template object from interface file
-	var templateName = constants.InterfaceFileName
-	var interfaceFilePath = filepath.Join(packageDirPath, templateName)
+	var interfaceFile = constants.GetInterfaceFile(packageDir)
 	var tmpl *template.Template
-	tmpl, err = templates.GetTemplateFromFile(parentTemplate, templateName, interfaceFilePath)
+	tmpl, err = templates.GetTemplateFromFile(parentTemplate, filepath.Base(interfaceFile), interfaceFile)
 	if err != nil {
 		return nil, err
 	}
@@ -231,9 +234,11 @@ func getValuesFromInterface(parentTemplate *template.Template, packageDirPath st
 }
 
 // GetPackageNamesFromLocalRepository returns the list of package names in the local KPM package repository.
-func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, error) {
+func GetPackageNamesFromLocalRepository(kpmHomeDir string) ([]string, error) {
 	var err error
 	var ok bool
+
+	var packageRepositoryDir = constants.GetPackageRepositoryDir(kpmHomeDir)
 
 	// Exit early if the packages directory doesn't exist
 	err = files.DirExists(packageRepositoryDir, "packages repository")
@@ -268,7 +273,7 @@ func GetPackageNamesFromLocalRepository(packageRepositoryDir string) ([]string, 
 		}
 
 		// Check if this is a valid package directory
-		_, err = GetPackageInfo(currentPath)
+		_, err = GetPackageInfo(kpmHomeDir, currentPath)
 		if err == nil {
 			// Found a valid package, so add it to the list of found packages
 			packages.Add(currentPath)

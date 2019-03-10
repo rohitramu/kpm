@@ -16,7 +16,7 @@ func ListCmd(kpmHomeDirArg *string) error {
 
 	// Get KPM home directory
 	var kpmHomeDir string
-	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirArg, constants.GetDefaultKpmHomeDirPath)
+	kpmHomeDir, err = files.GetAbsolutePathOrDefaultFunc(kpmHomeDirArg, constants.GetDefaultKpmHomeDir)
 	if err != nil {
 		return err
 	}
