@@ -1,8 +1,6 @@
 package subcommands
 
 import (
-	"strings"
-
 	"./common"
 	"./utils/constants"
 	"./utils/files"
@@ -20,15 +18,17 @@ func ListCmd(kpmHomeDirArg *string) error {
 		return err
 	}
 
+	// Get package full names
 	var packages []string
-	packages, err = common.GetPackageNamesFromLocalRepository(kpmHomeDir)
+	packages, err = common.GetPackageFullNamesFromLocalRepository(kpmHomeDir)
 	if err != nil {
 		return err
 	}
 
-	// Print directory names
-	var output = strings.Join(packages, "\n")
-	log.Info("Available template packages:\n" + output)
+	// Print package full names in order
+	for _, n := range packages {
+		log.Output(n)
+	}
 
 	return nil
 }

@@ -19,8 +19,8 @@ var (
 	// KpmHomeDirFlagName is the home directory for KPM, for the current user.
 	KpmHomeDirFlagName = "kpmHomeDir"
 
-	// DockerRegistryURLFlagName is the Docker registry URL to use when pushing or pulling a package.
-	DockerRegistryURLFlagName = "dockerRegistryUrl"
+	// DockerRegistryFlagName is the Docker registry to use when pushing or pulling a package.
+	DockerRegistryFlagName = "dockerRegistry"
 
 	// DockerNamespaceFlagName is the docker namespace to use when pushing or pulling a package.
 	DockerNamespaceFlagName = "dockerNamespace"

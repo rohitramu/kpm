@@ -37,7 +37,7 @@ func GetDockerfilePath(kpmHomeDir string) string {
 		var dockerfile = fmt.Sprintf(`
 FROM scratch
 COPY ./ /%s
-CMD ""
+CMD [""]
 `, DockerfileRootDir)
 		dockerfile = strings.TrimSpace(dockerfile)
 

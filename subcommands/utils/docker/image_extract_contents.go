@@ -15,12 +15,14 @@ import (
 func ExtractImageContents(imageName string, destinationDir string) error {
 	var err error
 
-	var exe = "docker"
-	const containerName = "kpm_container"
+	const (
+		exe           = "docker"
+		containerName = "kpm_container"
+	)
 
 	// Create a container using the image
 	{
-		log.Info("Creating container \"%s\" from image: %s", containerName, imageName)
+		log.Verbose("Creating container \"%s\" from image: %s", containerName, imageName)
 
 		var args = []string{"create", "--name", containerName, imageName}
 		_, err = cmd.Exec(exe, args...)
@@ -31,7 +33,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Delete container after we're done
 	defer func() {
-		log.Info("Deleting container: %s", containerName)
+		log.Verbose("Deleting container: %s", containerName)
 
 		var args = []string{"rm", "--force", containerName}
 		var deleteErr error
@@ -66,7 +68,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 		}
 
 		// Extract data to temporary directory
-		var args = []string{"cp", fmt.Sprintf("%s:/%s", containerName, DockerfileRootDir), tempDir}
+		var args = []string{"cp", fmt.Sprintf("%s:/%s/.", containerName, DockerfileRootDir), tempDir}
 		_, err = cmd.Exec(exe, args...)
 		if err != nil {
 			return fmt.Errorf("Failed to extract data from container: %s\n%s", containerName, err)
@@ -75,16 +77,16 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Copy data to destination directory
 	{
-		log.Info("Copying contents of container \"%s\" to destination directory: %s", containerName, destinationDir)
+		log.Verbose("Copying contents of container \"%s\" to destination directory: %s", containerName, destinationDir)
 
 		// Remove destination directory to clear it
-		err = os.RemoveAll(tempDir)
+		err = os.RemoveAll(destinationDir)
 		if err != nil {
 			log.Panic("Failed to remove directory: %s", err)
 		}
 
 		// Recreate destination directory
-		err = os.MkdirAll(tempDir, os.ModePerm)
+		err = os.MkdirAll(destinationDir, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("Failed to make destination directory for saving data: %s\n%s", destinationDir, err)
 		}

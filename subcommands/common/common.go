@@ -12,6 +12,7 @@ import (
 	"github.com/emirpasic/gods/stacks/linkedliststack"
 
 	"../utils/constants"
+	"../utils/docker"
 	"../utils/files"
 	"../utils/log"
 	"../utils/templates"
@@ -20,16 +21,45 @@ import (
 	"../utils/yaml"
 )
 
-// PullPackage retrieves a remote template package and makes it available for use.  If a package
-// was successfully retrieved, this function returns the retrieved version number.
-func PullPackage(packageName string, wildcardPackageVersion string) (string, error) {
-	//TODO: Get list of versions in remote repository
+// PullPackage retrieves a remote template package and makes it available for use.
+func PullPackage(kpmHomeDir string, dockerRegistry string, packageName string, packageVersion string) error {
+	var err error
 
-	//TODO: Resolve version to the highest that is compatible with the requested version
+	// Get the package's full name
+	var packageFullName = constants.GetPackageFullName(packageName, packageVersion)
 
-	//TODO: Download the template package of the resolved version into the local package repository
+	log.Info("Pulling from \"%s\": %s", dockerRegistry, packageFullName)
 
-	return "", fmt.Errorf("Could not find version matching \"%s\" in remote repository for package: %s", wildcardPackageVersion, packageName)
+	// Get the image name
+	var imageName = docker.GetImageName(dockerRegistry, packageName, packageVersion)
+
+	// Pull the Docker image
+	err = docker.PullImage(imageName)
+	if err != nil {
+		return err
+	}
+
+	// Delete the local image after we're done
+	defer func() {
+		var deleteErr = docker.DeleteImage(imageName)
+		if deleteErr != nil {
+			if err != nil {
+				err = fmt.Errorf("Failed to delete image: %s\n%s\n%s", imageName, deleteErr, err)
+			}
+		}
+	}()
+
+	// Get the package directory
+	var packageDir = constants.GetPackageDir(kpmHomeDir, packageFullName)
+
+	// Extract Docker image contents into the local package repository
+	err = docker.ExtractImageContents(imageName, packageDir)
+	if err != nil {
+		log.Error("Failed to extract Docker image contents")
+		return err
+	}
+
+	return nil
 }
 
 // GetTemplateInput creates the input values for a template by combining the interface, parameters and package info.
@@ -233,8 +263,8 @@ func getValuesFromInterface(parentTemplate *template.Template, packageDir string
 	return result, nil
 }
 
-// GetPackageNamesFromLocalRepository returns the list of package names in the local KPM package repository.
-func GetPackageNamesFromLocalRepository(kpmHomeDir string) ([]string, error) {
+// GetPackageFullNamesFromLocalRepository returns the list of package names in the local KPM package repository, in alphabetical order.
+func GetPackageFullNamesFromLocalRepository(kpmHomeDir string) ([]string, error) {
 	var err error
 	var ok bool
 
@@ -299,7 +329,7 @@ func GetPackageNamesFromLocalRepository(kpmHomeDir string) ([]string, error) {
 			}
 
 			// Found a valid package, so add it to the list of found packages
-			packages.Add(currentPath)
+			packages.Add(packageFullNameFromPath)
 
 			// We don't want to add subdirectories, since packages cannot be nested
 			continue
@@ -321,25 +351,19 @@ func GetPackageNamesFromLocalRepository(kpmHomeDir string) ([]string, error) {
 		}
 	}
 
-	// Compile the list of results
-	var results = make([]string, packages.Size())
+	var result = make([]string, packages.Size())
+	var i = 0
 	for it := packages.Iterator(); it.Next(); {
-		var path string
-		path, ok = it.Value().(string)
+		var packageName string
+		var value = it.Value()
+		packageName, ok = value.(string)
 		if !ok {
-			log.Panic("Unexpected type found when getting list of string package names: %s", reflect.TypeOf(it.Value()))
+			log.Panic("Unexpected value in tree map: %s", value)
 		}
 
-		// Get the relative path
-		path, err = filepath.Rel(packageRepositoryDir, path)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get the image name by using forward slashes instead of backward slashes (if on a Windows machine)
-		var imageName = filepath.ToSlash(path)
-		results[it.Index()] = imageName
+		result[i] = packageName
+		i++
 	}
 
-	return results, nil
+	return result, nil
 }

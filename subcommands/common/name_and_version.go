@@ -52,17 +52,17 @@ func getAvailablePackagesAndVersions(kpmHomeDir string) (packageNamesAndVersions
 	var err error
 
 	// Get the full list of package names
-	var packagesList []string
-	packagesList, err = GetPackageNamesFromLocalRepository(kpmHomeDir)
+	var packages []string
+	packages, err = GetPackageFullNamesFromLocalRepository(kpmHomeDir)
 	if err != nil {
 		return nil, err
 	}
 
 	// Iterate over the package full names
 	var availablePackagesAndVersions = packageNamesAndVersions{}
-	for _, currentPackage := range packagesList {
+	for _, currentPackage := range packages {
 		// Extract name and version
-		currentPackageName, currentPackageVersion, err := validation.ExtractNameAndVersionFromFullPackageName(currentPackage)
+		currentPackageName, currentPackageVersion, err := validation.ExtractNameAndVersionFromPackageFullName(currentPackage)
 		if err != nil {
 			return nil, err
 		}

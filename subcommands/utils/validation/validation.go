@@ -143,14 +143,14 @@ func ValidateNamespaceSegment(namespaceSegment string) error {
 	return nil
 }
 
-// ExtractNameAndVersionFromFullPackageName returns the name and version of a template package, given the full package name.
-func ExtractNameAndVersionFromFullPackageName(fullPackageName string) (packageName string, packageVersion string, err error) {
+// ExtractNameAndVersionFromPackageFullName returns the name and version of a template package, given the full package name.
+func ExtractNameAndVersionFromPackageFullName(packageFullName string) (packageName string, packageVersion string, err error) {
 	// Split the file name to get the name and version
-	var splitFileName = strings.SplitN(fullPackageName, "-", 2)
+	var splitFileName = strings.SplitN(packageFullName, "-", 2)
 
 	// Check that this is a valid package name
 	if len(splitFileName) != 2 {
-		return "", "", fmt.Errorf("Full package name is an invalid format: %s", fullPackageName)
+		return "", "", fmt.Errorf("Full package name is an invalid format: %s", packageFullName)
 	}
 
 	packageName = splitFileName[0]

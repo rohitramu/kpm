@@ -2,7 +2,7 @@ package constants
 
 var (
 	// ListCmdName is the name of the subcommand which lists the packages that are available for use.
-	ListCmdName = "ls"
+	ListCmdName = "list"
 
 	// PackCmdName is the name of the subcommand which makes a template package ready for use.
 	PackCmdName = "pack"

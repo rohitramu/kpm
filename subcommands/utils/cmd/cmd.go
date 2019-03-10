@@ -18,7 +18,8 @@ func Exec(exe string, args ...string) (string, error) {
 	var output []byte
 	output, err = cmd.CombinedOutput()
 
-	log.Verbose("%s %s\n%s", exe, strings.Join(args, " "), string(output))
+	var outputString = string(output)
+	log.Verbose("%s %s\n%s", exe, strings.Join(args, " "), outputString)
 
-	return string(output), err
+	return outputString, err
 }

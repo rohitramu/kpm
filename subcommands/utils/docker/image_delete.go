@@ -11,7 +11,7 @@ import (
 func DeleteImage(imageName string) error {
 	var err error
 
-	log.Info("Deleting image: %s", imageName)
+	log.Verbose("Deleting image: %s", imageName)
 
 	var exe = "docker"
 	var args = []string{"image", "rm", "--force", imageName}

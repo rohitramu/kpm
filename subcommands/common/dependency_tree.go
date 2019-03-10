@@ -78,7 +78,7 @@ func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(path []string,
 }
 
 // GetDependencyTree ensures that the dependency tree has no loops and then returns the dependency tree.
-func GetDependencyTree(outputName string, kpmHomeDir string, packageName string, packageVersion string, parameters *types.GenericMap) (*DependencyTree, error) {
+func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion string, dockerRegistry string, outputName string, parameters *types.GenericMap) (*DependencyTree, error) {
 	var err error
 	var ok bool
 
@@ -138,15 +138,34 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 			return nil, fmt.Errorf("Invalid version for package \"%s\": %s", currentOutputName, err)
 		}
 
-		// // Check remote repository for newest matching versions of the package
-		// if pulledVersion, err := PullPackage(currentPackageName, currentPackageVersion); err != nil {
-		// 	log.Warning(err)
-		// } else {
-		// 	currentPackageVersion = pulledVersion
-		// }
-
 		// Get the package's full name
 		var currentPackageFullName = constants.GetPackageFullName(currentPackageName, currentPackageVersion)
+
+		// Get the package directory
+		var currentPackageDirPath = constants.GetPackageDir(kpmHomeDir, currentPackageFullName)
+
+		// Check local repository for package
+		var packages []string
+		packages, err = GetPackageFullNamesFromLocalRepository(kpmHomeDir)
+		if err != nil {
+			return nil, err
+		}
+		var found = false
+		for _, value := range packages {
+			if value == currentPackageFullName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			log.Warning("Package \"%s\" not found in local repository, now checking docker registry \"%s\"...", currentPackageFullName, dockerRegistry)
+
+			// Check remote repository for package
+			err = PullPackage(kpmHomeDir, dockerRegistry, currentPackageName, currentPackageVersion)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to get package \"%s\" from docker registry \"%s\":\n%s", currentPackageFullName, dockerRegistry, err)
+			}
+		}
 
 		// Check if there is a loop in the dependency tree
 		if _, exists := currentPathNodes.Get(currentPackageFullName); exists {
@@ -172,9 +191,6 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 
 		// Add this node to the map which is tracking the current path
 		currentPathNodes.Put(currentPackageFullName, currentNode)
-
-		// Get the package directory
-		var currentPackageDirPath = constants.GetPackageDir(kpmHomeDir, currentPackageFullName)
 
 		// Create shared template (with common options, functions and helper templates for this package)
 		var sharedTemplate *template.Template
@@ -243,7 +259,7 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 
 		// Make sure to clean up all of the nodes that will no longer be in the path on the next iteration
 		var pathIt = currentPathNodes.Iterator()
-		var found = false
+		found = false
 		for pathIt.End(); pathIt.Prev() && !found; {
 			// Get this node's children
 			if pathNode, pathNodeIsCorrectType := pathIt.Value().(*dependencyTreeNode); !pathNodeIsCorrectType {
@@ -257,6 +273,7 @@ func GetDependencyTree(outputName string, kpmHomeDir string, packageName string,
 							log.Panic("Stack object is not a tree node")
 						} else if stackNode == childNode {
 							found = true
+							break
 						}
 					}
 				}

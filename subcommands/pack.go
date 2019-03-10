@@ -56,10 +56,11 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	log.Verbose("Copying package to: %s", outputDir)
 	files.CopyDir(packageDir, outputDir)
 
+	log.Info("====")
 	log.Info("Template package name:    %s", packageInfo.Name)
 	log.Info("Template package version: %s", packageInfo.Version)
-
-	log.Verbose("Repository directory:     %s", outputDir)
+	log.Info("Output directory:         %s", outputDir)
+	log.Info("====")
 
 	return nil
 }

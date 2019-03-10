@@ -11,7 +11,7 @@ import (
 func PullImage(imageName string) error {
 	var err error
 
-	log.Info("Pulling image: %s", imageName)
+	log.Verbose("Pulling image: %s", imageName)
 
 	var exe = "docker"
 	var args = []string{"pull", imageName}

@@ -77,7 +77,8 @@ func PushCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionAr
 	}
 
 	// Ensure that the dependency tree can be calculated without errors using the default parameters
-	_, err = common.GetDependencyTree(packageFullName, kpmHomeDir, packageName, packageVersion, packageParameters)
+	var outputName = packageFullName
+	_, err = common.GetDependencyTree(kpmHomeDir, packageName, packageVersion, dockerRegistry, outputName, packageParameters)
 	if err != nil {
 		return err
 	}

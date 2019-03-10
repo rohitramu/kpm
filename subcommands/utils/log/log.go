@@ -28,15 +28,24 @@ const (
 	LevelVerbose
 )
 
+// WriterOut is the stream to use when writing program output.
+var WriterOut = os.Stdout
+
+// WriterInfo is the stream to use when writing info or error logs.
+var WriterInfo = os.Stdout
+
+// WriterErr is the stream to use when writing error or warning logs.
+var WriterErr = os.Stderr
+
 // loggers is the list of defined loggers.
 var loggers = func() []*stdLog.Logger {
 	var result = make([]*stdLog.Logger, MaxLevel+1)
 
 	result[LevelNone] = nil
-	result[LevelError] = stdLog.New(os.Stderr, "[_ERR] ", stdLog.LstdFlags)
-	result[LevelWarning] = stdLog.New(os.Stdout, "[WARN] ", stdLog.LstdFlags)
-	result[LevelInfo] = stdLog.New(os.Stdout, "[INFO] ", stdLog.LstdFlags)
-	result[LevelVerbose] = stdLog.New(os.Stdout, "[VERB] ", stdLog.LstdFlags)
+	result[LevelError] = stdLog.New(WriterErr, "[_ERR] ", stdLog.LstdFlags)
+	result[LevelWarning] = stdLog.New(WriterErr, "[WARN] ", stdLog.LstdFlags)
+	result[LevelInfo] = stdLog.New(WriterInfo, "[INFO] ", stdLog.LstdFlags)
+	result[LevelVerbose] = stdLog.New(WriterInfo, "[VERB] ", stdLog.LstdFlags)
 
 	return result
 }()
@@ -122,6 +131,11 @@ func SetLevel(level Level) {
 	} else {
 		currentLogLevel = level
 	}
+}
+
+// Output logs the formatted message as output, without any prefixes or logging flags turned on.
+func Output(format string, toLog ...interface{}) {
+	fmt.Fprintln(WriterOut, fmt.Sprintf(format, toLog...))
 }
 
 // Panic logs the formatted message as an error, and then panics.

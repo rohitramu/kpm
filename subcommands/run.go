@@ -8,6 +8,7 @@ import (
 
 	"./common"
 	"./utils/constants"
+	"./utils/docker"
 	"./utils/files"
 	"./utils/log"
 	"./utils/templates"
@@ -17,7 +18,7 @@ import (
 
 // RunCmd runs the given template package directory and parameters file,
 // and then writes the output files to the given output directory.
-func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputNameArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string) error {
+func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputNameArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string) error {
 	var err error
 
 	// Resolve base paths
@@ -63,14 +64,8 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 		return err
 	}
 
-	// // Check remote repository for newest matching versions of the package
-	// var pulledVersion string
-	// pulledVersion, err = common.PullPackage(packageName, wildcardPackageVersion)
-	// if err != nil {
-	// 	log.Warning(err)
-	// } else {
-	// 	wildcardPackageVersion = pulledVersion
-	// }
+	// Get Docker registry name
+	var dockerRegistry = validation.GetStringOrDefault(dockerRegistryArg, docker.DefaultDockerRegistry)
 
 	// Resolve generation paths
 	var packageFullName = constants.GetPackageFullName(packageName, packageVersion)
@@ -98,19 +93,24 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	log.Info("Output directory:  %s", outputDirPath)
 	log.Info("====")
 
-	// Get the dependency tree
-	var parameters *types.GenericMap
-	parameters, err = common.GetPackageParameters(parametersFilePath)
+	// Get the default parameters
+	var packageParameters *types.GenericMap
+	packageParameters, err = common.GetPackageParameters(parametersFilePath)
 	if err != nil {
 		return err
 	}
+
+	// Get the dependency tree
 	var dependencyTree *common.DependencyTree
-	if dependencyTree, err = common.GetDependencyTree(outputName, kpmHomeDir, packageName, packageVersion, parameters); err != nil {
+	if dependencyTree, err = common.GetDependencyTree(kpmHomeDir, packageName, packageVersion, dockerRegistry, outputName, packageParameters); err != nil {
 		return err
 	}
 
 	// Delete the output directory in case it isn't empty
-	os.RemoveAll(outputDirPath)
+	err = os.RemoveAll(outputDirPath)
+	if err != nil {
+		return err
+	}
 
 	// Execute template packages in the dependency tree and write the output to the filesystem
 	var numPackages int
@@ -119,7 +119,10 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 		var outputDir = filepath.Join(outputDirPath, filepath.Join(pathSegments...))
 
 		// Create the output directory if it doesn't exist
-		os.MkdirAll(outputDir, os.ModePerm)
+		err = os.MkdirAll(outputDir, os.ModePerm)
+		if err != nil {
+			return err
+		}
 
 		// Get the templates in the package
 		for _, tmpl := range executableTemplates {
