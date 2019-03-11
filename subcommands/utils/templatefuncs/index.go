@@ -3,7 +3,7 @@ package templatefuncs
 import (
 	"fmt"
 
-	"../types"
+	"github.com/rohitramu/kpm/subcommands/utils/types"
 )
 
 // Index gets a single value from a generic map (of any depth) given an ordered list of keys

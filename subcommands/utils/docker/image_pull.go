@@ -3,8 +3,8 @@ package docker
 import (
 	"fmt"
 
-	"../cmd"
-	"../log"
+	"github.com/rohitramu/kpm/subcommands/utils/cmd"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // PullImage pulls a Docker image from a remote Docker registry.

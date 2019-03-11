@@ -3,7 +3,7 @@ package constants
 import (
 	"path/filepath"
 
-	"../files"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
 )
 
 // DependenciesDirName is the name of the directory where package dependencies are defined

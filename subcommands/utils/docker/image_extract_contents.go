@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"../cmd"
-	"../files"
-	"../log"
+	"github.com/rohitramu/kpm/subcommands/utils/cmd"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // ExtractImageContents extracts files and directories from a Docker image, and copies them to the local KPM repository.

@@ -3,8 +3,8 @@ package docker
 import (
 	"fmt"
 
-	"../cmd"
-	"../log"
+	"github.com/rohitramu/kpm/subcommands/utils/cmd"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // BuildImage builds a new docker image by making a call to the Docker daemon.

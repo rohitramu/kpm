@@ -10,12 +10,12 @@ import (
 	"github.com/emirpasic/gods/maps/linkedhashmap"
 	"github.com/emirpasic/gods/stacks/linkedliststack"
 
-	"../utils/constants"
-	"../utils/log"
-	"../utils/templates"
-	"../utils/types"
-	"../utils/validation"
-	"../utils/yaml"
+	"github.com/rohitramu/kpm/subcommands/utils/constants"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
+	"github.com/rohitramu/kpm/subcommands/utils/templates"
+	"github.com/rohitramu/kpm/subcommands/utils/types"
+	"github.com/rohitramu/kpm/subcommands/utils/validation"
+	"github.com/rohitramu/kpm/subcommands/utils/yaml"
 )
 
 // DependencyTree is the definition of the package dependency tree.

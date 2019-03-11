@@ -3,11 +3,11 @@ package subcommands
 import (
 	"os"
 
-	"./common"
-	"./utils/constants"
-	"./utils/files"
-	"./utils/log"
-	"./utils/types"
+	"github.com/rohitramu/kpm/subcommands/common"
+	"github.com/rohitramu/kpm/subcommands/utils/constants"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
+	"github.com/rohitramu/kpm/subcommands/utils/types"
 )
 
 // PackCmd packs a local template package so it is available for use in the given local KPM repository.

@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 
-	"../utils/validation"
+	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
 type packageNamesAndVersions map[string][]string

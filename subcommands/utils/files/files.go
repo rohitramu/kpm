@@ -10,7 +10,7 @@ import (
 
 	"github.com/otiai10/copy"
 
-	"../log"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // GetWorkingDir returns the current working directory.

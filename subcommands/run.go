@@ -8,14 +8,14 @@ import (
 	"strings"
 	"text/template"
 
-	"./common"
-	"./utils/constants"
-	"./utils/docker"
-	"./utils/files"
-	"./utils/log"
-	"./utils/templates"
-	"./utils/types"
-	"./utils/validation"
+	"github.com/rohitramu/kpm/subcommands/common"
+	"github.com/rohitramu/kpm/subcommands/utils/constants"
+	"github.com/rohitramu/kpm/subcommands/utils/docker"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
+	"github.com/rohitramu/kpm/subcommands/utils/templates"
+	"github.com/rohitramu/kpm/subcommands/utils/types"
+	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
 // RunCmd runs the given template package directory and parameters file,

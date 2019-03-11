@@ -6,9 +6,9 @@ import (
 
 	"github.com/urfave/cli"
 
-	"./subcommands"
-	"./subcommands/utils/constants"
-	"./subcommands/utils/log"
+	"github.com/rohitramu/kpm/subcommands"
+	"github.com/rohitramu/kpm/subcommands/utils/constants"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // Flags

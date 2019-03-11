@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"../files"
-	"../log"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // DefaultDockerRegistry is the default registry to use (Docker Hub).

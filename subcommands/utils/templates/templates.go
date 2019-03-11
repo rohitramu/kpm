@@ -9,10 +9,10 @@ import (
 
 	"github.com/Masterminds/sprig"
 
-	"../files"
-	"../log"
-	"../templatefuncs"
-	"../types"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
+	"github.com/rohitramu/kpm/subcommands/utils/templatefuncs"
+	"github.com/rohitramu/kpm/subcommands/utils/types"
 )
 
 // NewRootTemplate returns a new root template with options and functions provided.

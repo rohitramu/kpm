@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"../log"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // Exec runs a command on the command line.

@@ -3,8 +3,8 @@ package docker
 import (
 	"fmt"
 
-	"../cmd"
-	"../log"
+	"github.com/rohitramu/kpm/subcommands/utils/cmd"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // PushImage pushes a Docker image to a remote Docker registry.

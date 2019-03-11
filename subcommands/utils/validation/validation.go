@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"../log"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // MaxOutputNameLength is the maximum number of characters allowed in the output name.

@@ -3,13 +3,13 @@ package subcommands
 import (
 	"fmt"
 
-	"./common"
-	"./utils/constants"
-	"./utils/docker"
-	"./utils/files"
-	"./utils/log"
-	"./utils/types"
-	"./utils/validation"
+	"github.com/rohitramu/kpm/subcommands/common"
+	"github.com/rohitramu/kpm/subcommands/utils/constants"
+	"github.com/rohitramu/kpm/subcommands/utils/docker"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
+	"github.com/rohitramu/kpm/subcommands/utils/types"
+	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
 // PushCmd pushes the template package to a Docker registry.

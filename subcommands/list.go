@@ -1,10 +1,10 @@
 package subcommands
 
 import (
-	"./common"
-	"./utils/constants"
-	"./utils/files"
-	"./utils/log"
+	"github.com/rohitramu/kpm/subcommands/common"
+	"github.com/rohitramu/kpm/subcommands/utils/constants"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
+	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
 // ListCmd lists all packages that are available for use in the given KPM home directory.

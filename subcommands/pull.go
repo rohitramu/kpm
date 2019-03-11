@@ -1,11 +1,11 @@
 package subcommands
 
 import (
-	"./common"
-	"./utils/constants"
-	"./utils/docker"
-	"./utils/files"
-	"./utils/validation"
+	"github.com/rohitramu/kpm/subcommands/common"
+	"github.com/rohitramu/kpm/subcommands/utils/constants"
+	"github.com/rohitramu/kpm/subcommands/utils/docker"
+	"github.com/rohitramu/kpm/subcommands/utils/files"
+	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
 // PullCmd pulls a template package from a Docker registry to the local filesystem.
