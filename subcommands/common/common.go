@@ -126,14 +126,14 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*types.PackageInfo, e
 	var yamlBytes []byte
 	yamlBytes, err = files.ReadBytes(packageInfoFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to read package information file: %s\n%s", packageInfoFile, err)
 	}
 
 	// Get package info object from file content
 	var packageInfo = new(types.PackageInfo)
 	err = yaml.BytesToObject(yamlBytes, packageInfo)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Invalid package information file: %s\n%s", packageInfoFile, err)
 	}
 
 	// Validate package name
@@ -159,7 +159,7 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*types.PackageInfo, e
 
 	// Make sure that the parameters file exists
 	var parametersFile = constants.GetDefaultParametersFile(packageDir)
-	err = files.FileExists(parametersFile, "parameters")
+	err = files.FileExists(parametersFile, "default parameters")
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,8 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*types.PackageInfo, e
 		var fileInfos []os.FileInfo
 		fileInfos, err = ioutil.ReadDir(templatesDir)
 		if err != nil {
-			return nil, err
+			// We already checked that this directory exists, so we shouldn't ever get to here
+			log.Panic("Failed to read directory: %s\n%s", templatesDir, err)
 		}
 
 		for _, fileInfo := range fileInfos {
@@ -191,7 +192,8 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*types.PackageInfo, e
 		var fileInfos []os.FileInfo
 		fileInfos, err = ioutil.ReadDir(helpersDir)
 		if err != nil {
-			return nil, err
+			// We already checked that this directory exists, so we shouldn't ever get to here
+			log.Panic("Failed to read directory: %s\n%s", helpersDir, err)
 		}
 
 		for _, fileInfo := range fileInfos {
@@ -218,7 +220,8 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*types.PackageInfo, e
 		var fileInfos []os.FileInfo
 		fileInfos, err = ioutil.ReadDir(dependenciesDir)
 		if err != nil {
-			return nil, err
+			// We already checked that this directory exists, so we shouldn't ever get to here
+			log.Panic("Failed to read directory: %s\n%s", dependenciesDir, err)
 		}
 
 		for _, fileInfo := range fileInfos {
