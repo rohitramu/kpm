@@ -108,7 +108,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	}
 
 	// Delete the output directory in case it isn't empty
-	err = os.RemoveAll(outputDirPath)
+	err = os.RemoveAll(filepath.Join(outputDirPath, outputName))
 	if err != nil {
 		return err
 	}
