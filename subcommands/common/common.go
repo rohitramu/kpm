@@ -164,6 +164,80 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*types.PackageInfo, e
 		return nil, err
 	}
 
+	// Validate the templates directory if it exists
+	var templatesDir = constants.GetTemplatesDir(packageDir)
+	if files.DirExists(templatesDir, "templates") == nil {
+		var fileInfos []os.FileInfo
+		fileInfos, err = ioutil.ReadDir(templatesDir)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, fileInfo := range fileInfos {
+			// Get file name
+			var fileName = fileInfo.Name()
+
+			// Don't allow directories
+			if fileInfo.IsDir() {
+				return nil, fmt.Errorf("Directories are not allowed in the \"%s\" directory: %s", constants.TemplatesDirName, fileName)
+			}
+		}
+	}
+
+	// Validate the helpers directory if it exists
+	var helpersDir = constants.GetHelpersDir(packageDir)
+	if files.DirExists(helpersDir, "helpers") == nil {
+		// Make sure all helper template files have the extension ".tpl"
+		var fileInfos []os.FileInfo
+		fileInfos, err = ioutil.ReadDir(helpersDir)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, fileInfo := range fileInfos {
+			// Get file name
+			var fileName = fileInfo.Name()
+
+			// Don't allow directories
+			if fileInfo.IsDir() {
+				return nil, fmt.Errorf("Directories are not allowed in the \"%s\" directory: %s", constants.HelpersDirName, fileName)
+			}
+
+			// Check file extension
+			var validExtension = ".tpl"
+			if filepath.Ext(fileName) != validExtension {
+				return nil, fmt.Errorf("Invalid helpers - helpers files must be valid template files with the extension \"%s\": %s", validExtension, fileName)
+			}
+		}
+	}
+
+	// Validate the dependencies directory if it exists
+	var dependenciesDir = constants.GetDependenciesDir(packageDir)
+	if files.DirExists(dependenciesDir, "dependencies") == nil {
+		// Make sure all dependencies files have the extension ".yaml"
+		var fileInfos []os.FileInfo
+		fileInfos, err = ioutil.ReadDir(dependenciesDir)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, fileInfo := range fileInfos {
+			// Get file name
+			var fileName = fileInfo.Name()
+
+			// Don't allow directories
+			if fileInfo.IsDir() {
+				return nil, fmt.Errorf("Directories are not allowed in the \"%s\" directory: %s", constants.DependenciesDirName, fileName)
+			}
+
+			// Check file extension
+			var validExtension = ".yaml"
+			if filepath.Ext(fileName) != validExtension {
+				return nil, fmt.Errorf("Invalid dependency definition - dependency definition files must be valid yaml files with the extension \"%s\": %s", validExtension, fileName)
+			}
+		}
+	}
+
 	return packageInfo, nil
 }
 
