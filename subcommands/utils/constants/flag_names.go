@@ -1,27 +1,25 @@
 package constants
 
-var (
-	// LogLevelFlagName is the minimum severity log level to output.
-	LogLevelFlagName = "logLevel"
+// LogLevelFlagName is the minimum severity log level to output.
+const LogLevelFlagName = "logLevel"
 
-	// PackageVersionFlagName is the version of a template package.
-	PackageVersionFlagName = "packageVersion"
+// PackageVersionFlagName is the version of a template package.
+const PackageVersionFlagName = "packageVersion"
 
-	// ParametersFileFlagName is the file that contains the parameters for a template.
-	ParametersFileFlagName = "parametersFile"
+// ParametersFileFlagName is the file that contains the parameters for a template.
+const ParametersFileFlagName = "parametersFile"
 
-	// OutputNameFlagName is the name of the generated configuration.
-	OutputNameFlagName = "outputName"
+// OutputNameFlagName is the name of the generated configuration.
+const OutputNameFlagName = "outputName"
 
-	// OutputDirFlagName is the output directory.
-	OutputDirFlagName = "outputDir"
+// OutputDirFlagName is the output directory.
+const OutputDirFlagName = "outputDir"
 
-	// KpmHomeDirFlagName is the home directory for KPM, for the current user.
-	KpmHomeDirFlagName = "kpmHomeDir"
+// KpmHomeDirFlagName is the home directory for KPM, for the current user.
+const KpmHomeDirFlagName = "kpmHomeDir"
 
-	// DockerRegistryFlagName is the Docker registry to use when pushing or pulling a package.
-	DockerRegistryFlagName = "dockerRegistry"
+// DockerRegistryFlagName is the Docker registry to use when pushing or pulling a package.
+const DockerRegistryFlagName = "dockerRegistry"
 
-	// DockerNamespaceFlagName is the docker namespace to use when pushing or pulling a package.
-	DockerNamespaceFlagName = "dockerNamespace"
-)
+// DockerNamespaceFlagName is the docker namespace to use when pushing or pulling a package.
+const DockerNamespaceFlagName = "dockerNamespace"
