@@ -15,12 +15,12 @@ type TemplateConsumer func(tmpl *template.Template)
 
 // PackageInfo is the structure of the package definition's yaml file.
 type PackageInfo struct {
-	Name    string `yaml:"name"`
-	Version string `yaml:"version"`
+	Name    string `yaml:"name" json:"name"`
+	Version string `yaml:"version" json:"version"`
 }
 
 // PackageDefinition contains the information required to execute a template package.
 type PackageDefinition struct {
-	Package    *PackageInfo `yaml:"package"`
-	Parameters *GenericMap  `yaml:"parameters"`
+	PackageInfo *PackageInfo `yaml:"package" json:"package"`
+	Parameters  *GenericMap  `yaml:"parameters" json:"parameters"`
 }

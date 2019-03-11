@@ -39,3 +39,8 @@ func GetPackageInfoFile(packageDir string) string {
 func GetPackageFullName(packageName string, packageVersion string) string {
 	return fmt.Sprintf("%s-%s", packageName, packageVersion)
 }
+
+// GetDefaultOutputName returns the default output name when executing a package.
+func GetDefaultOutputName(packageName string, packageVersion string) string {
+	return GetPackageFullName(packageName, packageVersion)
+}

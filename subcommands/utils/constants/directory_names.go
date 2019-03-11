@@ -46,9 +46,9 @@ func GetPackageRepositoryDir(kpmHomeDir string) string {
 	return packageRepositoryDir
 }
 
-// GetOutputDir returns the path of the output directory for generated files.
-func GetOutputDir(rootOutputDir string, outputName string) string {
-	var outputDirPath = filepath.Join(rootOutputDir, GeneratedDirName, filepath.FromSlash(outputName))
+// GetDefaultOutputDir returns the default path of the root directory for generated files.
+func GetDefaultOutputDir(outputParentDir string) string {
+	var outputDirPath = filepath.Join(outputParentDir, GeneratedDirName)
 
 	return outputDirPath
 }

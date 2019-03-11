@@ -1,9 +1,11 @@
 package subcommands
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"./common"
@@ -70,13 +72,12 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	// Resolve generation paths
 	var packageFullName = constants.GetPackageFullName(packageName, packageVersion)
 	var packageDirPath = constants.GetPackageDir(kpmHomeDir, packageFullName)
-	var outputName = validation.GetStringOrDefault(outputNameArg, packageName)
-	var outputParentDir string
-	outputParentDir, err = files.GetAbsolutePathOrDefault(outputDirPathArg, workingDir)
+	var outputName = validation.GetStringOrDefault(outputNameArg, constants.GetDefaultOutputName(packageName, packageVersion))
+	var outputDirPath string
+	outputDirPath, err = files.GetAbsolutePathOrDefault(outputDirPathArg, constants.GetDefaultOutputDir(workingDir))
 	if err != nil {
 		return err
 	}
-	var outputDirPath = constants.GetOutputDir(outputParentDir, outputName)
 	var parametersFilePath string
 	parametersFilePath, err = files.GetAbsolutePathOrDefault(parametersFilePathArg, constants.GetDefaultParametersFile(packageDirPath))
 	if err != nil {
@@ -114,9 +115,9 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 
 	// Execute template packages in the dependency tree and write the output to the filesystem
 	var numPackages int
-	numPackages, err = dependencyTree.VisitNodesDepthFirst(func(pathSegments []string, executableTemplates []*template.Template, templateInput *types.GenericMap) error {
+	numPackages, err = dependencyTree.VisitNodesDepthFirst(func(relativeFilePath []string, friendlyNamePath []string, executableTemplates []*template.Template, templateInput *types.GenericMap) error {
 		// Get the output directory
-		var outputDir = filepath.Join(outputDirPath, filepath.Join(pathSegments...))
+		var outputDir = filepath.Join(outputDirPath, filepath.Join(relativeFilePath...))
 
 		// Create the output directory if it doesn't exist
 		err = os.MkdirAll(outputDir, os.ModePerm)
@@ -130,7 +131,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 			var templateOutput []byte
 			templateOutput, err = templates.ExecuteTemplate(tmpl, templateInput)
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to execute package: %s\n%s", strings.Join(friendlyNamePath, " -> "), err)
 			}
 
 			// Write the data to the filesystem

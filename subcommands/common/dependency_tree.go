@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -36,41 +37,84 @@ type dependencyTreeNode struct {
 }
 
 // VisitNodesDepthFirst visits nodes in the tree in depth-first fashion, applying the given consumer function on each node.  It returns the number of nodes that were visited.
-func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(path []string, executableTemplates []*template.Template, templateInput *types.GenericMap) error) (int, error) {
+func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(relativeFilePath []string, friendlyNamePath []string, executableTemplates []*template.Template, templateInput *types.GenericMap) error) (int, error) {
+	var err error
+	var ok bool
+
 	var numVisitedNodes = 0
 	var toVisitStack = linkedliststack.New()
 	toVisitStack.Push(tree.root)
 	for !toVisitStack.Empty() {
-		if nodeObj, ok := toVisitStack.Pop(); !ok {
+		// Get the next item to visit off of the stack
+		var nodeObj interface{}
+		if nodeObj, ok = toVisitStack.Pop(); !ok {
 			log.Panic("Failed to get next node")
-		} else {
-			if node, ok := nodeObj.(*dependencyTreeNode); !ok {
-				log.Panic("Failed to cast item in stack to node object")
-			} else {
-				numVisitedNodes++
+		}
 
-				// Get the current path excluding the root
-				var nodePath []string
-				var currentNode = node
-				for currentNode != nil && currentNode.Parent != nil {
-					nodePath = append(nodePath, currentNode.OutputName)
-					currentNode = currentNode.Parent
-				}
+		// Convert the object into a node
+		var node *dependencyTreeNode
+		node, ok = nodeObj.(*dependencyTreeNode)
+		if !ok {
+			log.Panic("Failed to cast item in stack to node object")
+		}
 
-				// Reverse the path so it is ordered from the top (the root) to the bottom of the tree
-				for left, right := 0, len(nodePath)-1; left < right; left, right = left+1, right-1 {
-					nodePath[left], nodePath[right] = nodePath[right], nodePath[left]
-				}
+		// Keep track of the number of visited nodes
+		numVisitedNodes++
 
-				// Call the consuming function
-				if err := consumeNode(nodePath, node.ExecutableTemplates, node.TemplateInput); err != nil {
-					return 0, err
-				}
+		// Get the current path excluding the root (use stacks so it is easy to reverse the list later)
+		var friendlyNameStack = linkedliststack.New()
+		var relativeFileStack = linkedliststack.New()
+		var currentNode = node
+		for currentNode != nil {
+			// Get the package info
+			var packageInfo = currentNode.packageDefinition.PackageInfo
+			var packageFullName = constants.GetPackageFullName(packageInfo.Name, packageInfo.Version)
 
-				for _, childNode := range node.Children {
-					toVisitStack.Push(childNode)
-				}
+			// Get the next segment in the friendly name path
+			var friendlyName = GetOutputFriendlyName(currentNode.OutputName, packageFullName)
+
+			// Append the next friendly name path segment to the friendly name path
+			friendlyNameStack.Push(friendlyName)
+
+			// Append the output name to the relative file path
+			relativeFileStack.Push(currentNode.OutputName)
+
+			// Update the current node
+			currentNode = currentNode.Parent
+		}
+
+		// Get the reversed list so it is ordered from the top (the root) to the bottom of the tree
+		var friendlyNamePath = make([]string, friendlyNameStack.Size())
+		var relativeFilePath = make([]string, relativeFileStack.Size())
+		var friendlyNameIterator = friendlyNameStack.Iterator()
+		var relativeFileIterator = relativeFileStack.Iterator()
+		var i = 0
+		for friendlyNameIterator.Next() {
+			var val = friendlyNameIterator.Value()
+			friendlyNamePath[i], ok = val.(string)
+			if !ok {
+				log.Panic("Unexpected object type while iterating over friendly name path segments: %s", reflect.TypeOf(val))
 			}
+			i++
+		}
+		i = 0
+		for relativeFileIterator.Next() {
+			var val = relativeFileIterator.Value()
+			relativeFilePath[i], ok = val.(string)
+			if !ok {
+				log.Panic("Unexpected object type while iterating over relative file path segments: %s", reflect.TypeOf(val))
+			}
+			i++
+		}
+
+		// Call the consuming function
+		if err = consumeNode(relativeFilePath, friendlyNamePath, node.ExecutableTemplates, node.TemplateInput); err != nil {
+			return 0, err
+		}
+
+		// Visit all the children
+		for _, childNode := range node.Children {
+			toVisitStack.Push(childNode)
 		}
 	}
 
@@ -89,7 +133,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 
 	// Create the package definition for the root node
 	var rootNodePackageDefinition = &types.PackageDefinition{
-		Package: &types.PackageInfo{
+		PackageInfo: &types.PackageInfo{
 			Name:    packageName,
 			Version: packageVersion,
 		},
@@ -122,8 +166,8 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 		log.Verbose("Visiting node: %s", currentNode.OutputName)
 
 		var currentOutputName = currentNode.OutputName
-		var currentPackageName = currentNode.packageDefinition.Package.Name
-		var currentPackageVersion = currentNode.packageDefinition.Package.Version
+		var currentPackageName = currentNode.packageDefinition.PackageInfo.Name
+		var currentPackageVersion = currentNode.packageDefinition.PackageInfo.Version
 		var currentParameters = currentNode.packageDefinition.Parameters
 
 		// Validate package name
@@ -141,8 +185,11 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 		// Get the package's full name
 		var currentPackageFullName = constants.GetPackageFullName(currentPackageName, currentPackageVersion)
 
-		// Get the package directory
-		var currentPackageDirPath = constants.GetPackageDir(kpmHomeDir, currentPackageFullName)
+		// Make sure that the parameters were provided
+		if currentParameters == nil {
+			var friendlyName = GetOutputFriendlyName(currentOutputName, currentPackageFullName)
+			return nil, fmt.Errorf("Output was not provided any parameters: %s", friendlyName)
+		}
 
 		// Check local repository for package
 		var packages []string
@@ -192,25 +239,59 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 		// Add this node to the map which is tracking the current path
 		currentPathNodes.Put(currentPackageFullName, currentNode)
 
+		// Create a function to easily get the human readable path
+		var getFriendlyPath = func() string {
+			var segments = make([]string, currentPathNodes.Size())
+			var it = currentPathNodes.Iterator()
+			var i = 0
+			for it.Next() {
+				var val = it.Value()
+				var nodeVal *dependencyTreeNode
+				nodeVal, ok = val.(*dependencyTreeNode)
+				if !ok {
+					log.Panic("Unexpected type in nodes path: %s", reflect.TypeOf(val))
+				}
+
+				var packageDefVal = nodeVal.packageDefinition
+				if packageDefVal == nil {
+					log.Panic("Unexpected nil value for package definition: %s", nodeVal.PackageDirPath)
+				}
+
+				var packageInfoVal = packageDefVal.PackageInfo
+				if packageInfoVal == nil {
+					log.Panic("Unexpected nil value for package info: %s", nodeVal.PackageDirPath)
+				}
+
+				segments[i] = GetOutputFriendlyName(nodeVal.OutputName, constants.GetPackageFullName(packageInfoVal.Name, packageInfoVal.Version))
+
+				i++
+			}
+
+			return strings.Join(segments, " -> ")
+		}
+
+		// Get the package directory
+		var currentPackageDirPath = constants.GetPackageDir(kpmHomeDir, currentPackageFullName)
+
 		// Create shared template (with common options, functions and helper templates for this package)
 		var sharedTemplate *template.Template
 		sharedTemplate, err = GetSharedTemplate(currentPackageDirPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to construct shared template in package: %s\n%s", getFriendlyPath(), err)
 		}
 
 		// Calculate values to be used as inputs to the templates in this package
 		var templateInput *types.GenericMap
 		templateInput, err = GetTemplateInput(kpmHomeDir, currentPackageFullName, sharedTemplate, currentParameters)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to get template input in package: %s\n%s", getFriendlyPath(), err)
 		}
 
 		// Get the dependency definition templates
 		var dependencyTemplates []*template.Template
 		dependencyTemplates, err = GetDependencyDefinitionTemplates(sharedTemplate, currentPackageDirPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to get dependency definition templates in package: %s\n%s", getFriendlyPath(), err)
 		}
 
 		// Save the package directory path, shared template and calculated values that can be used with this package in the node
@@ -218,7 +299,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 		currentNode.TemplateInput = templateInput
 		currentNode.ExecutableTemplates, err = GetExecutableTemplates(sharedTemplate, currentPackageDirPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to get executable templates in package: %s\n%s", getFriendlyPath(), err)
 		}
 
 		// Evaluate dependencies
@@ -235,22 +316,27 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 				var dependencyOutputName = strings.TrimSuffix(templateFileName, filepath.Ext(templateFileName))
 
 				// Get the package definition by running the template input through the package definition file
-				var dependencyPackageDefinitionBytes []byte
-				dependencyPackageDefinitionBytes, err = templates.ExecuteTemplate(dependencyTemplate, currentNode.TemplateInput)
+				var dependencyDefinitionBytes []byte
+				dependencyDefinitionBytes, err = templates.ExecuteTemplate(dependencyTemplate, currentNode.TemplateInput)
+				if err != nil {
+					return nil, fmt.Errorf("Failed to execute dependency definition template \"%s\" in package: %s\n%s", templateFileName, getFriendlyPath(), err)
+				}
+
+				// Create an object from the package definition
+				var dependencyDefinition = new(types.PackageDefinition)
+				err = yaml.BytesToObject(dependencyDefinitionBytes, dependencyDefinition)
 				if err != nil {
 					return nil, err
 				}
 
-				// Create an object from the package definition
-				var dependencyPackageDefinition = new(types.PackageDefinition)
-				err = yaml.BytesToObject(dependencyPackageDefinitionBytes, dependencyPackageDefinition)
-				if err != nil {
-					return nil, err
+				// Make sure that the package info object is not nil
+				if dependencyDefinition.PackageInfo == nil {
+					return nil, fmt.Errorf("Package info was not found for dependency of package \"%s\": %s", currentPackageFullName, dependencyOutputName)
 				}
 
 				// Push new dependency node
 				var dependencyNode *dependencyTreeNode
-				if dependencyNode, err = getPackageNode(currentNode, dependencyPackageDefinition, dependencyOutputName, ""); err != nil {
+				if dependencyNode, err = getPackageNode(currentNode, dependencyDefinition, dependencyOutputName, ""); err != nil {
 					return nil, err
 				}
 				toVisitStack.Push(dependencyNode)

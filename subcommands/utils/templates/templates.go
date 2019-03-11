@@ -15,8 +15,8 @@ import (
 	"../types"
 )
 
-// GetRootTemplate returns a new root template with options and functions provided.
-func GetRootTemplate() *template.Template {
+// NewRootTemplate returns a new root template with options and functions provided.
+func NewRootTemplate() *template.Template {
 	// Create template
 	var tmpl = template.New("root")
 
@@ -24,10 +24,10 @@ func GetRootTemplate() *template.Template {
 	tmpl = tmpl.Option("missingkey=error")
 
 	// Add sprig functions
-	tmpl.Funcs(sprig.TxtFuncMap())
+	tmpl = tmpl.Funcs(sprig.TxtFuncMap())
 
 	// Add custom functions
-	tmpl.Funcs(template.FuncMap{
+	tmpl = tmpl.Funcs(template.FuncMap{
 		// Override the "index" function so it correctly fails the template generation on missing keys
 		"index": templatefuncs.Index,
 	})
@@ -113,6 +113,10 @@ func ExecuteTemplate(tmpl *template.Template, values *types.GenericMap) ([]byte,
 	// Create template object
 	if tmpl == nil {
 		log.Panic("The template to execute cannot be nil")
+	}
+
+	if values == nil {
+		log.Panic("The values to execute the template with cannot be nil")
 	}
 
 	// Apply values to template

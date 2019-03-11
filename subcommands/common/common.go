@@ -67,16 +67,18 @@ func GetTemplateInput(kpmHomeDir string, packageFullName string, parentTemplate 
 	var err error
 
 	var packageDir = constants.GetPackageDir(kpmHomeDir, packageFullName)
-
-	// Add top-level objects
 	var result = types.GenericMap{}
+
+	// Add package info
 	result[constants.TemplateFieldPackage], err = GetPackageInfo(kpmHomeDir, packageDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to get information about package: %s\n%s", packageFullName, err)
 	}
+
+	// Add values
 	result[constants.TemplateFieldValues], err = getValuesFromInterface(parentTemplate, packageDir, parameters)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to calculate values from the interface in package: %s\n%s", packageFullName, err)
 	}
 
 	return &result, nil
@@ -93,7 +95,7 @@ func GetSharedTemplate(packageDir string) (*template.Template, error) {
 	// Create a template which includes the helper template definitions
 	var sharedTemplate *template.Template
 	var numHelpers int
-	sharedTemplate, numHelpers, err = templates.ChainTemplatesFromDir(templates.GetRootTemplate(), helpersDir)
+	sharedTemplate, numHelpers, err = templates.ChainTemplatesFromDir(templates.NewRootTemplate(), helpersDir)
 	if err != nil {
 		return nil, err
 	}
@@ -243,21 +245,21 @@ func getValuesFromInterface(parentTemplate *template.Template, packageDir string
 	var tmpl *template.Template
 	tmpl, err = templates.GetTemplateFromFile(parentTemplate, filepath.Base(interfaceFile), interfaceFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to get interface file: %s\n%s", packageDir, err)
 	}
 
 	// Generate values by applying parameters to interface
 	var interfaceBytes []byte
 	interfaceBytes, err = templates.ExecuteTemplate(tmpl, parameters)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to execute interface file: %s\n%s", interfaceFile, err)
 	}
 
 	// Get values object from generated values yaml file
 	var result = new(types.GenericMap)
 	err = yaml.BytesToObject(interfaceBytes, result)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to parse generated values from interface file: %s\n%s", interfaceFile, err)
 	}
 
 	return result, nil

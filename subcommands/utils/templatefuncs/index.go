@@ -8,12 +8,15 @@ import (
 
 // Index gets a single value from a generic map (of any depth) given an ordered list of keys
 func Index(data interface{}, keys ...string) (interface{}, error) {
+	var ok bool
+
 	if len(keys) == 0 {
 		return data, nil
 	}
 
 	// Make sure the data is either a map or a value type
-	var currentMap, ok = data.(*types.GenericMap)
+	var currentMap *types.GenericMap
+	currentMap, ok = data.(*types.GenericMap)
 	if !ok {
 		if len(keys) == 0 {
 			// Data is a value type and it was expected (i.e. no keys were supplied), so return it as-is
@@ -21,7 +24,7 @@ func Index(data interface{}, keys ...string) (interface{}, error) {
 		}
 
 		// Unexpected data type - it is not a map, but keys were supplied
-		return nil, fmt.Errorf("Invalid object for index: %s", data)
+		return nil, fmt.Errorf("Invalid object supplied to the index function: %s", data)
 	}
 
 	var result interface{}
@@ -32,7 +35,7 @@ func Index(data interface{}, keys ...string) (interface{}, error) {
 		}
 
 		// Get the value
-		result, ok := (*currentMap)[key]
+		result, ok = (*currentMap)[key]
 		if !ok {
 			return nil, fmt.Errorf("Missing key: %s", key)
 		}
