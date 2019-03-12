@@ -15,6 +15,12 @@ const OutputNameFlagName = "outputName"
 // OutputDirFlagName is the output directory.
 const OutputDirFlagName = "outputDir"
 
+// ExportNameFlagName is the exported name.
+const ExportNameFlagName = "exportName"
+
+// ExportDirFlagName is the export directory.
+const ExportDirFlagName = "exportDir"
+
 // KpmHomeDirFlagName is the home directory for KPM, for the current user.
 const KpmHomeDirFlagName = "kpmHomeDir"
 

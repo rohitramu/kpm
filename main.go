@@ -16,7 +16,7 @@ var (
 	// Log level
 	logLevelFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, log", constants.LogLevelFlagName),
-		Usage: "The minimum severity log level to output - severities are in the following order: \"verbose\", \"info\" (default), \"warning\", \"error\", \"none\"",
+		Usage: "The minimum severity log level to output - the severity log levels in increasing order are: \"verbose\", \"info\" (default), \"warning\", \"error\", \"none\"",
 	}
 
 	// Package version
@@ -34,13 +34,25 @@ var (
 	// Output name
 	outputNameFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, n", constants.OutputNameFlagName),
-		Usage: "Name of the output configuration (defaults to \"<package name>-<package version>\")",
+		Usage: "Name of the output (defaults to \"<package name>-<package version>\")",
 	}
 
 	// Output directory
 	outputDirFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, d", constants.ExportDirFlagName),
+		Usage: fmt.Sprintf("Directory in which output files should be written (defaults to \"%s\" under the current working directory) - WARNING: the sub-directory specified by \"<outputName>\" will be deleted if it exists", constants.GeneratedDirName),
+	}
+
+	// Export name
+	exportNameFlag = cli.StringFlag{
+		Name:  fmt.Sprintf("%s, n", constants.ExportNameFlagName),
+		Usage: "Name of the exported output (defaults to \"<package name>-<package version>\")",
+	}
+
+	// Export directory
+	exportDirFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, d", constants.OutputDirFlagName),
-		Usage: "Directory in which output files should be written (defaults to current working directory) - WARNING: the sub-directory specified by \"<outputName>\" will be deleted before generation if it exists",
+		Usage: fmt.Sprintf("Directory in which exported files should be written (defaults to \"%s\" under the current working directory) - WARNING: the sub-directory specified by \"<outputName>\" will be deleted if it exists", constants.ExportDirName),
 	}
 
 	// KPM home directory
@@ -49,10 +61,10 @@ var (
 		Usage: "Directory to use as the KPM home folder (defaults to \"~/.kpm\")",
 	}
 
-	// Docker registry URL
+	// Docker registry
 	dockerRegistryFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, r", constants.DockerRegistryFlagName),
-		Usage: "The Docker registry URL to use when pulling or pushing a template package",
+		Usage: "The Docker registry to use when pulling or pushing a template package",
 	}
 )
 
@@ -101,6 +113,28 @@ func main() {
 			},
 		},
 
+		// Unpack
+		{
+			Name:  constants.UnpackCmdName,
+			Usage: "Exports a template package to the specified location",
+			Flags: []cli.Flag{
+				packageVersionFlag,
+				exportDirFlag,
+				exportNameFlag,
+				kpmHomeDirFlag,
+				dockerRegistryFlag,
+			},
+			Action: func(c *cli.Context) error {
+				var packageName = getStringArg(c, 0)
+				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
+				var exportDir = getStringFlag(c, constants.ExportDirFlagName)
+				var exportName = getStringFlag(c, constants.ExportNameFlagName)
+				var kpmHomeDir = getStringFlag(c, constants.KpmHomeDirFlagName)
+				var dockerRegistry = getStringFlag(c, constants.DockerRegistryFlagName)
+				return subcommands.UnpackCmd(packageName, packageVersion, exportDir, exportName, kpmHomeDir, dockerRegistry)
+			},
+		},
+
 		// Run
 		{
 			Name:  constants.RunCmdName,
@@ -108,8 +142,8 @@ func main() {
 			Flags: []cli.Flag{
 				packageVersionFlag,
 				parametersFileFlag,
-				outputNameFlag,
 				outputDirFlag,
+				outputNameFlag,
 				kpmHomeDirFlag,
 				dockerRegistryFlag,
 			},
@@ -117,11 +151,11 @@ func main() {
 				var packageName = getStringArg(c, 0)
 				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
 				var paramFile = getStringFlag(c, constants.ParametersFileFlagName)
-				var outputName = getStringFlag(c, constants.OutputNameFlagName)
 				var outputDir = getStringFlag(c, constants.OutputDirFlagName)
+				var outputName = getStringFlag(c, constants.OutputNameFlagName)
 				var kpmHomeDir = getStringFlag(c, constants.KpmHomeDirFlagName)
 				var dockerRegistry = getStringFlag(c, constants.DockerRegistryFlagName)
-				return subcommands.RunCmd(packageName, packageVersion, paramFile, outputName, outputDir, kpmHomeDir, dockerRegistry)
+				return subcommands.RunCmd(packageName, packageVersion, paramFile, outputDir, outputName, kpmHomeDir, dockerRegistry)
 			},
 		},
 
@@ -130,16 +164,16 @@ func main() {
 			Name:  constants.PushCmdName,
 			Usage: "Pushes the template package to a remote Docker registry",
 			Flags: []cli.Flag{
-				dockerRegistryFlag,
 				packageVersionFlag,
 				kpmHomeDirFlag,
+				dockerRegistryFlag,
 			},
 			Action: func(c *cli.Context) error {
-				var dockerRegistry = getStringFlag(c, constants.DockerRegistryFlagName)
 				var packageName = getStringArg(c, 0)
 				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
 				var kpmHomeDir = getStringFlag(c, constants.KpmHomeDirFlagName)
-				return subcommands.PushCmd(dockerRegistry, packageName, packageVersion, kpmHomeDir)
+				var dockerRegistry = getStringFlag(c, constants.DockerRegistryFlagName)
+				return subcommands.PushCmd(packageName, packageVersion, kpmHomeDir, dockerRegistry)
 			},
 		},
 
@@ -148,16 +182,16 @@ func main() {
 			Name:  constants.PullCmdName,
 			Usage: "Pulls a template package from a remote Docker registry",
 			Flags: []cli.Flag{
-				dockerRegistryFlag,
 				packageVersionFlag,
 				kpmHomeDirFlag,
+				dockerRegistryFlag,
 			},
 			Action: func(c *cli.Context) error {
-				var dockerRegistry = getStringFlag(c, constants.DockerRegistryFlagName)
 				var packageName = getStringArg(c, 0)
 				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
 				var kpmHomeDir = getStringFlag(c, constants.KpmHomeDirFlagName)
-				return subcommands.PullCmd(dockerRegistry, packageName, packageVersion, kpmHomeDir)
+				var dockerRegistry = getStringFlag(c, constants.DockerRegistryFlagName)
+				return subcommands.PullCmd(packageName, packageVersion, kpmHomeDir, dockerRegistry)
 			},
 		},
 	}

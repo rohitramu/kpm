@@ -6,6 +6,9 @@ const ListCmdName = "list"
 // PackCmdName is the name of the subcommand which makes a template package ready for use.
 const PackCmdName = "pack"
 
+// UnpackCmdName is the name of the subcommand which exports a template package.
+const UnpackCmdName = "unpack"
+
 // RunCmdName is the name of the subcommand which generates output using a template package.
 const RunCmdName = "run"
 
