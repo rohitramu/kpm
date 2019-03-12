@@ -6,7 +6,8 @@ import (
 	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
-type packageNamesAndVersions map[string][]string
+// PackageNamesAndVersions is the mapping of package names to its list of versions.
+type PackageNamesAndVersions map[string][]string
 
 // GetOutputFriendlyName returns the friendly name given an output name and a package's full name.
 func GetOutputFriendlyName(outputName string, packageFullName string) string {
@@ -25,8 +26,8 @@ func GetHighestPackageVersion(kpmHomeDir string, packageName string) (string, er
 	var err error
 
 	// Get all available package names and versions
-	var availablePackagesAndVersions packageNamesAndVersions
-	availablePackagesAndVersions, err = getAvailablePackagesAndVersions(kpmHomeDir)
+	var availablePackagesAndVersions PackageNamesAndVersions
+	availablePackagesAndVersions, err = GetAvailablePackagesAndVersions(kpmHomeDir)
 	if err != nil {
 		return "", err
 	}
@@ -59,8 +60,8 @@ func GetHighestPackageVersion(kpmHomeDir string, packageName string) (string, er
 	return result, nil
 }
 
-// getAvailablePackagesAndVersions retrieves the list of available packages and their versions.
-func getAvailablePackagesAndVersions(kpmHomeDir string) (packageNamesAndVersions, error) {
+// GetAvailablePackagesAndVersions retrieves the list of available packages and their versions.
+func GetAvailablePackagesAndVersions(kpmHomeDir string) (PackageNamesAndVersions, error) {
 	var err error
 
 	// Get the full list of package names
@@ -71,7 +72,7 @@ func getAvailablePackagesAndVersions(kpmHomeDir string) (packageNamesAndVersions
 	}
 
 	// Iterate over the package full names
-	var availablePackagesAndVersions = packageNamesAndVersions{}
+	var availablePackagesAndVersions = PackageNamesAndVersions{}
 	for _, currentPackage := range packages {
 		// Extract name and version
 		currentPackageName, currentPackageVersion, err := validation.ExtractNameAndVersionFromPackageFullName(currentPackage)

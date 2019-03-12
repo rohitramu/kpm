@@ -3,6 +3,12 @@ package constants
 // ListCmdName is the name of the subcommand which lists the packages that are available for use.
 const ListCmdName = "list"
 
+// RemoveCmdName is the name of the subcommand which removes a package from the local KPM repository.
+const RemoveCmdName = "remove"
+
+// PurgeCmdName is the name of the subcommand which purges the local KPM repository.
+const PurgeCmdName = "purge"
+
 // PackCmdName is the name of the subcommand which makes a template package ready for use.
 const PackCmdName = "pack"
 

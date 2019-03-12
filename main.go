@@ -11,14 +11,17 @@ import (
 	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
-// Flags
+// Global flags
 var (
 	// Log level
 	logLevelFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, log", constants.LogLevelFlagName),
 		Usage: "The minimum severity log level to output - the severity log levels in increasing order are: \"verbose\", \"info\" (default), \"warning\", \"error\", \"none\"",
 	}
+)
 
+// Flags
+var (
 	// Package version
 	packageVersionFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, v", constants.PackageVersionFlagName),
@@ -86,7 +89,7 @@ func main() {
 	// Sub-commands
 	app.Commands = []cli.Command{
 		// List
-		{
+		cli.Command{
 			Name:    constants.ListCmdName,
 			Aliases: []string{"ls"},
 			Usage:   "Lists all packages that are currently available for use",
@@ -99,13 +102,52 @@ func main() {
 			},
 		},
 
+		// Remove
+		cli.Command{
+			Name:    constants.RemoveCmdName,
+			Aliases: []string{"rm"},
+			Usage:   "Removes a package from the local KPM package repository",
+			Flags: []cli.Flag{
+				packageVersionFlag,
+				kpmHomeDirFlag,
+			},
+			ArgsUsage: "<package name>",
+			Action: func(c *cli.Context) error {
+				var packageName = getStringArg(c, 0)
+				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
+				var kpmHomeDir = getStringFlag(c, constants.KpmHomeDirFlagName)
+				return subcommands.RemoveCmd(packageName, packageVersion, kpmHomeDir)
+			},
+		},
+
+		// Purge
+		cli.Command{
+			Name:  constants.PurgeCmdName,
+			Usage: "Removes all versions of a package from the local KPM package repository",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  fmt.Sprintf("%s, a", constants.PurgeAllFlagName),
+					Usage: "Confirms that all packages in the local KPM repository should be removed - NOTE: this flag is ignored if a package name is provided",
+				},
+				kpmHomeDirFlag,
+			},
+			ArgsUsage: "<package name>",
+			Action: func(c *cli.Context) error {
+				var packageName = getStringArg(c, 0)
+				var allConfirm = getBoolFlag(c, constants.PurgeAllFlagName)
+				var kpmHomeDir = getStringFlag(c, constants.KpmHomeDirFlagName)
+				return subcommands.PurgeCmd(packageName, allConfirm, kpmHomeDir)
+			},
+		},
+
 		// Pack
-		{
+		cli.Command{
 			Name:  constants.PackCmdName,
 			Usage: "Validates a template package and makes it available for use from the local KPM package repository",
 			Flags: []cli.Flag{
 				kpmHomeDirFlag,
 			},
+			ArgsUsage: "<package directory>",
 			Action: func(c *cli.Context) error {
 				var packageDir = getStringArg(c, 0)
 				var kpmHomeDir = getStringFlag(c, constants.KpmHomeDirFlagName)
@@ -114,7 +156,7 @@ func main() {
 		},
 
 		// Unpack
-		{
+		cli.Command{
 			Name:  constants.UnpackCmdName,
 			Usage: "Exports a template package to the specified location",
 			Flags: []cli.Flag{
@@ -124,6 +166,7 @@ func main() {
 				kpmHomeDirFlag,
 				dockerRegistryFlag,
 			},
+			ArgsUsage: "<package name>",
 			Action: func(c *cli.Context) error {
 				var packageName = getStringArg(c, 0)
 				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
@@ -136,7 +179,7 @@ func main() {
 		},
 
 		// Run
-		{
+		cli.Command{
 			Name:  constants.RunCmdName,
 			Usage: "Runs a template package",
 			Flags: []cli.Flag{
@@ -147,6 +190,7 @@ func main() {
 				kpmHomeDirFlag,
 				dockerRegistryFlag,
 			},
+			ArgsUsage: "<package name>",
 			Action: func(c *cli.Context) error {
 				var packageName = getStringArg(c, 0)
 				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
@@ -160,7 +204,7 @@ func main() {
 		},
 
 		// Push
-		{
+		cli.Command{
 			Name:  constants.PushCmdName,
 			Usage: "Pushes the template package to a remote Docker registry",
 			Flags: []cli.Flag{
@@ -168,6 +212,7 @@ func main() {
 				kpmHomeDirFlag,
 				dockerRegistryFlag,
 			},
+			ArgsUsage: "<package name>",
 			Action: func(c *cli.Context) error {
 				var packageName = getStringArg(c, 0)
 				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
@@ -178,7 +223,7 @@ func main() {
 		},
 
 		// Pull
-		{
+		cli.Command{
 			Name:  constants.PullCmdName,
 			Usage: "Pulls a template package from a remote Docker registry",
 			Flags: []cli.Flag{
@@ -186,6 +231,7 @@ func main() {
 				kpmHomeDirFlag,
 				dockerRegistryFlag,
 			},
+			ArgsUsage: "<package name>",
 			Action: func(c *cli.Context) error {
 				var packageName = getStringArg(c, 0)
 				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
@@ -253,5 +299,14 @@ func getStringArg(c *cli.Context, index int) *string {
 	}
 
 	var result = c.Args().Get(index)
+	return &result
+}
+
+func getBoolFlag(c *cli.Context, flagName string) *bool {
+	if !c.IsSet(flagName) {
+		return nil
+	}
+
+	var result = c.Bool(flagName)
 	return &result
 }
