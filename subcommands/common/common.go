@@ -75,8 +75,20 @@ func GetTemplateInput(kpmHomeDir string, packageFullName string, parentTemplate 
 		return nil, fmt.Errorf("Failed to get information about package: %s\n%s", packageFullName, err)
 	}
 
+	// Get the default values
+	var inputParameters *types.GenericMap
+	inputParameters, err = GetPackageParameters(constants.GetDefaultParametersFile(packageDir))
+	if err != nil {
+		return nil, err
+	}
+
+	// Allow default values to be overridden by the provided parameters
+	for key := range *parameters {
+		(*inputParameters)[key] = (*parameters)[key]
+	}
+
 	// Add values
-	result[constants.TemplateFieldValues], err = getValuesFromInterface(parentTemplate, packageDir, parameters)
+	result[constants.TemplateFieldValues], err = getValuesFromInterface(parentTemplate, packageDir, inputParameters)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to calculate values from the interface in package: %s\n%s", packageFullName, err)
 	}
