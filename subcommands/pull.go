@@ -9,7 +9,7 @@ import (
 )
 
 // PullCmd pulls a template package from a Docker registry to the local filesystem.
-func PullCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string) error {
+func PullCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string) error {
 	var err error
 
 	// Resolve KPM home directory

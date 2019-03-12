@@ -13,7 +13,7 @@ import (
 )
 
 // PushCmd pushes the template package to a Docker registry.
-func PushCmd(dockerRegistryArg *string, packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string) error {
+func PushCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string) error {
 	var err error
 
 	// Resolve KPM home directory
