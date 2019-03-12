@@ -27,8 +27,5 @@ const KpmHomeDirFlagName = "kpm-home-dir"
 // DockerRegistryFlagName is the Docker registry to use when pushing or pulling a package.
 const DockerRegistryFlagName = "docker-registry"
 
-// DockerNamespaceFlagName is the docker namespace to use when pushing or pulling a package.
-const DockerNamespaceFlagName = "docker-namespace"
-
 // PurgeAllFlagName is used to confirm that .
 const PurgeAllFlagName = "purge-all"
