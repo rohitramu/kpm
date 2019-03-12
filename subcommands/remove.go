@@ -51,16 +51,9 @@ func RemoveCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPath
 		return err
 	}
 
-	// Resolve paths
+	// Resolve package path
 	var packageFullName = constants.GetPackageFullName(packageName, packageVersion)
 	var packageDir = constants.GetPackageDir(kpmHomeDir, packageFullName)
-
-	// Log resolved values
-	log.Info("====")
-	log.Info("Package name:      %s", packageName)
-	log.Info("Package version:   %s", packageVersion)
-	log.Info("Package directory: %s", packageDir)
-	log.Info("====")
 
 	// Check that the package exists in the local repository
 	err = files.DirExists(packageDir, "template package")
