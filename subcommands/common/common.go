@@ -70,10 +70,15 @@ func GetTemplateInput(kpmHomeDir string, packageFullName string, parentTemplate 
 	var result = types.GenericMap{}
 
 	// Add package info
-	result[constants.TemplateFieldPackage], err = GetPackageInfo(kpmHomeDir, packageDir)
+	var packageInfo *types.PackageInfo
+	packageInfo, err = GetPackageInfo(kpmHomeDir, packageDir)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get information about package: %s\n%s", packageFullName, err)
 	}
+	var packageInfoMap = types.GenericMap{}
+	packageInfoMap["name"] = packageInfo.Name
+	packageInfoMap["version"] = packageInfo.Version
+	result[constants.TemplateFieldPackage] = &packageInfoMap
 
 	// Get the default values
 	var inputParameters *types.GenericMap
