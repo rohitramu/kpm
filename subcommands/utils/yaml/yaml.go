@@ -40,3 +40,29 @@ func ObjectToBytes(obj interface{}) ([]byte, error) {
 
 	return result, nil
 }
+
+// FromObject takes an interface, marshals it to yaml, and returns a string.
+func FromObject(obj interface{}) (string, error) {
+	var err error
+
+	var data []byte
+	data, err = yaml.Marshal(obj)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
+// ToObject converts a YAML document into a map[string]interface{}.
+func ToObject(yamlString string) (map[string]interface{}, error) {
+	var err error
+
+	var result = map[string]interface{}{}
+	err = yaml.Unmarshal([]byte(yamlString), &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
