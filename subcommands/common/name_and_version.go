@@ -11,14 +11,11 @@ type PackageNamesAndVersions map[string][]string
 
 // GetOutputFriendlyName returns the friendly name given an output name and a package's full name.
 func GetOutputFriendlyName(outputName string, packageFullName string) string {
-	var friendlyName string
 	if outputName == packageFullName {
-		friendlyName = packageFullName
+		return packageFullName
 	} else {
-		friendlyName = fmt.Sprintf("%s (%s)", outputName, packageFullName)
+		return fmt.Sprintf("%s (%s)", outputName, packageFullName)
 	}
-
-	return friendlyName
 }
 
 // GetHighestPackageVersion returns the highest available package version found in the local KPM repository.

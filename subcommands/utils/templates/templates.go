@@ -2,6 +2,7 @@ package templates
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/rohitramu/kpm/subcommands/utils/files"
 	"github.com/rohitramu/kpm/subcommands/utils/log"
-	"github.com/rohitramu/kpm/subcommands/utils/templatefuncs"
 	"github.com/rohitramu/kpm/subcommands/utils/types"
 )
 
@@ -26,13 +26,22 @@ func NewRootTemplate() *template.Template {
 	// Add sprig functions
 	tmpl = tmpl.Funcs(sprig.TxtFuncMap())
 
-	// Add custom functions
-	tmpl = tmpl.Funcs(template.FuncMap{
-		// Override the "index" function so it correctly fails the template generation on missing keys
-		"index": templatefuncs.Index,
-	})
+	// Add global functions
+	tmpl = tmpl.Funcs(GetGlobalFuncMap())
+
+	// Add placeholders for package-specific functions
+	tmpl = tmpl.Funcs(GetPackageFuncMap(nil))
 
 	return tmpl
+}
+
+// AddPackageSpecificTemplateFunctions adds the package-specific template functions for the given template.
+func AddPackageSpecificTemplateFunctions(tmpl *template.Template) *template.Template {
+	if tmpl == nil {
+		log.Panic("Template cannot be nil")
+	}
+
+	return tmpl.Funcs(GetPackageFuncMap(tmpl))
 }
 
 // GetTemplateFromFile returns a new template object given a template file.
@@ -106,22 +115,49 @@ func ChainTemplatesFromDir(parentTemplate *template.Template, templatesDirPath s
 	return currentTemplate, numTemplates, nil
 }
 
+// ExecuteNamedTemplate executes a named template that can be found in the provided template.
+func ExecuteNamedTemplate(tmpl *template.Template, templateName string, values interface{}) ([]byte, error) {
+	var err error
+
+	// Check that the parent template is not nil
+	if tmpl == nil {
+		log.Panic("The provided template cannot be nil")
+	}
+
+	// Check that the template name is not empty
+	if templateName == "" {
+		return nil, fmt.Errorf("Template name cannot be empty: %s", tmpl.Name())
+	}
+
+	// Get the named template
+	var namedTemplate = tmpl.Lookup(templateName)
+	if namedTemplate == nil {
+		return nil, fmt.Errorf("Failed to find named template: %s", templateName)
+	}
+
+	// Execute the named template with the provided values
+	var result []byte
+	result, err = ExecuteTemplate(namedTemplate, values)
+
+	return result, err
+}
+
 // ExecuteTemplate executes a template given the template object and the values.
-func ExecuteTemplate(tmpl *template.Template, values *types.GenericMap) ([]byte, error) {
+func ExecuteTemplate(tmpl *template.Template, values interface{}) ([]byte, error) {
 	var err error
 
 	// Create template object
 	if tmpl == nil {
-		log.Panic("The template to execute cannot be nil")
+		return nil, fmt.Errorf("The template to execute cannot be nil")
 	}
 
 	if values == nil {
-		log.Panic("The values to execute the template with cannot be nil")
+		return nil, fmt.Errorf("The values to execute the template with cannot be nil")
 	}
 
 	// Apply values to template
 	var outputByteBuffer = new(bytes.Buffer)
-	err = tmpl.Execute(outputByteBuffer, (*types.GenericMap)(values))
+	err = tmpl.Execute(outputByteBuffer, values)
 	if err != nil {
 		return nil, err
 	}

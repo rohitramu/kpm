@@ -81,7 +81,7 @@ func UnpackCmd(packageNameArg *string, packageVersionArg *string, exportDirPathA
 		// Check remote repository for package
 		err = common.PullPackage(kpmHomeDir, dockerRegistry, packageName, packageVersion)
 		if err != nil {
-			return fmt.Errorf("Failed to get package \"%s\" from docker registry \"%s\":\n%s", packageFullName, dockerRegistry, err)
+			return fmt.Errorf("Failed to get package \"%s\" from docker registry \"%s\": %s", packageFullName, dockerRegistry, err)
 		}
 	}
 

@@ -210,30 +210,42 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 			// Check remote repository for package
 			err = PullPackage(kpmHomeDir, dockerRegistry, currentPackageName, currentPackageVersion)
 			if err != nil {
-				return nil, fmt.Errorf("Failed to get package \"%s\" from docker registry \"%s\":\n%s", currentPackageFullName, dockerRegistry, err)
+				return nil, fmt.Errorf("Failed to get package \"%s\" from docker registry \"%s\": %s", currentPackageFullName, dockerRegistry, err)
 			}
 		}
 
 		// Check if there is a loop in the dependency tree
 		if _, exists := currentPathNodes.Get(currentPackageFullName); exists {
+			// Found a loop
 			var dependencyLoop = make([]string, currentPathNodes.Size()+1)
 			for i, keyObj := range currentPathNodes.Keys() {
 				if valueObj, found := currentPathNodes.Get(keyObj); !found {
 					log.Panic("Failed to find value in path nodes map for key: %s", keyObj)
 				} else {
+					// Value is the node object
 					if value, ok := valueObj.(*dependencyTreeNode); !ok {
 						log.Panic("Found value in path nodes map which is not a node")
 					} else {
+						// Key is the package full name for this node
 						if key, ok := keyObj.(string); !ok {
 							log.Panic("Found key in path nodes map which is not a string")
 						} else {
-							dependencyLoop[i] = fmt.Sprintf("%s (%s)", key, value.OutputName)
+							dependencyLoop[i] = GetOutputFriendlyName(value.OutputName, key)
+
+							// Add a special symbol to identify the package causing the problem
+							if key == currentPackageFullName {
+								dependencyLoop[i] += " [START]"
+							}
 						}
 					}
 				}
 			}
-			dependencyLoop[len(dependencyLoop)-1] = fmt.Sprintf("%s (%s)", currentPackageFullName, currentOutputName)
-			return nil, fmt.Errorf("Found loop in dependency tree: %s", strings.Join(dependencyLoop, "->"))
+
+			// Add the current node
+			dependencyLoop[len(dependencyLoop)-1] = GetOutputFriendlyName(currentOutputName, currentPackageFullName) + " [END]"
+
+			// Return an error with the formatted package path
+			return nil, fmt.Errorf("Found a circular reference in the dependency tree:\n%s", strings.Join(dependencyLoop, " -> "))
 		}
 
 		// Add this node to the map which is tracking the current path

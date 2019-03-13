@@ -104,13 +104,19 @@ func GetSharedTemplate(packageDir string) (*template.Template, error) {
 	// Get the directory which contains the helper templates
 	var helpersDir = constants.GetHelpersDir(packageDir)
 
+	// Get the root template
+	var rootTemplate = templates.NewRootTemplate()
+
 	// Create a template which includes the helper template definitions
 	var sharedTemplate *template.Template
 	var numHelpers int
-	sharedTemplate, numHelpers, err = templates.ChainTemplatesFromDir(templates.NewRootTemplate(), helpersDir)
+	sharedTemplate, numHelpers, err = templates.ChainTemplatesFromDir(rootTemplate, helpersDir)
 	if err != nil {
 		return nil, err
 	}
+
+	// Add the package-specific template functions
+	sharedTemplate = templates.AddPackageSpecificTemplateFunctions(sharedTemplate)
 
 	log.Verbose("Found %d template(s) in directory: %s", numHelpers, helpersDir)
 

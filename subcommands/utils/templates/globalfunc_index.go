@@ -1,4 +1,4 @@
-package templatefuncs
+package templates
 
 import (
 	"fmt"
@@ -6,10 +6,14 @@ import (
 	"github.com/rohitramu/kpm/subcommands/utils/types"
 )
 
-// Index gets a single value from a generic map (of any depth) given an ordered list of keys
-func Index(data interface{}, keys ...string) (interface{}, error) {
+// FuncNameIndex is the name of the "index" template function.
+const FuncNameIndex = "index"
+
+// IndexFunc gets a single value from a generic map (of any depth), given an ordered list of keys.
+func IndexFunc(data interface{}, keys ...string) (interface{}, error) {
 	var ok bool
 
+	// If there are no keys, return the object as-is
 	if len(keys) == 0 {
 		return data, nil
 	}
@@ -24,20 +28,20 @@ func Index(data interface{}, keys ...string) (interface{}, error) {
 		}
 
 		// Unexpected data type - it is not a map, but keys were supplied
-		return nil, fmt.Errorf("Invalid object supplied to the index function: %s", data)
+		return nil, fmt.Errorf("Invalid object supplied to the \"%s\" function: %s", FuncNameIndex, data)
 	}
 
 	var result interface{}
 	for _, key := range keys {
 		// Make sure that the current map is not nil, otherwise there were too many keys provided
 		if currentMap == nil {
-			return nil, fmt.Errorf("Too many keys provided - a key was provided, but the data is not a map: %s", key)
+			return nil, fmt.Errorf("Too many keys provided to the \"%s\" function - a key was provided, but the data is not a map: %s", FuncNameIndex, key)
 		}
 
 		// Get the value
 		result, ok = (*currentMap)[key]
 		if !ok {
-			return nil, fmt.Errorf("Missing key: %s", key)
+			return nil, fmt.Errorf("Missing key found in the object provided to the \"%s\" function: %s", FuncNameIndex, key)
 		}
 
 		// Try to assign the next map if the type is a map
