@@ -5,10 +5,7 @@ import (
 	"text/template"
 )
 
-// PackageFunc represents a template function which is package-specific.
-type PackageFunc func(...interface{}) (interface{}, error)
-
-type packageFuncFactory (func(tmpl *template.Template) PackageFunc)
+type packageFuncFactory (func(tmpl *template.Template) interface{})
 
 // GetPackageFuncMap returns the template functions which can be used only in the context of a particular template.
 // If the template provided is nil, placeholder template functions are provided which return "Not implemented" errors.
@@ -18,7 +15,7 @@ func GetPackageFuncMap(tmpl *template.Template) map[string]interface{} {
 	}
 }
 
-func getPackageFuncOrPlaceholder(tmpl *template.Template, fn packageFuncFactory) PackageFunc {
+func getPackageFuncOrPlaceholder(tmpl *template.Template, fn packageFuncFactory) interface{} {
 	if tmpl == nil {
 		return func(...interface{}) (interface{}, error) {
 			return nil, fmt.Errorf("Not implemented")
