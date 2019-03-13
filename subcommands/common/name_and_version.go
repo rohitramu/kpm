@@ -13,9 +13,9 @@ type PackageNamesAndVersions map[string][]string
 func GetOutputFriendlyName(outputName string, packageFullName string) string {
 	if outputName == packageFullName {
 		return packageFullName
-	} else {
-		return fmt.Sprintf("%s (%s)", outputName, packageFullName)
 	}
+
+	return fmt.Sprintf("%s (%s)", outputName, packageFullName)
 }
 
 // GetHighestPackageVersion returns the highest available package version found in the local KPM repository.
