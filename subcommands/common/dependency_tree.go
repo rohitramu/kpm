@@ -127,8 +127,8 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 	var ok bool
 
 	// Validate output name
-	if err := validation.ValidateOutputName(outputName); err != nil {
-		return nil, err
+	if err = validation.ValidateOutputName(outputName); err != nil {
+		return nil, fmt.Errorf("Invalid output name \"%s\" for package: %s\n%s", outputName, packageName, err)
 	}
 
 	// Create the package definition for the root node
@@ -385,9 +385,11 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 }
 
 func getPackageNode(parentNode *dependencyTreeNode, packageDefinition *types.PackageDefinition, outputName string, packageDirPath string) (*dependencyTreeNode, error) {
+	var err error
+
 	// Validate inputs
-	if err := validation.ValidateOutputName(outputName); err != nil {
-		return nil, err
+	if err = validation.ValidateOutputName(outputName); err != nil {
+		return nil, fmt.Errorf("Invalid output name: %s\n%s", outputName, err)
 	}
 
 	// Create the node

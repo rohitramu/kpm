@@ -110,20 +110,21 @@ func GetSharedTemplate(packageDir string) (*template.Template, error) {
 	var helpersDir = constants.GetHelpersDir(packageDir)
 
 	// Get the root template
-	var rootTemplate = templates.NewRootTemplate()
+	var sharedTemplate = templates.NewRootTemplate()
 
 	// Create a template which includes the helper template definitions
-	var sharedTemplate *template.Template
-	var numHelpers int
-	sharedTemplate, numHelpers, err = templates.ChainTemplatesFromDir(rootTemplate, helpersDir)
-	if err != nil {
-		return nil, err
+	if files.DirExists(helpersDir, "helpers") == nil {
+		var numHelpers int
+		sharedTemplate, numHelpers, err = templates.ChainTemplatesFromDir(sharedTemplate, helpersDir)
+		if err != nil {
+			return nil, err
+		}
+
+		log.Verbose("Found %d template(s) in directory: %s", numHelpers, helpersDir)
 	}
 
 	// Add the package-specific template functions
 	sharedTemplate = templates.AddPackageSpecificTemplateFunctions(sharedTemplate)
-
-	log.Verbose("Found %d template(s) in directory: %s", numHelpers, helpersDir)
 
 	return sharedTemplate, nil
 }
@@ -300,9 +301,10 @@ func GetExecutableTemplates(parentTemplate *template.Template, packageDir string
 
 	// Get the templates directory
 	var executableTemplatesDir = constants.GetTemplatesDir(packageDir)
-	err = files.DirExists(executableTemplatesDir, "templates")
-	if err != nil {
-		return nil, err
+
+	// If the templates directory doesn't exist, just return a list of no templates instead of erroring out
+	if files.DirExists(executableTemplatesDir, "templates") != nil {
+		return []*template.Template{}, nil
 	}
 
 	// Return the templates in the directory
@@ -322,9 +324,10 @@ func GetDependencyDefinitionTemplates(parentTemplate *template.Template, package
 
 	// Get the dependencies directory
 	var dependenciesDir = constants.GetDependenciesDir(packageDir)
-	err = files.DirExists(dependenciesDir, "dependencies")
-	if err != nil {
-		return nil, err
+
+	// If the dependencies directory doesn't exist, just return a list of no templates instead of erroring out
+	if files.DirExists(dependenciesDir, "dependencies") != nil {
+		return []*template.Template{}, nil
 	}
 
 	var dependencyTemplates []*template.Template
