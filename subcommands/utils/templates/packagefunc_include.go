@@ -16,14 +16,14 @@ func GetIncludeFunc(tmpl *template.Template) interface{} {
 		log.Panic("Template cannot be nil")
 	}
 
-	return func(templateName string, data interface{}) (interface{}, error) {
+	return func(templateName string, data interface{}) (string, error) {
 		var err error
 
 		// Execute the named template
 		var resultBytes []byte
 		resultBytes, err = ExecuteNamedTemplate(tmpl, templateName, data)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to execute named template \"%s\":\n%s", templateName, err)
+			return "", fmt.Errorf("Failed to execute named template \"%s\":\n%s", templateName, err)
 		}
 
 		// Get the result as a string
