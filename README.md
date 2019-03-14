@@ -1,13 +1,43 @@
-# Overview
-KPM is a command line tool which attempts to simplify and modularize the process of generating text files.
+KPM is a command line tool which simplifies and modularizes the process of generating text files.
+
+- [Setup](#setup)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Command line usage](#command-line-usage)
+- [Template packages](#template-packages)
+  - [Pull a template package from a Docker registry](#pull-a-template-package-from-a-docker-registry)
+  - [List the locally available template packages](#list-the-locally-available-template-packages)
+  - [Create a parameters file](#create-a-parameters-file)
+  - [Unpack a template package](#unpack-a-template-package)
+  - [Execute a template package](#execute-a-template-package)
+- [Authoring a template package](#authoring-a-template-package)
+  - [Directory structure](#directory-structure)
+  - [package.yaml](#packageyaml)
+  - [parameters.yaml](#parametersyaml)
+  - [interface.yaml](#interfaceyaml)
+  - [templates/](#templates)
+  - [helpers/](#helpers)
+  - [dependencies/](#dependencies)
+  - [Template functions and logic](#template-functions-and-logic)
+    - [Conditionals](#conditionals)
+    - [Loops](#loops)
+    - [Sprig functions](#sprig-functions)
+    - [Other template functions](#other-template-functions)
+      - [index](#index)
+      - [include](#include)
+      - [indent vs. nindent](#indent-vs-nindent)
+- [Testing your package locally](#testing-your-package-locally)
+  - [Pack your template package](#pack-your-template-package)
+- [Sharing your template package](#sharing-your-template-package)
+  - [Push your template package to a Docker registry](#push-your-template-package-to-a-docker-registry)
 
 # Setup
 ## Prerequisites
-In order to [push](#push-package) and [pull](#pull-package) template packages, you must have installed and configured [Docker](https://docs.docker.com/install/).
+In order to [push](#push-your-template-package-to-a-docker-registry) and [pull](#pull-a-template-package-from-a-docker-registry) template packages, you must have installed and configured [Docker](https://docs.docker.com/install/).
 
 The default Docker registry used is `docker.io` (i.e. Docker Hub).  Ensure that you have a Docker Hub account and have credentials by running `docker login docker.io`.
 
-To specify a different Docker registry, set the `--docker-registry` flag on subcommands which interact with a Docker registry (e.g. [`push`](#push-package), [`pull`](#pull-package), [`run`](#run-package)).  E.g. to log in and run a package from your own Docker registry:
+To specify a different Docker registry, set the `--docker-registry` flag on subcommands which interact with a Docker registry (e.g. [`push`](#push-your-template-package-to-a-docker-registry), [`pull`](#pull-a-template-package-from-a-docker-registry), [`run`](#execute-a-template-package)).  E.g. to log in and run a package from your own Docker registry:
 ```
 docker login my.registry.com
 kpm run mynamespace/mypackage -v 2.0.0 --docker-registry my.registry.com
@@ -32,45 +62,45 @@ kpm run -h
 A template package is simply a collection of templates.  This collection of templates can be thought of as a program or function which can be executed.  A template package accepts inputs in the form of parameters, and produces outputs in the form of generated files.
 
 Usage of a template package typically consists of these steps:
- 1. [Pull a template package](#pull-package) from a Docker registry to make it available locally.
- 2. [Create a parameters file](#user-parameters) which can be used as input to the template package.
- 3. [Run the template package](#run-package) with your parameters file.
+ 1. [Pull a template package](#pull-a-template-package-from-a-docker-registry) from a Docker registry to make it available locally.
+ 2. [Create a parameters file](#create-a-parameters-file) which can be used as input to the template package.
+ 3. [Run the template package](#execute-a-template-package) with your parameters file.
  4. View your generated files!
 
 KPM uses Golang templating.  More information about defining templates can be found here: https://golang.org/pkg/text/template/
 
-## <a name="pull-package"></a>Pull a template package from a Docker registry
+## Pull a template package from a Docker registry
 Pull a template package from a Docker registry with the "pull" subcommand.  For example, try running the following command:
 ```
 kpm pull kpmtool/example -v 1.0.0
 ```
 
-## <a name="list-packages"></a>List the locally available template packages
+## List the locally available template packages
 To see the list of all template packages in the local KPM repository, run the "list" subcommand:
 ```
 kpm ls
 ```
 
-## <a name="user-parameters"></a>Create a parameters file
+## Create a parameters file
 A parameters file is just a YAML file containing the input values to a template package.  The structure of this parameters file is determined by the author of the package that you would like to execute.  Take a look at the "parameters.yaml" file in the root of the package directory for a good example of the structure that the package expects.  Package authors are also encouraged to add documentation by way of comments into this file in order to assist with understanding correct usage of the package.
 
-## <a name="unpack-package"></a>Unpack a template package
+## Unpack a template package
 Unpack a template package by running the "unpack" subcommand:
 ```
 kpm unpack rohitramu/kpm.example /path/to/output/folder
 ```
 
-If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-package) or [packed](#pack-package)) will be used.
+If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-a-template-package-from-a-docker-registry) or [packed](#pack-your-template-package)) will be used.
 
 If an output directory is not specified, files will be copied to `<current directory>/.kpm_exported/<package full name>`.
 
-## <a name="run-package"></a>Execute a template package
+## Execute a template package
 Execute a template package with the "run" subcommand:
 ```
 kpm run rohitramu/kpm.example
 ```
 
-If a version is not specified like in the above example, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-package) or [packed](#pack-package)) will be used.
+If a version is not specified like in the above example, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-a-template-package-from-a-docker-registry) or [packed](#pack-your-template-package)) will be used.
 
 If a version is specified and the package cannot be found in the local KPM repository, an attempt will be made to pull the package from the remote Docker registry.  By default, this is `docker.io`.  A different Docker registry can be specified setting the `--docker-registry` flag.
 
@@ -79,7 +109,7 @@ If an output directory is not specified, files will be generated in `<current di
 If an output name is not specified, the package's full name will be used as the output name.
 
 
-# <a name="authoring"></a>Authoring a template package
+# Authoring a template package
 
 ## Directory structure
 A template package must have the following directory structure (items with trailing slashes are directories):
@@ -121,7 +151,7 @@ The name of the package should include the namespace that will be used when push
 
 The version must be in the format `"major.minor.revision"`.  Leading zeros are not permitted in the `major`, `minor` or `revision` segments of the version string, however a segment may be just `0` (zero).  The zero version (`0.0.0`) is not allowed.
 
-## <a name="default-parameters"></a>parameters.yaml
+## parameters.yaml
 A package author must provide a set of default parameters which will be used whenever a user does not provide a parameter.  The default parameters file is also a great place to document each parameter using comments.
 
 NOTE: This is the only file in the package which cannot be a template, and must only contain concrete values.
@@ -152,14 +182,14 @@ colors:
 - blue
 ```
 
-## <a name="interface"></a>interface.yaml
+## interface.yaml
 The interface is a YAML template which defines what parameters the package requires in order to correctly generate output.  Parameters which are provided by the user are used as the input to this interface.  The resulting YAML is then used as the input to all other templates in the package.
 
-If a value is not provided by the user for a parameter, the default value will be used.  Default values are defined in the [parameters](default-parameters) file.
+If a value is not provided by the user for a parameter, the default value will be used.  Default values are defined in the [parameters](#parametersyaml) file.
 
 The values in the interface may be defined as "constants" (i.e. hardcoded values) which can be referenced in templates.  However, for more complex string values (e.g. multi-line strings, strings with special characters, etc.), [helper templates](#helpers) should be preferred.  See the `constantGreeting` property or the `favorite-things` list below for examples of how hardcoded values may be defined.
 
-Here is an example interface definition which can accept the parameters from the [example above](#default-parameters):
+Here is an example interface definition which can accept the parameters from the [example above](#parametersyaml):
 ```yaml
 username: {{ .name.first }} {{ .name.last }}
 someColors:
@@ -178,10 +208,10 @@ customObj: {{- index . "custom-object" | toYaml | nindent 2 }}
 
 Since the interface definition is itself a template, all of the normal template functions are available to be used.  See the [templates](#templates) section for more details.
 
-## <a name="templates"></a>templates/
+## templates/
 Files in the templates directory are the text templates which will be used to generate the output files.  These can be used to generate any text format with any filename.
 
-Here is an example of a template file which generates a text file by using values provided by the [interface example](#interface) above:
+Here is an example of a template file which generates a text file by using values provided by the [interface example](#interfaceyaml) above:
 ```
 Hello, {{ .values.username }}!
 
@@ -217,10 +247,10 @@ configuration:
   {{- end }}
 ```
 
-## <a name="helpers"></a>helpers/
+## helpers/
 Helper templates (a.k.a. "named templates" or "partial templates") allow the definition of templates which are useful in other templates in the package.  If you find yourself copying any pasting parts of templates, defining helper templates will allow you to simplify your templates and reduce the likelihood of copy-paste errors.
 
-Helper templates can be inserted by using either the [`template` action or `include` function](#include-function).
+Helper templates can be inserted by using either the [`template` action or the `include` function](#include).
 
 A helper template file may contain any number of helper templates, and must have the extension ".tpl".  Here is an example helper template file:
 ```
@@ -237,7 +267,7 @@ colors:
 {{- end -}}
 ```
 
-## <a name="dependencies"></a>dependencies/
+## dependencies/
 Dependency definitions are references to other template packages.  A package dependency must contain both the package information (i.e. package name and version) and the parameters to send to that package.
 
 ```yaml
@@ -269,7 +299,7 @@ parameters:
 {{- end }}
 ```
 
-## <a name="template-functions-and-logic"></a>Template functions and logic
+## Template functions and logic
 Template functions and control structures are used to transform data within templates, in order to produce the desired output.
 
 ### Conditionals
@@ -321,7 +351,7 @@ Each item in the array can be assigned to a variable as well.  This is useful wh
 ```
 
 ### Sprig functions
-Sprig is a large library of useful template functions.  All of these functions are available for use inside all templates in a template package, including the [interface definition](#interface), [helper templates](#helpers) and [dependency definitions](#dependencies)).
+Sprig is a large library of useful template functions.  All of these functions are available for use inside all templates in a template package, including the [interface definition](#interfaceyaml), [helper templates](#helpers) and [dependency definitions](#dependencies)).
 - Documentation: http://masterminds.github.io/sprig/
 - GitHub: https://github.com/Masterminds/sprig
 
@@ -333,7 +363,7 @@ It is very difficult to reference parameters which have special characters in th
 {{ .values.my-property }}
 ```
 
-#### <a name="include-function"></a>include
+#### include
 The `template` action can be used for inserting helper templates.  However, since it does not return the helper template as a string, transforming it before inserting it is not possible.  The `include` function solves this problem by executing the helper template and then returning it as a string (rather than immediately printing it in the document as-is).
 
 ```yaml
@@ -367,7 +397,7 @@ myObject:
 
 # Testing your package locally
 
-## <a name="pack-package"></a>Pack your template package
+## Pack your template package
 To make your package available to use locally, run the "pack" subcommand:
 ```
 kpm pack /path/to/package/root
@@ -378,13 +408,13 @@ If you are in the root directory of the package, you can just run the following 
 kpm pack .
 ```
 
-It can then be executed as normal with the ["run" command](#run-package), and will be shown by the ["list" command](list-packages).
+It can then be executed as normal with the ["run" command](#execute-a-template-package), and will be shown by the ["list" command](#list-the-locally-available-template-packages).
 
 
 # Sharing your template package
 
-## <a name="push-package"></a>Push your template package to a Docker registry
-1. If you have not already done so, make your package locally available by running the ["pack" command](#pack-package).  Verify that it really is locally available with the ["list" command](#list-packages).
+## Push your template package to a Docker registry
+1. If you have not already done so, make your package locally available by running the ["pack" command](#pack-your-template-package).  Verify that it really is locally available with the ["list" command](#list-the-locally-available-template-packages).
 
 2. To push your package to a Docker registry, ensure that you have the credentials to do so by first logging in.  For example, to get credentials for your Docker Hub account, run:
 ```
