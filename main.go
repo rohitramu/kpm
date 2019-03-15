@@ -240,6 +240,25 @@ func main() {
 				return subcommands.PullCmd(packageName, packageVersion, kpmHomeDir, dockerRegistry)
 			},
 		},
+
+		// View
+		cli.Command{
+			Name:  constants.ViewCmdName,
+			Usage: "Outputs the contents of the default parameters file in a template package",
+			Flags: []cli.Flag{
+				packageVersionFlag,
+				kpmHomeDirFlag,
+				dockerRegistryFlag,
+			},
+			ArgsUsage: "<package name>",
+			Action: func(c *cli.Context) error {
+				var packageName = getStringArg(c, 0)
+				var packageVersion = getStringFlag(c, constants.PackageVersionFlagName)
+				var kpmHomeDir = getStringFlag(c, constants.KpmHomeDirFlagName)
+				var dockerRegistry = getStringFlag(c, constants.DockerRegistryFlagName)
+				return subcommands.ViewCmd(packageName, packageVersion, kpmHomeDir, dockerRegistry)
+			},
+		},
 	}
 
 	// Do setup

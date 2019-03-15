@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"io"
 	"log"
 	stdLog "log"
 	"os"
@@ -135,7 +136,19 @@ func SetLevel(level Level) {
 
 // Output logs the formatted message as output, without any prefixes or logging flags turned on.
 func Output(format string, toLog ...interface{}) {
-	fmt.Fprintln(WriterOut, fmt.Sprintf(format, toLog...))
+	var output = fmt.Sprintf(format, toLog...)
+	var _, err = fmt.Fprintln(WriterOut, output)
+	if err != nil {
+		Error("Failed to write output: %s", output)
+	}
+}
+
+// OutputStream writes all bytes from the given reader as output.
+func OutputStream(reader io.Reader) {
+	var _, err = io.Copy(WriterOut, reader)
+	if err != nil {
+		Error("Failed to write stream to output")
+	}
 }
 
 // Panic logs the formatted message as an error, and then panics.

@@ -23,3 +23,6 @@ const PushCmdName = "push"
 
 // PullCmdName is the name of the subcommand which pulls a template package from a remote repository.
 const PullCmdName = "pull"
+
+// ViewCmdName is the name of the subcommand which outputs the contents of the default parameters file in a package.
+const ViewCmdName = "view"
