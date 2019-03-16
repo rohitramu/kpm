@@ -1,10 +1,10 @@
-KPM is a command line tool which simplifies and modularizes the process of generating text files.
-
+- [What is KPM?](#what-is-kpm)
 - [Setup](#setup)
   - [Prerequisites](#prerequisites)
     - [Docker](#docker)
   - [Installation](#installation)
   - [Command line usage](#command-line-usage)
+  - [Golang templating](#golang-templating)
 - [Template packages](#template-packages)
   - [Pull a template package from a Docker registry](#pull-a-template-package-from-a-docker-registry)
   - [List the locally available template packages](#list-the-locally-available-template-packages)
@@ -20,6 +20,7 @@ KPM is a command line tool which simplifies and modularizes the process of gener
   - [helpers/](#helpers)
   - [dependencies/](#dependencies)
   - [Template functions and logic](#template-functions-and-logic)
+    - [Controlling whitespace](#controlling-whitespace)
     - [Conditionals](#conditionals)
     - [Loops](#loops)
     - [Sprig functions](#sprig-functions)
@@ -32,6 +33,11 @@ KPM is a command line tool which simplifies and modularizes the process of gener
   - [Unpack a template package](#unpack-a-template-package)
 - [Sharing your template package](#sharing-your-template-package)
   - [Push your template package to a Docker registry](#push-your-template-package-to-a-docker-registry)
+
+
+# What is KPM?
+KPM is a command line tool which simplifies and modularizes the process of generating text files.  It was specifically built to generate configuration files for Kubernetes, however it can be used for any text file generation.
+
 
 # Setup
 
@@ -62,6 +68,8 @@ To see the usage pattern for any subcommand, use the `-h` flag:
 kpm <subcommand> -h
 ```
 
+## Golang templating
+KPM uses Golang templating.  More information about defining and using templates can be found in the official [Golang template docs](https://golang.org/pkg/text/template/).
 
 # Template packages
 A template package is simply a collection of templates.  This collection of templates can be thought of as a program or function which can be executed.  A template package accepts inputs in the form of parameters, and produces outputs in the form of generated files.
@@ -71,8 +79,6 @@ Usage of a template package typically consists of these steps:
  2. [Create a parameters file](#create-a-parameters-file) which can be used as input to the template package.
  3. [Run the template package](#execute-a-template-package) with your parameters file.
  4. View your generated files!
-
-KPM uses Golang templating.  More information about defining templates can be found here: https://golang.org/pkg/text/template/
 
 ## Pull a template package from a Docker registry
 Pull a template package from a [Docker registry](#docker) with the "pull" subcommand.  For example, try running the following command:
@@ -355,6 +361,27 @@ parameters:
 
 ## Template functions and logic
 Template functions and control structures are used to transform data within templates, in order to produce the desired output.
+
+### Controlling whitespace
+Controlling whitespace in certain types of files can be very important.
+
+One example is YAML, where properties are defined on objects by indenting them.  In this case, producing incorrect indentation would lead to an incorrect definition of objects.
+
+Thanks to [Golang templating](#golang-templating), whitespace may be controlled using special syntax when inserting placeholders in templates:
+```yaml
+# This will result in the string "hello world" being indented
+    {{ "hello" }} {{ "world" }}
+
+# This will result in the string "hello world" being left-justified (i.e. not indented at all)
+    {{- "hello" }} {{ "world" }}
+
+# This will result in the string "hello" being indented, and "world" being inserted without
+# the spaces or new line after "hello" (i.e. it would become the string "    helloworld")
+    {{ "hello" -}}
+    {{ "world" }}
+```
+
+The dash (`-`) character after the start of the placeholder (`{{`) or before the end of the placeholder (`}}`) tells the renderer to remove any whitespace to the left or right before inserting the value.  This trims all whitespace, including **spaces, tabs and new lines**.
 
 ### Conditionals
 Conditional generation of output is done using if-else statements:
