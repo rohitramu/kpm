@@ -29,6 +29,7 @@ type dependencyTreeNode struct {
 	Children []*dependencyTreeNode
 
 	packageDefinition *types.PackageDefinition
+	hash              *string
 
 	OutputName          string
 	PackageDirPath      string
@@ -214,46 +215,9 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 			}
 		}
 
-		// Check if there is a loop in the dependency tree
-		if _, exists := currentPathNodes.Get(currentPackageFullName); exists {
-			// Found a loop
-			var dependencyLoop = make([]string, currentPathNodes.Size()+1)
-			for i, keyObj := range currentPathNodes.Keys() {
-				if valueObj, found := currentPathNodes.Get(keyObj); !found {
-					log.Panic("Failed to find value in path nodes map for key: %s", keyObj)
-				} else {
-					// Value is the node object
-					if value, ok := valueObj.(*dependencyTreeNode); !ok {
-						log.Panic("Found value in path nodes map which is not a node")
-					} else {
-						// Key is the package full name for this node
-						if key, ok := keyObj.(string); !ok {
-							log.Panic("Found key in path nodes map which is not a string")
-						} else {
-							dependencyLoop[i] = GetOutputFriendlyName(value.OutputName, key)
-
-							// Add a special symbol to identify the package causing the problem
-							if key == currentPackageFullName {
-								dependencyLoop[i] += " [START]"
-							}
-						}
-					}
-				}
-			}
-
-			// Add the current node
-			dependencyLoop[len(dependencyLoop)-1] = GetOutputFriendlyName(currentOutputName, currentPackageFullName) + " [END]"
-
-			// Return an error with the formatted package path
-			return nil, fmt.Errorf("Found a circular reference in the dependency tree:\n%s", strings.Join(dependencyLoop, " -> "))
-		}
-
-		// Add this node to the map which is tracking the current path
-		currentPathNodes.Put(currentPackageFullName, currentNode)
-
 		// Create a function to easily get the human readable path
 		var getFriendlyPath = func() string {
-			var segments = make([]string, currentPathNodes.Size())
+			var segments = make([]string, currentPathNodes.Size()+1)
 			var it = currentPathNodes.Iterator()
 			var i = 0
 			for it.Next() {
@@ -278,6 +242,9 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 
 				i++
 			}
+
+			// Add current node
+			segments[len(segments)] = GetOutputFriendlyName(currentNode.OutputName, currentPackageFullName)
 
 			return strings.Join(segments, " -> ")
 		}
@@ -313,6 +280,42 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get executable templates in package: %s\n%s", getFriendlyPath(), err)
 		}
+
+		// Check if there is a loop in the dependency tree
+		var currentNodeHash = currentNode.getPackageNodeHash()
+		if _, exists := currentPathNodes.Get(currentNodeHash); exists {
+			// Found a loop
+			var dependencyLoop = make([]string, currentPathNodes.Size()+1)
+			for i, keyObj := range currentPathNodes.Keys() {
+				if valueObj, found := currentPathNodes.Get(keyObj); !found {
+					log.Panic("Failed to find value in path nodes map for key: %s", keyObj)
+				} else {
+					// Value is the node object
+					if value, ok := valueObj.(*dependencyTreeNode); !ok {
+						log.Panic("Found value in path nodes map which is not a node, for key: %s", keyObj)
+					} else {
+						var dependencyPackageName = value.packageDefinition.PackageInfo.Name
+						var dependencyPackageVersion = value.packageDefinition.PackageInfo.Version
+						var dependencyPackageFullName = constants.GetPackageFullName(dependencyPackageName, dependencyPackageVersion)
+						dependencyLoop[i] = GetOutputFriendlyName(value.OutputName, dependencyPackageFullName)
+
+						// Add a special symbol to identify the package causing the problem
+						if value.getPackageNodeHash() == currentNodeHash {
+							dependencyLoop[i] += " [START]"
+						}
+					}
+				}
+			}
+
+			// Add the current node
+			dependencyLoop[len(dependencyLoop)-1] = GetOutputFriendlyName(currentOutputName, currentPackageFullName) + " [END]"
+
+			// Return an error with the formatted package path
+			return nil, fmt.Errorf("Found a circular reference in the dependency tree:\n%s", strings.Join(dependencyLoop, " -> "))
+		}
+
+		// Add this node to the map which is tracking the current path
+		currentPathNodes.Put(currentNodeHash, currentNode)
 
 		// Evaluate dependencies
 		if len(dependencyTemplates) == 0 {
@@ -409,4 +412,45 @@ func getPackageNode(parentNode *dependencyTreeNode, packageDefinition *types.Pac
 	}
 
 	return packageNode, nil
+}
+
+func (node *dependencyTreeNode) getPackageNodeHash() string {
+	var err error
+
+	if node == nil {
+		log.Panic("Package node cannot be nil")
+	}
+
+	if node.hash != nil {
+		return *node.hash
+	}
+
+	if node.packageDefinition == nil {
+		log.Panic("Package definition cannot be nil")
+	}
+	if node.TemplateInput == nil {
+		log.Panic("Template input cannot be nil")
+	}
+	if node.packageDefinition.PackageInfo == nil {
+		log.Panic("Package info inside package definition cannot be nil")
+	}
+
+	var hashedValues = struct {
+		PackageInfo   *types.PackageInfo
+		PackageInputs *types.GenericMap
+	}{
+		node.packageDefinition.PackageInfo,
+		node.TemplateInput,
+	}
+
+	var hash []byte
+	hash, err = yaml.ObjectToBytes(&hashedValues)
+	if err != nil {
+		log.Panic("Invalid object for node: %s", node.OutputName)
+	}
+
+	var stringHash = string(hash)
+	node.hash = &stringHash
+
+	return stringHash
 }
