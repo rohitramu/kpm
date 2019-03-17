@@ -126,7 +126,7 @@ func ValidateNamespaceSegment(namespaceSegment string) error {
 	}
 
 	// Build the regex
-	var regex = "^[a-z0-9]+$"
+	var regex = "^[a-z]((\\.|_)?[a-z0-9])*$"
 
 	// Check if the value satisfies the regex
 	var isValid bool

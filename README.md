@@ -71,6 +71,7 @@ kpm <subcommand> -h
 ## Golang templating
 KPM uses Golang templating.  More information about defining and using templates can be found in the official [Golang template docs](https://golang.org/pkg/text/template/).
 
+
 # Template packages
 A template package is simply a collection of templates.  This collection of templates can be thought of as a program or function which can be executed.  A template package accepts inputs in the form of parameters, and produces outputs in the form of generated files.
 
@@ -168,7 +169,11 @@ name: kpmtool/helloworld
 version: 1.0.0
 ```
 
-The name of the package should include the namespace that will be used when pushing it to a [Docker registry](#docker).  It may only contain lowercase letters, numbers, forward slashes and dots. Also, it must start with a lowercase letter.
+The name of the package should include the namespace that will be used when pushing it to a [Docker registry](#docker).  It may only contain lowercase letters, numbers, forward slashes, underscores and dots. Also, it must start with a lowercase letter.
+The recommended convention for naming packages is to use dots for separating segments (i.e. creating a heirarchy), and using underscores to separate words inside a segment:
+```
+my_username/my_company.my_product.my_package_name
+```
 
 The version must be in the format `"major.minor.revision"`.  Leading zeros are not permitted in the `major`, `minor` or `revision` segments of the version string, however a segment may be just `0` (zero).  The zero version (`0.0.0`) is not allowed.
 
@@ -495,6 +500,7 @@ myObject:
   anotherNestedObject:
     foo: bar
 ```
+
 
 # Testing your package locally
 
