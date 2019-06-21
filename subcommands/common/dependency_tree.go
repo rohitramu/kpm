@@ -244,7 +244,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 			}
 
 			// Add current node
-			segments[len(segments)] = GetOutputFriendlyName(currentNode.OutputName, currentPackageFullName)
+			segments[len(segments)-1] = GetOutputFriendlyName(currentNode.OutputName, currentPackageFullName)
 
 			return strings.Join(segments, " -> ")
 		}
