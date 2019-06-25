@@ -137,7 +137,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 			// Write the data to the filesystem
 			var outputFilePath = filepath.Join(outputDir, tmpl.Name())
 			log.Verbose("Output file path: %s", outputFilePath)
-			ioutil.WriteFile(outputFilePath, templateOutput, os.ModeAppend)
+			ioutil.WriteFile(outputFilePath, templateOutput, 0755)
 		}
 
 		return nil
