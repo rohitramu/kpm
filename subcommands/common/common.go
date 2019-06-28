@@ -87,6 +87,11 @@ func GetTemplateInput(kpmHomeDir string, packageFullName string, parentTemplate 
 		return nil, err
 	}
 
+	// If the file didn't exist, create an empty map
+	if inputParameters == nil {
+		inputParameters = new(types.GenericMap)
+	}
+
 	// Allow default values to be overridden by the provided parameters
 	for key := range *parameters {
 		(*inputParameters)[key] = (*parameters)[key]
