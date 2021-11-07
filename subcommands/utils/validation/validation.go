@@ -186,3 +186,11 @@ func GetStringOrError(testValue *string, valueName string) (string, error) {
 
 	return *testValue, nil
 }
+
+func GetBoolOrDefault(testValue *bool, defaultValue bool) bool {
+	if testValue == nil {
+		return defaultValue
+	}
+
+	return *testValue
+}

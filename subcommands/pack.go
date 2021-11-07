@@ -1,17 +1,16 @@
 package subcommands
 
 import (
-	"os"
-
 	"github.com/rohitramu/kpm/subcommands/common"
 	"github.com/rohitramu/kpm/subcommands/utils/constants"
 	"github.com/rohitramu/kpm/subcommands/utils/files"
 	"github.com/rohitramu/kpm/subcommands/utils/log"
 	"github.com/rohitramu/kpm/subcommands/utils/types"
+	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
 // PackCmd packs a local template package so it is available for use in the given local KPM repository.
-func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
+func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string, userHasConfirmedArg *bool) error {
 	var err error
 
 	// Package directory
@@ -28,13 +27,9 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 		return err
 	}
 
-	// Get local package repository directory
-	var localPackageRepositoryDir = constants.GetPackageRepositoryDir(kpmHomeDir)
-
 	// Log resolved paths
 	log.Info("====")
 	log.Info("Package directory:             %s", packageDir)
-	log.Info("Package repository directory:  %s", localPackageRepositoryDir)
 	log.Info("====")
 
 	// Validate package and get package info
@@ -49,8 +44,11 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string) error {
 	var packageNameWithVersion = constants.GetPackageFullName(packageInfo.Name, packageInfo.Version)
 	var outputDir = constants.GetPackageDir(kpmHomeDir, packageNameWithVersion)
 
-	// Delete the output directory in case it isn't empty
-	os.RemoveAll(outputDir)
+	// Delete the output directory
+	var userHasConfirmed bool = validation.GetBoolOrDefault(userHasConfirmedArg, false)
+	if err = files.DeleteDirIfExists(outputDir, "output", userHasConfirmed); err != nil {
+		return err
+	}
 
 	// Copy package to output directory
 	log.Verbose("Copying package to: %s", outputDir)

@@ -8,11 +8,12 @@ import (
 	"github.com/rohitramu/kpm/subcommands/utils/constants"
 	"github.com/rohitramu/kpm/subcommands/utils/files"
 	"github.com/rohitramu/kpm/subcommands/utils/log"
+	"github.com/rohitramu/kpm/subcommands/utils/user_prompts"
 	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
 // PurgeCmd removes all versions of a template package from the local KPM repository.
-func PurgeCmd(packageNameArg *string, allConfirm *bool, kpmHomeDirPathArg *string) error {
+func PurgeCmd(packageNameArg *string, userHasConfirmedArg *bool, kpmHomeDirPathArg *string) error {
 	var err error
 	var ok bool
 
@@ -30,7 +31,7 @@ func PurgeCmd(packageNameArg *string, allConfirm *bool, kpmHomeDirPathArg *strin
 	var packages common.PackageNamesAndVersions
 	packages, err = common.GetAvailablePackagesAndVersions(kpmHomeDir)
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve the list of available packages: %s", err)
+		return fmt.Errorf("Failed to retrieve the list of available packages in the local KPM repository: %s", err)
 	}
 
 	// Create function to remove all versions of a package
@@ -40,6 +41,17 @@ func PurgeCmd(packageNameArg *string, allConfirm *bool, kpmHomeDirPathArg *strin
 		versions, ok = packages[currentPackageName]
 		if !ok {
 			return fmt.Errorf("Failed to find package in the local KPM repository: %s", currentPackageName)
+		}
+
+		var userHasConfirmed bool = validation.GetBoolOrDefault(userHasConfirmedArg, false)
+		if !userHasConfirmed {
+			if userHasConfirmed, err = user_prompts.ConfirmWithUser(fmt.Sprintf("All versions of package '%s' will be deleted from the local KPM repository.", currentPackageName)); err != nil {
+				log.Panic("Failed to get user confirmation. \n%s", err)
+			}
+
+			if !userHasConfirmed {
+				return fmt.Errorf("Purge operation cancelled - user did not confirm the delete action.")
+			}
 		}
 
 		// Remove the package
@@ -55,7 +67,7 @@ func PurgeCmd(packageNameArg *string, allConfirm *bool, kpmHomeDirPathArg *strin
 		return nil
 	}
 
-	// If we only want to remove all versions for a single package, iterate over just that package's versions
+	// If we only want to remove all versions of a single package, iterate over just that package's versions
 	if packageName != "" {
 		// Validate package name
 		err = validation.ValidatePackageName(packageName)
@@ -67,17 +79,14 @@ func PurgeCmd(packageNameArg *string, allConfirm *bool, kpmHomeDirPathArg *strin
 		if err != nil {
 			return err
 		}
-	} else if allConfirm != nil && *allConfirm {
-		// If the user has confirmed that they want to remove all packages, purge the local KPM repository
+	} else {
+		// Purge the local KPM repository of all packages
 		for packageName := range packages {
 			err = removeAllVersions(packageName)
 			if err != nil {
 				return err
 			}
 		}
-	} else {
-		log.Warning("Either provide a package name for which to remove all versions, or confirm that you want to remove all packages from the local KPM repository by providing the \"--%s\" flag", constants.PurgeAllFlagName)
-		return nil
 	}
 
 	return nil

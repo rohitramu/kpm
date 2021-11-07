@@ -20,7 +20,7 @@ import (
 
 // RunCmd runs the given template package directory and parameters file,
 // and then writes the output files to the given output directory.
-func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputNameArg *string, outputDirPathArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string) error {
+func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePathArg *string, outputDirPathArg *string, outputNameArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string, userHasConfirmedArg *bool) error {
 	var err error
 
 	// Resolve base paths
@@ -108,8 +108,8 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 	}
 
 	// Delete the output directory in case it isn't empty
-	err = os.RemoveAll(filepath.Join(outputDirPath, outputName))
-	if err != nil {
+	var userHasConfirmed bool = validation.GetBoolOrDefault(userHasConfirmedArg, false)
+	if err = files.DeleteDirIfExists(filepath.Join(outputDirPath, outputName), "output", userHasConfirmed); err != nil {
 		return err
 	}
 

@@ -3,6 +3,9 @@ package constants
 // LogLevelFlagName is the minimum severity log level to output.
 const LogLevelFlagName = "log-level"
 
+// SkipConfirmationFlagName skips user confirmations.
+const SkipConfirmationFlagName = "skip-user-confirmation"
+
 // PackageVersionFlagName is the version of a template package.
 const PackageVersionFlagName = "package-version"
 
@@ -26,6 +29,3 @@ const KpmHomeDirFlagName = "kpm-home-dir"
 
 // DockerRegistryFlagName is the Docker registry to use when pushing or pulling a package.
 const DockerRegistryFlagName = "docker-registry"
-
-// PurgeAllFlagName is used to confirm that .
-const PurgeAllFlagName = "purge-all"

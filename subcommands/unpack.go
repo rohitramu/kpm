@@ -14,7 +14,7 @@ import (
 )
 
 // UnpackCmd exports a template package to the specified path.
-func UnpackCmd(packageNameArg *string, packageVersionArg *string, exportDirPathArg *string, exportNameArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string) error {
+func UnpackCmd(packageNameArg *string, packageVersionArg *string, exportDirPathArg *string, exportNameArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string, userHasConfirmedArg *bool) error {
 	var err error
 
 	// Resolve base paths
@@ -79,6 +79,7 @@ func UnpackCmd(packageNameArg *string, packageVersionArg *string, exportDirPathA
 		log.Warning("Package \"%s\" not found in local repository, now checking docker registry \"%s\"...", packageFullName, dockerRegistry)
 
 		// Check remote repository for package
+		//TODO: Replace this with an error if the package does not exist - the docker pull (of the top-level package) should pull all dependencies automatically
 		err = common.PullPackage(kpmHomeDir, dockerRegistry, packageName, packageVersion)
 		if err != nil {
 			return fmt.Errorf("Failed to get package \"%s\" from docker registry \"%s\": %s", packageFullName, dockerRegistry, err)
@@ -97,10 +98,9 @@ func UnpackCmd(packageNameArg *string, packageVersionArg *string, exportDirPathA
 	// Get full export path
 	var exportPath = filepath.Join(exportDir, exportName)
 
-	// Delete the export path in case it isn't empty
-	err = os.RemoveAll(exportPath)
-	if err != nil {
-		log.Panic("Failed to remove directory: %s\n%s", exportPath, err)
+	var userHasConfirmed bool = validation.GetBoolOrDefault(userHasConfirmedArg, false)
+	if err = files.DeleteDirIfExists(exportDir, "export", userHasConfirmed); err != nil {
+		return err
 	}
 
 	err = os.MkdirAll(exportPath, os.ModePerm)
@@ -111,6 +111,8 @@ func UnpackCmd(packageNameArg *string, packageVersionArg *string, exportDirPathA
 	// Copy package to export path
 	log.Verbose("Exporting package to: %s", exportPath)
 	files.CopyDir(packageDir, exportPath)
+
+	log.Info(fmt.Sprintf("Package '%s' exported to: %s", packageFullName, exportPath))
 
 	return nil
 }

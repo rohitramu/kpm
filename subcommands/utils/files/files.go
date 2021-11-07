@@ -11,6 +11,7 @@ import (
 	"github.com/otiai10/copy"
 
 	"github.com/rohitramu/kpm/subcommands/utils/log"
+	"github.com/rohitramu/kpm/subcommands/utils/user_prompts"
 )
 
 // GetWorkingDir returns the current working directory.
@@ -170,6 +171,62 @@ func DirExists(absoluteDirPath string, lowercaseHumanFriendlyName string) error 
 	}
 
 	log.Verbose("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath)
+
+	return nil
+}
+
+func DirIsEmpty(absoluteDirPath string, lowercaseHumanFriendlyName string) (bool, error) {
+	var err error
+
+	if err = DirExists(absoluteDirPath, lowercaseHumanFriendlyName); err != nil {
+		return false, err
+	}
+
+	var fileInfo *os.File
+	if fileInfo, err = os.Open(absoluteDirPath); err == nil {
+		return false, err
+	}
+
+	var names []string
+	if names, err = fileInfo.Readdirnames(1); err == nil {
+		return false, err
+	}
+
+	return len(names) == 0, nil
+}
+
+func DeleteDirIfExists(absoluteDirPath string, lowercaseHumanFriendlyName string, userHasConfirmed bool) error {
+	var err error
+
+	// If the directory doesn't exist, exit
+	if err = DirExists(absoluteDirPath, lowercaseHumanFriendlyName); err != nil {
+		return err
+	}
+
+	var dirIsEmpty bool
+	if dirIsEmpty, err = DirIsEmpty(absoluteDirPath, lowercaseHumanFriendlyName); err != nil {
+		return err
+	}
+
+	// If the directory is not empty, get user confirmation
+	if !dirIsEmpty {
+		// If the user hasn't already confirmed, ask for a confirmation now
+		if !userHasConfirmed {
+			if userHasConfirmed, err = user_prompts.ConfirmWithUser(fmt.Sprintf("%s will be deleted.", toTitleCase(lowercaseHumanFriendlyName))); err != nil {
+				return err
+			}
+		}
+
+		// Couldn't get user confirmation, so return an error saying that the operation has been cancelled
+		if !userHasConfirmed {
+			return fmt.Errorf("Operation cancelled - user did not confirm deletion of pre-existing %s folder.", lowercaseHumanFriendlyName)
+		}
+	}
+
+	// Delete the directory
+	if err = os.RemoveAll(absoluteDirPath); err != nil {
+		log.Panic("Failed to delete directory: %s\n%s", absoluteDirPath, err)
+	}
 
 	return nil
 }

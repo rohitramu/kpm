@@ -23,6 +23,7 @@ import (
 
 // PullPackage retrieves a remote template package and makes it available for use.
 func PullPackage(kpmHomeDir string, dockerRegistry string, packageName string, packageVersion string) error {
+	//TODO: Decouple Docker operations from the rest of KPM.
 	var err error
 
 	// Get the package's full name
@@ -58,6 +59,8 @@ func PullPackage(kpmHomeDir string, dockerRegistry string, packageName string, p
 		log.Error("Failed to extract Docker image contents")
 		return err
 	}
+
+	//TODO: Pull all dependencies of this package
 
 	return nil
 }
@@ -383,7 +386,7 @@ func GetPackageFullNamesFromLocalRepository(kpmHomeDir string) ([]string, error)
 	// Exit early if the packages directory doesn't exist
 	err = files.DirExists(packageRepositoryDir, "packages repository")
 	if err != nil {
-		return nil, err
+		return []string{}, nil
 	}
 
 	// Traverse the packages directory

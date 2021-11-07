@@ -2,17 +2,15 @@ package subcommands
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/rohitramu/kpm/subcommands/common"
 	"github.com/rohitramu/kpm/subcommands/utils/constants"
 	"github.com/rohitramu/kpm/subcommands/utils/files"
-	"github.com/rohitramu/kpm/subcommands/utils/log"
 	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
 // RemoveCmd removes a template package from the local KPM repository.
-func RemoveCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string) error {
+func RemoveCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string, userHasConfirmedArg *bool) error {
 	var err error
 
 	// Get KPM home directory
@@ -41,7 +39,7 @@ func RemoveCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPath
 	if err != nil {
 		// Since the package version was not provided, check the local repository for the highest version
 		if packageVersion, err = common.GetHighestPackageVersion(kpmHomeDir, packageName); err != nil {
-			return fmt.Errorf("Package version must be provided if the package does not exist in the local repository: %s", err)
+			return fmt.Errorf("Could not find package '%s' in the local KPM repository. %s", packageName, err)
 		}
 	}
 
@@ -55,18 +53,9 @@ func RemoveCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPath
 	var packageFullName = constants.GetPackageFullName(packageName, packageVersion)
 	var packageDir = constants.GetPackageDir(kpmHomeDir, packageFullName)
 
-	// Check that the package exists in the local repository
-	err = files.DirExists(packageDir, "template package")
-	if err != nil {
-		// Package doesn't exist, so just log a warning and exit
-		log.Warning("Package \"%s\" not found in local repository", packageFullName)
-		return nil
-	}
-
-	// Delete the package from the local repository
-	err = os.RemoveAll(packageDir)
-	if err != nil {
-		return fmt.Errorf("Failed to remove package from local repository: %s\n%s", packageFullName, err)
+	var userHasConfirmed bool = validation.GetBoolOrDefault(userHasConfirmedArg, false)
+	if err = files.DeleteDirIfExists(packageDir, "template package", userHasConfirmed); err != nil {
+		return err
 	}
 
 	return nil

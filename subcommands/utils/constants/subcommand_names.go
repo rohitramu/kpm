@@ -18,11 +18,14 @@ const UnpackCmdName = "unpack"
 // RunCmdName is the name of the subcommand which generates output using a template package.
 const RunCmdName = "run"
 
+// DockerCmdName is the name of the subcommand which contains subcommands for interacting with KPM packages in Docker registries.
+const DockerCmdName = "docker"
+
 // PushCmdName is the name of the subcommand which pushes a template package to a remote repository.
 const PushCmdName = "push"
 
 // PullCmdName is the name of the subcommand which pulls a template package from a remote repository.
 const PullCmdName = "pull"
 
-// ViewCmdName is the name of the subcommand which outputs the contents of the default parameters file in a package.
-const ViewCmdName = "view"
+// InspectCmdName is the name of the subcommand which outputs the contents of the default parameters file in a package.
+const InspectCmdName = "inspect"

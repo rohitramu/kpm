@@ -12,8 +12,8 @@ import (
 	"github.com/rohitramu/kpm/subcommands/utils/validation"
 )
 
-// ViewCmd displays the given template package's parameters file.
-func ViewCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string) error {
+// InspectCmd displays the given template package's parameters file.
+func InspectCmd(packageNameArg *string, packageVersionArg *string, kpmHomeDirPathArg *string, dockerRegistryArg *string) error {
 	var err error
 
 	// Get KPM home directory
