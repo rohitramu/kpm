@@ -200,7 +200,7 @@ func DeleteDirIfExists(absoluteDirPath string, lowercaseHumanFriendlyName string
 
 	// If the directory doesn't exist, exit
 	if err = DirExists(absoluteDirPath, lowercaseHumanFriendlyName); err != nil {
-		return err
+		return nil
 	}
 
 	var dirIsEmpty bool
