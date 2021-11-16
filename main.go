@@ -16,7 +16,7 @@ var (
 	// Log level
 	logLevelFlag = cli.StringFlag{
 		Name:  fmt.Sprintf("%s, log", constants.LogLevelFlagName),
-		Usage: "The minimum severity log level to output - the severity log levels in increasing order are: \"verbose\", \"info\" (default), \"warning\", \"error\", \"none\"",
+		Usage: "The minimum severity log level to output - the severity log levels in increasing order are: \"debug\", \"verbose\", \"info\" (default), \"warning\", \"error\", \"none\"",
 	}
 )
 
