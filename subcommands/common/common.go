@@ -128,7 +128,7 @@ func GetSharedTemplate(packageDir string) (*template.Template, error) {
 			return nil, err
 		}
 
-		log.Verbose("Found %d template(s) in directory: %s", numHelpers, helpersDir)
+		log.Debug("Found %d template(s) in directory: %s", numHelpers, helpersDir)
 	}
 
 	// Add the package-specific template functions
@@ -316,7 +316,7 @@ func GetExecutableTemplates(parentTemplate *template.Template, packageDir string
 	}
 
 	// Return the templates in the directory
-	log.Verbose("Found template directory: %s", executableTemplatesDir)
+	log.Debug("Found template directory: %s", executableTemplatesDir)
 	var result []*template.Template
 	result, err = templates.GetTemplatesFromDir(parentTemplate, executableTemplatesDir)
 	if err != nil {

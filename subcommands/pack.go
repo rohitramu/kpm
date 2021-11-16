@@ -33,7 +33,7 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string, userHasConfir
 	log.Info("====")
 
 	// Validate package and get package info
-	log.Verbose("Getting package info")
+	log.Debug("Getting package info")
 	var packageInfo *types.PackageInfo
 	packageInfo, err = common.GetPackageInfo(kpmHomeDir, packageDir)
 	if err != nil {
@@ -51,7 +51,7 @@ func PackCmd(packageDirPathArg *string, kpmHomeDirPathArg *string, userHasConfir
 	}
 
 	// Copy package to output directory
-	log.Verbose("Copying package to: %s", outputDir)
+	log.Debug("Copying package to: %s", outputDir)
 	files.CopyDir(packageDir, outputDir)
 
 	log.Info("====")

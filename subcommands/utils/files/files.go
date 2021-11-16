@@ -152,7 +152,7 @@ func FileExists(absoluteFilePath string, lowercaseHumanFriendlyName string) erro
 		return fmt.Errorf("%s file path does not point to a file: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteFilePath)
 	}
 
-	log.Verbose("Found %s file: %s", lowercaseHumanFriendlyName, absoluteFilePath)
+	log.Debug("Found %s file: %s", lowercaseHumanFriendlyName, absoluteFilePath)
 
 	return nil
 }
@@ -170,7 +170,7 @@ func DirExists(absoluteDirPath string, lowercaseHumanFriendlyName string) error 
 		return fmt.Errorf("%s directory path does not point to a directory: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteDirPath)
 	}
 
-	log.Verbose("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath)
+	log.Debug("Found %s directory: %s", lowercaseHumanFriendlyName, absoluteDirPath)
 
 	return nil
 }
@@ -212,7 +212,7 @@ func DeleteDirIfExists(absoluteDirPath string, lowercaseHumanFriendlyName string
 	if !dirIsEmpty {
 		// If the user hasn't already confirmed, ask for a confirmation now
 		if !userHasConfirmed {
-			if userHasConfirmed, err = user_prompts.ConfirmWithUser(fmt.Sprintf("%s will be deleted.", toTitleCase(lowercaseHumanFriendlyName))); err != nil {
+			if userHasConfirmed, err = user_prompts.ConfirmWithUser("%s directory exists, so it will be deleted before continuing.", toTitleCase(lowercaseHumanFriendlyName)); err != nil {
 				return err
 			}
 		}

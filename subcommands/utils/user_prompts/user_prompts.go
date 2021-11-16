@@ -8,11 +8,12 @@ import (
 	"strings"
 )
 
-func ConfirmWithUser(promptText string) (bool, error) {
+func ConfirmWithUser(format string, args ...interface{}) (bool, error) {
 	var err error
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("%s Continue (Y/N)? ", promptText)
+	message := fmt.Sprintf(format, args...)
+	fmt.Printf("%s Continue (Y/N)? ", message)
 
 	var text string
 	if text, err = reader.ReadString('\n'); err != nil && err != io.EOF {

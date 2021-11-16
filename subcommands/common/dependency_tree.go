@@ -164,7 +164,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 			log.Panic("Object on \"toVisit\" list is not a tree node")
 		}
 
-		log.Verbose("Visiting node: %s", currentNode.OutputName)
+		log.Debug("Visiting node: %s", currentNode.OutputName)
 
 		var currentOutputName = currentNode.OutputName
 		var currentPackageName = currentNode.packageDefinition.PackageInfo.Name

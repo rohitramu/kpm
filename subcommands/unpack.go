@@ -109,7 +109,7 @@ func UnpackCmd(packageNameArg *string, packageVersionArg *string, exportDirPathA
 	}
 
 	// Copy package to export path
-	log.Verbose("Exporting package to: %s", exportPath)
+	log.Debug("Exporting package contents to: %s", exportPath)
 	files.CopyDir(packageDir, exportPath)
 
 	log.Info(fmt.Sprintf("Package '%s' exported to: %s", packageFullName, exportPath))

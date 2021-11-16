@@ -45,7 +45,7 @@ func PurgeCmd(packageNameArg *string, userHasConfirmedArg *bool, kpmHomeDirPathA
 
 		var userHasConfirmed bool = validation.GetBoolOrDefault(userHasConfirmedArg, false)
 		if !userHasConfirmed {
-			if userHasConfirmed, err = user_prompts.ConfirmWithUser(fmt.Sprintf("All versions of package '%s' will be deleted from the local KPM repository.", currentPackageName)); err != nil {
+			if userHasConfirmed, err = user_prompts.ConfirmWithUser("All versions of package '%s' will be deleted from the local KPM repository.", currentPackageName); err != nil {
 				log.Panic("Failed to get user confirmation. \n%s", err)
 			}
 

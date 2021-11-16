@@ -84,14 +84,17 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 		return err
 	}
 
+	packageOutputDirPath := filepath.Join(outputDirPath, outputName)
+
 	// Log resolved values
 	log.Info("====")
-	log.Info("Package name:      %s", packageName)
-	log.Info("Package version:   %s", packageVersion)
-	log.Info("Package directory: %s", packageDirPath)
-	log.Info("Parameters file:   %s", parametersFilePath)
-	log.Info("Output name:       %s", outputName)
-	log.Info("Output directory:  %s", outputDirPath)
+	log.Info("Package name:              %s", packageName)
+	log.Info("Package version:           %s", packageVersion)
+	log.Info("Package directory:         %s", packageDirPath)
+	log.Info("Parameters file:           %s", parametersFilePath)
+	log.Info("Output name:               %s", outputName)
+	log.Info("Output directory:          %s", outputDirPath)
+	log.Info("Package output directory:  %s", packageOutputDirPath)
 	log.Info("====")
 
 	// Get the default parameters
@@ -109,7 +112,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 
 	// Delete the output directory in case it isn't empty
 	var userHasConfirmed bool = validation.GetBoolOrDefault(userHasConfirmedArg, false)
-	if err = files.DeleteDirIfExists(filepath.Join(outputDirPath, outputName), "output", userHasConfirmed); err != nil {
+	if err = files.DeleteDirIfExists(packageOutputDirPath, "package output", userHasConfirmed); err != nil {
 		return err
 	}
 
@@ -136,7 +139,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 
 			// Write the data to the filesystem
 			var outputFilePath = filepath.Join(outputDir, tmpl.Name())
-			log.Verbose("Output file path: %s", outputFilePath)
+			log.Verbose("Writing file: %s", outputFilePath)
 			ioutil.WriteFile(outputFilePath, templateOutput, 0755)
 		}
 
@@ -146,7 +149,7 @@ func RunCmd(packageNameArg *string, packageVersionArg *string, parametersFilePat
 		return err
 	}
 
-	log.Verbose("Executed %d packages", numPackages)
+	log.Debug("Executed %d packages", numPackages)
 
 	return nil
 }

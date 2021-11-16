@@ -47,7 +47,7 @@ CMD [""]
 			log.Panic("Failed to write dockerfile: %s", err)
 		}
 
-		log.Verbose("Generated Dockerfile:\n%s", dockerfile)
+		log.Debug("Generated Dockerfile:\n%s", dockerfile)
 	}
 
 	return dockerfilePath

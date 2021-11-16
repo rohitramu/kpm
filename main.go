@@ -11,6 +11,12 @@ import (
 	"github.com/rohitramu/kpm/subcommands/utils/log"
 )
 
+/*
+TODO: Update docs
+ - User confirmation flag
+ - docker subcommand
+*/
+
 // Global flags
 var (
 	// Log level
@@ -24,7 +30,7 @@ var (
 var (
 	// Confirmation flag
 	skipConfirmationFlag = cli.BoolFlag{
-		Name:  fmt.Sprintf("%s, confirm", constants.SkipConfirmationFlagName),
+		Name:  fmt.Sprintf("%s, confirmed", constants.SkipConfirmationFlagName),
 		Usage: "Skip user confirmations.",
 	}
 

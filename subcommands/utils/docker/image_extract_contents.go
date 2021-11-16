@@ -22,7 +22,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Create a container using the image
 	{
-		log.Verbose("Creating container \"%s\" from image: %s", containerName, imageName)
+		log.Debug("Creating container \"%s\" from image: %s", containerName, imageName)
 
 		var args = []string{"create", "--name", containerName, imageName}
 		_, err = cmd.Exec(exe, args...)
@@ -33,7 +33,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Delete container after we're done
 	defer func() {
-		log.Verbose("Deleting container: %s", containerName)
+		log.Debug("Deleting container: %s", containerName)
 
 		var args = []string{"rm", "--force", containerName}
 		var deleteErr error
@@ -53,7 +53,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 	var imageNameWithoutColon = strings.Replace(imageName, ":", "-", -1)
 	var tempDir = filepath.Join(os.TempDir(), ".kpm", imageNameWithoutColon)
 	{
-		log.Verbose("Extracting contents from container \"%s\" to temporary directory: %s", containerName, tempDir)
+		log.Debug("Extracting contents from container \"%s\" to temporary directory: %s", containerName, tempDir)
 
 		// Remove temporary directory to clear it
 		err = os.RemoveAll(tempDir)
@@ -77,7 +77,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Copy data to destination directory
 	{
-		log.Verbose("Copying contents of container \"%s\" to destination directory: %s", containerName, destinationDir)
+		log.Debug("Copying contents of container \"%s\" to destination directory: %s", containerName, destinationDir)
 
 		// Remove destination directory to clear it
 		err = os.RemoveAll(destinationDir)
@@ -100,7 +100,7 @@ func ExtractImageContents(imageName string, destinationDir string) error {
 
 	// Delete temporary directory
 	{
-		log.Verbose("Deleting temporary directory: %s", tempDir)
+		log.Debug("Deleting temporary directory: %s", tempDir)
 		err = os.RemoveAll(tempDir)
 		if err != nil {
 			return fmt.Errorf("Failed to delete temporary directory: %s", err)

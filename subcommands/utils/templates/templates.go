@@ -156,6 +156,7 @@ func ExecuteTemplate(tmpl *template.Template, values interface{}) ([]byte, error
 	}
 
 	// Apply values to template
+	log.Debug("Executing template: %s", tmpl.Name())
 	var outputByteBuffer = new(bytes.Buffer)
 	err = tmpl.Execute(outputByteBuffer, values)
 	if err != nil {
@@ -181,28 +182,29 @@ func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.Temp
 	}
 
 	// Parse all templates in the given directory, ignoring sub-directories
-	log.Verbose("Parsing templates in directory: %s", templatesDirPath)
+	log.Debug("Parsing templates in directory: %s", templatesDirPath)
 	for _, filesystemObject := range filesystemObjects {
 		var fileName = filesystemObject.Name()
 
 		// Ignore directories
 		if filesystemObject.IsDir() {
 			log.Warning("Ignoring sub-directory: %s", fileName)
-		} else {
-			log.Verbose("Parsing template: %s", fileName)
-
-			// Create a template object from the file
-			var filePath = filepath.Join(templatesDirPath, fileName)
-			var tmpl *template.Template
-			tmpl, err = GetTemplateFromFile(getParentTemplate(), fileName, filePath)
-			if err != nil {
-				return err
-			}
-
-			// Consume template
-			log.Verbose("Consuming template: %s", tmpl.Name())
-			consumeTemplate(tmpl)
+			continue
 		}
+
+		log.Debug("Parsing template: %s", fileName)
+
+		// Create a template object from the file
+		var filePath = filepath.Join(templatesDirPath, fileName)
+		var tmpl *template.Template
+		tmpl, err = GetTemplateFromFile(getParentTemplate(), fileName, filePath)
+		if err != nil {
+			return err
+		}
+
+		// Consume template
+		log.Debug("Consuming template: %s", tmpl.Name())
+		consumeTemplate(tmpl)
 	}
 
 	return nil
