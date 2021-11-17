@@ -58,11 +58,11 @@ var loggers = func() []*stdLog.Logger {
 	var result = make([]*stdLog.Logger, MaxLevel+1)
 
 	result[LevelNone] = nil
-	result[LevelError] = stdLog.New(WriterErr, "[ERR ] ", stdLog.LstdFlags)
-	result[LevelWarning] = stdLog.New(WriterErr, "[WARN] ", stdLog.LstdFlags)
-	result[LevelInfo] = stdLog.New(WriterInfo, "[INFO] ", stdLog.LstdFlags)
-	result[LevelVerbose] = stdLog.New(WriterInfo, "[VERB] ", stdLog.LstdFlags)
-	result[LevelDebug] = stdLog.New(WriterInfo, "[DEBG] ", stdLog.LstdFlags)
+	result[LevelError] = stdLog.New(WriterErr, "[ERR] ", stdLog.LstdFlags)
+	result[LevelWarning] = stdLog.New(WriterErr, "[WRN] ", stdLog.LstdFlags)
+	result[LevelInfo] = stdLog.New(WriterInfo, "[INF] ", stdLog.LstdFlags)
+	result[LevelVerbose] = stdLog.New(WriterInfo, "[VRB] ", stdLog.LstdFlags)
+	result[LevelDebug] = stdLog.New(WriterInfo, "[DBG] ", stdLog.LstdFlags)
 
 	return result
 }()
