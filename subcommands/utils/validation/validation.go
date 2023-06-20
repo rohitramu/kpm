@@ -23,7 +23,7 @@ func ValidatePackageName(packageName string) error {
 	// Check namespace segments
 	var nameSegments = strings.Split(packageName, "/")
 	for i, namespaceSegment := range nameSegments {
-		// The final segment is the unqualified name, so don't check if it is a valid namespace segment
+		// The final segment is the unqualified name, so don't check if it is a valid namespace segment.
 		if i+1 < len(nameSegments) {
 			err = ValidateNamespaceSegment(namespaceSegment)
 			if err != nil {
@@ -36,7 +36,7 @@ func ValidatePackageName(packageName string) error {
 	var unqualifiedName = nameSegments[len(nameSegments)-1]
 
 	// Check the unqualified name
-	var regex = "^[a-z]((\\.|_)?[a-z0-9])*$"
+	var regex = "^[a-z]((\\.|__?|-+)?[a-z0-9])*$"
 	var isValid bool
 	isValid, err = regexp.MatchString(regex, unqualifiedName)
 	if err != nil {
@@ -45,7 +45,7 @@ func ValidatePackageName(packageName string) error {
 
 	// Return an error if the name is not valid
 	if !isValid {
-		return fmt.Errorf("The unqualified package name (i.e. ignoring the namespace) must consist of lowercase words which may be separated by dots or underscores: %s", packageName)
+		return fmt.Errorf("The unqualified package name (i.e. ignoring the namespace) must consist of lowercase words which may be separated by dots, underscores and/or hyphens: %s", packageName)
 	}
 
 	return nil

@@ -151,7 +151,7 @@ If an output name is not specified with the `--output-name` flag, `<package name
 
 ### Directory structure
 
-A template package must have the following directory structure (items with trailing slashes are directories):
+A template package must have the following directory structure, but not every file is required (items with trailing slashes are directories):
 
 ```txt
 <working dir>
@@ -189,7 +189,7 @@ name: kpmtool/helloworld
 version: 1.0.0
 ```
 
-The name of the package should include the namespace that will be used when pushing it to a [Docker registry](#docker).  It may only contain lowercase letters, numbers, forward slashes, underscores and dots. Also, it must start with a lowercase letter.
+The name of the package should include the namespace that will be used when pushing it to a [Docker registry](#docker).  It may only contain lowercase letters, numbers, forward slashes, underscores, dashes and dots. Also, it must start with a lowercase letter.
 The recommended convention for naming packages is to use dots for separating segments (i.e. creating a heirarchy), and using underscores to separate words inside a segment:
 
 ```cmd

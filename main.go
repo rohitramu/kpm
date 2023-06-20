@@ -54,7 +54,7 @@ var (
 
 	// Output directory
 	outputDirFlag = cli.StringFlag{
-		Name:  fmt.Sprintf("%s, d", constants.OutputDirFlagName),
+		Name:  fmt.Sprintf("%s, o", constants.OutputDirFlagName),
 		Usage: fmt.Sprintf("Directory in which output files should be written (defaults to \"%s\" under the current working directory) - WARNING: the sub-directory specified by \"<outputName>\" will be deleted if it exists.", constants.GeneratedDirName),
 		//TODO: Add support for environment variable and file config
 	}
@@ -94,7 +94,7 @@ func main() {
 	// CLI app details
 	app := cli.NewApp()
 	app.Name = "kpm"
-	app.Usage = "Kubernetes Package Manager"
+	app.Usage = "Text generation via templates"
 	app.Version = "1.0.0"
 	app.EnableBashCompletion = true
 
@@ -228,7 +228,7 @@ func main() {
 		// Inspect
 		{
 			Name:  constants.InspectCmdName,
-			Usage: "Outputs the contents of the default parameters file in a template package.",
+			Usage: "Prints the contents of the default parameters file in a template package.",
 			Flags: []cli.Flag{
 				packageVersionFlag,
 				kpmHomeDirFlag,
@@ -248,6 +248,21 @@ func main() {
 			Name:  constants.DockerCmdName,
 			Usage: "Docker integration.",
 			Subcommands: []cli.Command{
+				// Versions
+				{
+					Name:  constants.VersionsCmdName,
+					Usage: "Lists the versions of a package available in a remote Docker registry.",
+					Flags: []cli.Flag{
+						dockerRegistryFlag,
+					},
+					ArgsUsage: "<package name>",
+					Action: func(c *cli.Context) error {
+						var packageName = getStringArg(c, 0)
+						var dockerRegistry = getStringFlag(c, constants.DockerRegistryFlagName)
+						return subcommands.GetPackageVersionsCmd(packageName, dockerRegistry)
+					},
+				},
+
 				// Push
 				{
 					Name:  constants.PushCmdName,

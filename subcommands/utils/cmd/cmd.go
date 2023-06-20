@@ -11,6 +11,8 @@ import (
 func Exec(exe string, args ...string) (string, error) {
 	var err error
 
+	log.Debug("Running command: %s %s", exe, strings.Join(args, " "))
+
 	// Create the command
 	var cmd = exec.Command(exe, args...)
 

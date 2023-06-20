@@ -17,12 +17,18 @@ const DefaultDockerRegistry = "docker.io"
 // DockerfileRootDir is the root directory to use when building or copying from a Docker image.
 const DockerfileRootDir = ".kpm"
 
-// GetImageName creates a new image name based on the Docker repository, package name and resolved package version.
-func GetImageName(dockerRegistry string, packageName string, resolvedPackageVersion string) string {
-	var imageName = fmt.Sprintf("%s:%s", packageName, resolvedPackageVersion)
+func GetImageNameWithoutTag(dockerRegistry string, packageName string) string {
+	imageName := packageName
 	if dockerRegistry != DefaultDockerRegistry {
 		imageName = fmt.Sprintf("%s/%s", dockerRegistry, imageName)
 	}
+
+	return imageName
+}
+
+// GetImageName creates a new image name based on the Docker repository, package name and resolved package version.
+func GetImageName(dockerRegistry string, packageName string, resolvedPackageVersion string) string {
+	imageName := fmt.Sprintf("%s:%s", GetImageNameWithoutTag(dockerRegistry, packageName), resolvedPackageVersion)
 
 	return imageName
 }
