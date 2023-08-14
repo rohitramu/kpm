@@ -2,12 +2,10 @@
 
 - [What is KPM?](#what-is-kpm)
 - [Setup](#setup)
-  - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Command line usage](#command-line-usage)
   - [Golang templating](#golang-templating)
 - [Template packages](#template-packages)
-  - [Pull a template package from a Docker registry](#pull-a-template-package-from-a-docker-registry)
   - [List the locally available template packages](#list-the-locally-available-template-packages)
   - [Create a parameters file](#create-a-parameters-file)
   - [View a template package's default parameters file](#view-a-template-packages-default-parameters-file)
@@ -24,29 +22,12 @@
 - [Testing your package locally](#testing-your-package-locally)
 - [Pack your template package](#pack-your-template-package)
   - [Unpack a template package](#unpack-a-template-package)
-- [Sharing your template package](#sharing-your-template-package)
-  - [Push your template package to a Docker registry](#push-your-template-package-to-a-docker-registry)
 
 ## What is KPM?
 
 KPM is a command line tool which simplifies and modularizes the process of generating text files.  It was specifically built to generate configuration files for Kubernetes, however it can be used for any text file generation.
 
 ## Setup
-
-### Prerequisites
-
-#### Docker
-
-In order to [push](#push-your-template-package-to-a-docker-registry) and [pull](#pull-a-template-package-from-a-docker-registry) template packages, you must have installed and configured [Docker](https://docs.docker.com/install/).
-
-The default Docker registry used is `docker.io` (i.e. Docker Hub).  Ensure that you have a Docker Hub account and have credentials by running `docker login docker.io`.
-
-To specify a different Docker registry, set the `--docker-registry` flag on subcommands which may interact with a Docker registry (e.g. [`push`](#push-your-template-package-to-a-docker-registry), [`pull`](#pull-a-template-package-from-a-docker-registry), [`run`](#execute-a-template-package), [`view`](#view-a-template-packages-default-parameters-file)).  E.g. to log in and run a package from your own Docker registry:
-
-```cmd
-docker login my.registry.com
-kpm run mynamespace/mypackage -v 2.0.0 --docker-registry my.registry.com
-```
 
 ### Installation
 
@@ -76,20 +57,9 @@ A template package is simply a collection of templates.  This collection of temp
 
 Usage of a template package typically consists of these steps:
 
- 1. [Pull a template package](#pull-a-template-package-from-a-docker-registry) from a Docker registry to make it available locally.
- 2. [Create a parameters file](#create-a-parameters-file) which can be used as input to the template package.
- 3. [Run the template package](#execute-a-template-package) with your parameters file.
- 4. View your generated files!
-
-### Pull a template package from a Docker registry
-
-Pull a template package from a [Docker registry](#docker) with the "pull" subcommand.  For example, try running the following command:
-
-```cmd
-kpm pull kpmtool/example -v 1.0.0
-```
-
-The default [Docker registry](#docker) which will be used is `docker.io` (i.e. Docker Hub).  A different Docker registry can be specified by setting the `--docker-registry` flag.
+1. [Create a parameters file](#create-a-parameters-file) which can be used as input to the template package.
+1. [Run the template package](#execute-a-template-package) with your parameters file.
+1. View your generated files!
 
 ### List the locally available template packages
 
@@ -120,9 +90,7 @@ Users may find it useful to view the default parameters file in order to gain a 
 kpm view kpmtool/example -v 1.0.0
 ```
 
-If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-a-template-package-from-a-docker-registry) or [packed](#pack-your-template-package)) will be used.
-
-If a version is specified and the package cannot be found in the local KPM repository, an attempt will be made to pull the package from the `docker.io` [Docker registry](#docker) (i.e. Docker Hub).  A different Docker registry can be specified by setting the `--docker-registry` flag.
+If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [packed](#pack-your-template-package)) will be used.
 
 ### Execute a template package
 
@@ -139,9 +107,7 @@ kpm run kpmtool/example -v 1.0.0
 kpm run kpmtool/example -v 1.0.0 -f my_params.yaml
 ```
 
-If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-a-template-package-from-a-docker-registry) or [packed](#pack-your-template-package)) will be used.
-
-If a version is specified and the package cannot be found in the local KPM repository, an attempt will be made to pull the package from the `docker.io` [Docker registry](#docker) (i.e. Docker Hub).  A different Docker registry can be specified by setting the `--docker-registry` flag.
+If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [packed](#pack-your-template-package)) will be used.
 
 If an output directory is not specified with the `--output-dir` flag, files will be generated in `<current directory>/.kpm_generated/<output name>`.
 
@@ -189,11 +155,11 @@ name: kpmtool/helloworld
 version: 1.0.0
 ```
 
-The name of the package should include the namespace that will be used when pushing it to a [Docker registry](#docker).  It may only contain lowercase letters, numbers, forward slashes, underscores, dashes and dots. Also, it must start with a lowercase letter.
+The name of the package may only contain lowercase letters, numbers, forward slashes, underscores, dashes and dots. Also, it must start with a lowercase letter.
 The recommended convention for naming packages is to use dots for separating segments (i.e. creating a heirarchy), and using underscores to separate words inside a segment:
 
 ```cmd
-my_username/my_company.my_product.my_package_name
+my_username/my_organization.my_product.my_package_name
 ```
 
 The version must be in the format `"major.minor.revision"`.  Leading zeros are not permitted in the `major`, `minor` or `revision` segments of the version string, however a segment may be just `0` (zero).  The zero version (`0.0.0`) is not allowed.
@@ -588,7 +554,7 @@ kpm run username/my.package -v 0.1.0
 
 ### Unpack a template package
 
-Unpacking (i.e. extracting) a template package to your file system can be useful to inspect its inner workings.  It can also be useful if you need to re-push a template package to a Docker registry that you control, by modifying the package name (e.g. in production scenarios, since package versions are mutable).
+Unpacking (i.e. extracting) a template package to your file system can be useful to inspect its inner workings.
 
 Unpack a template package by running the "unpack" subcommand:
 
@@ -602,35 +568,4 @@ If an output directory is not provided with the `--output-dir` flag, `<current d
 
 If an export name is not provided with the `--export-name` flag, `<package name>-<package version>` will be used.
 
-If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-a-template-package-from-a-docker-registry) or [packed](#pack-your-template-package)) will be used.
-
-If a version is specified and the template package is not available in the local KPM repository, it will be pulled from the `docker.io` [Docker registry](#docker) (i.e. Docker Hub).  Specify a different Docker registry to use with the `--docker-registry` flag.
-
-## Sharing your template package
-
-### Push your template package to a Docker registry
-
-1. If you have not already done so, make your package locally available by running the ["pack" command](#pack-your-template-package).  You can verify that it really is locally available with the ["list" command](#list-the-locally-available-template-packages).
-
-    ```cmd
-    kpm pack /path/to/package/root
-    kpm ls
-    ```
-
-1. To push your package to a [Docker registry](#docker), ensure that you have the credentials to do so by first logging in.  For example, to get credentials for your Docker Hub account, run:
-
-    ```cmd
-    docker login docker.io
-    ```
-
-1. Run the "push" subcommand to push the template package to the Docker registry:
-
-    ```cmd
-    kpm push username/example
-    ```
-
-1. Your package is now usable by anyone who has access to your Docker repository!
-
-    ```cmd
-    kpm pull username/example -v 0.1.0
-    ```
+If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [packed](#pack-your-template-package)) will be used.

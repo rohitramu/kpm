@@ -11,6 +11,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Ignore files and folders that start with a ".", except for the ".git" folder
+# Ignore files and folders that start with a ".", except for certain files/directories
 .*
 !.git
+!.travis.yml
+!.pre-commit-config.yaml
