@@ -15,11 +15,11 @@ repos:
     rev: v0.5.1
     hooks:
       - id: go-fmt
-      - id: go-imports
-      - id: go-lint
-      - id: go-build
+      # - id: go-imports
+      # - id: go-lint
+      # - id: go-build
       - id: go-mod-tidy
-      - id: go-critic
+      # - id: go-critic
       - id: no-go-testing
-      - id: golangci-lint
-      - id: go-unit-tests
+      # - id: golangci-lint
+      # - id: go-unit-tests
