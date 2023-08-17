@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/rohitramu/kpm/cmd/commands/command_groups"
-	"github.com/rohitramu/kpm/cmd/flags"
+	"github.com/rohitramu/kpm/cli/commands/command_groups"
+	"github.com/rohitramu/kpm/cli/flags"
 	"github.com/rohitramu/kpm/pkg"
 	"github.com/spf13/cobra"
 )

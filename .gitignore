@@ -1,3 +1,6 @@
+# Ignore built binary with no extension
+kpm
+
 # Binaries for programs and plugins
 *.exe
 *.exe~

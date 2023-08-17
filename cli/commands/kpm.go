@@ -3,8 +3,8 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/rohitramu/kpm/cmd/commands/command_groups"
-	"github.com/rohitramu/kpm/cmd/flags"
+	"github.com/rohitramu/kpm/cli/commands/command_groups"
+	"github.com/rohitramu/kpm/cli/flags"
 )
 
 var versionString = "0.0.0"
@@ -19,7 +19,6 @@ var KpmCmd = newKpmCommandBuilder(&cobra.Command{
 	command_groups.PackageEditing,
 ).AddPersistentFlags(
 	flags.LogLevelFlag,
-	flags.KpmHomeDirFlag,
 ).AddSubcommands(
 	ListCmd,
 	RemoveCmd,

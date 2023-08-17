@@ -3,16 +3,16 @@ package commands
 import (
 	"fmt"
 
-	"github.com/rohitramu/kpm/cmd/commands/command_groups"
-	"github.com/rohitramu/kpm/cmd/flags"
+	"github.com/rohitramu/kpm/cli/commands/command_groups"
+	"github.com/rohitramu/kpm/cli/flags"
 	"github.com/rohitramu/kpm/pkg"
 	"github.com/rohitramu/kpm/pkg/common"
 	"github.com/spf13/cobra"
 )
 
-var RunCmd = newKpmCommandBuilder(&cobra.Command{
-	Use:     "run <package name>",
-	Short:   "Runs a template package.",
+var InspectCmd = newKpmCommandBuilder(&cobra.Command{
+	Use:     "inspect <package name>",
+	Short:   "Prints the contents of the default parameters file in a template package.",
 	GroupID: command_groups.PackageManagement.ID,
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -21,15 +21,9 @@ var RunCmd = newKpmCommandBuilder(&cobra.Command{
 
 		// Flags
 		var packageVersion = flags.PackageVersionFlag.GetValue()
-		var paramFile = flags.ParametersFileFlag.GetValue()
-		var outputDir = flags.OutputDirFlag.GetValue()
-		var outputName = flags.OutputNameFlag.GetValue()
 		var kpmHomeDir = flags.KpmHomeDirFlag.GetValue()
-		var skipConfirmation = flags.SkipUserConfirmationFlag.GetValue()
 
 		// Validation
-		var optionalParamFile = &paramFile
-		var optionalOutputName = &outputName
 		{
 			// Package version
 			if !flags.PackageVersionFlag.IsSetByUser(cmd) {
@@ -39,17 +33,9 @@ var RunCmd = newKpmCommandBuilder(&cobra.Command{
 					return fmt.Errorf("could not find package '%s' in the local KPM repository: %s", packageName, err)
 				}
 			}
-			// Parameters file
-			if !flags.ParametersFileFlag.IsSetByUser(cmd) {
-				optionalParamFile = nil
-			}
-			// Output name
-			if !flags.OutputNameFlag.IsSetByUser(cmd) {
-				optionalOutputName = nil
-			}
 		}
 
-		return pkg.RunCmd(packageName, packageVersion, optionalParamFile, outputDir, optionalOutputName, kpmHomeDir, skipConfirmation)
+		return pkg.InspectCmd(packageName, packageVersion, kpmHomeDir)
 	},
 }).AddLocalFlags(
 	flags.PackageVersionFlag,
