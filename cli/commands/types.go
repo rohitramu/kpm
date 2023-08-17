@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/rohitramu/kpm/cmd/flags"
+	"github.com/rohitramu/kpm/cli/flags"
 	"github.com/spf13/cobra"
 )
 

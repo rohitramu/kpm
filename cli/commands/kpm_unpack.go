@@ -3,8 +3,8 @@ package commands
 import (
 	"fmt"
 
-	"github.com/rohitramu/kpm/cmd/commands/command_groups"
-	"github.com/rohitramu/kpm/cmd/flags"
+	"github.com/rohitramu/kpm/cli/commands/command_groups"
+	"github.com/rohitramu/kpm/cli/flags"
 	"github.com/rohitramu/kpm/pkg"
 	"github.com/rohitramu/kpm/pkg/common"
 	"github.com/rohitramu/kpm/pkg/utils/template_package"

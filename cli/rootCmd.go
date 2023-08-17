@@ -1,10 +1,8 @@
-package cmd
+package cli
 
 import (
-	"github.com/rohitramu/kpm/cmd/commands"
+	"github.com/rohitramu/kpm/cli/commands"
 )
-
-var versionString = "0.0.0"
 
 // RootCmd is the entrypoint for this application.
 var RootCmd = commands.KpmCmd

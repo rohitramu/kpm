@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/rohitramu/kpm/cmd"
+	"github.com/rohitramu/kpm/cli"
+	"github.com/rohitramu/kpm/cli/config"
+	"github.com/rohitramu/kpm/pkg/common"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 )
 
@@ -10,8 +12,17 @@ import (
 //       Repositories can be added and removed by users.  Need to define different repository types (e.g. local filesystem, Docker, GitHub, etc.)
 //       Need to handle authentication for private remote repositories (i.e. Docker, GitHub, etc.)
 
+var VersionString = "0.0.0"
+
 func main() {
-	if err := cmd.RootCmd.Execute(); err != nil {
+	var err error
+
+	err = config.InitConfig(common.KpmConfig)
+	if err != nil {
+		log.Fatalf("Failed to read KPM configuration: %s", err)
+	}
+
+	if err = cli.RootCmd.Execute(); err != nil {
 		log.Errorf("Failed to execute command: %s", err.Error())
 	}
 }
