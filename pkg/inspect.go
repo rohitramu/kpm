@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rohitramu/kpm/pkg/common"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
@@ -49,7 +48,7 @@ func InspectCmd(packageName string, packageVersion string, kpmHomeDirPath string
 
 	// Check local repository for package
 	var packages []string
-	packages, err = common.GetPackageFullNamesFromLocalRepository(kpmHomeDir)
+	packages, err = template_package.GetPackageFullNamesFromLocalRepository(kpmHomeDir)
 	if err != nil {
 		return err
 	}

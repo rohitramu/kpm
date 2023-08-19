@@ -23,7 +23,7 @@ func GetIncludeFunc(tmpl *template.Template) interface{} {
 		var resultBytes []byte
 		resultBytes, err = ExecuteNamedTemplate(tmpl, templateName, data)
 		if err != nil {
-			return "", fmt.Errorf("Failed to execute named template \"%s\":\n%s", templateName, err)
+			return "", fmt.Errorf("failed to execute named template \"%s\":\n%s", templateName, err)
 		}
 
 		// Get the result as a string

@@ -1,4 +1,4 @@
-package config
+package cli
 
 import (
 	"errors"
@@ -9,8 +9,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/rohitramu/kpm/cli/commands"
-	"github.com/rohitramu/kpm/pkg/common"
+	"github.com/rohitramu/kpm/pkg/utils/config"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
@@ -20,10 +19,10 @@ const ConfigFileName = ".kpm-config"
 const ConfigFileExt = "yaml"
 const KpmHomeDirEnvVar = "KPM_HOME"
 
-func InitConfig(conf *common.KpmConfigSchema) error {
+func InitConfig(conf *config.KpmConfigSchema) error {
 	var err error
 
-	err = viper.BindPFlags(commands.KpmCmd.PersistentFlags())
+	// err = viper.BindPFlags(commands.KpmCmd.PersistentFlags())
 	if err != nil {
 		log.Panicf("failed to bind config to flags: %s", err)
 	}

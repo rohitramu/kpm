@@ -1,4 +1,4 @@
-package common
+package template_package
 
 import (
 	"fmt"
@@ -12,9 +12,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/rohitramu/kpm/pkg/utils/log"
-	"github.com/rohitramu/kpm/pkg/utils/template_package"
 	"github.com/rohitramu/kpm/pkg/utils/templates"
-	"github.com/rohitramu/kpm/pkg/utils/types"
 	"github.com/rohitramu/kpm/pkg/utils/validation"
 	"github.com/rohitramu/kpm/pkg/utils/yaml"
 )
@@ -29,17 +27,17 @@ type dependencyTreeNode struct {
 	Parent   *dependencyTreeNode
 	Children []*dependencyTreeNode
 
-	packageDefinition *types.PackageDefinition
+	packageDefinition *templates.PackageDefinition
 	hash              *string
 
 	OutputName          string
 	PackageDirPath      string
 	ExecutableTemplates []*template.Template
-	TemplateInput       *types.GenericMap
+	TemplateInput       *templates.GenericMap
 }
 
 // VisitNodesDepthFirst visits nodes in the tree in depth-first fashion, applying the given consumer function on each node.  It returns the number of nodes that were visited.
-func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(relativeFilePath []string, friendlyNamePath []string, executableTemplates []*template.Template, templateInput *types.GenericMap) error) (int, error) {
+func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(relativeFilePath []string, friendlyNamePath []string, executableTemplates []*template.Template, templateInput *templates.GenericMap) error) (int, error) {
 	var err error
 	var ok bool
 
@@ -70,7 +68,7 @@ func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(relativeFilePa
 		for currentNode != nil {
 			// Get the package info
 			var packageInfo = currentNode.packageDefinition.PackageInfo
-			var packageFullName = template_package.GetPackageFullName(packageInfo.Name, packageInfo.Version)
+			var packageFullName = GetPackageFullName(packageInfo.Name, packageInfo.Version)
 
 			// Get the next segment in the friendly name path
 			var friendlyName = GetOutputFriendlyName(currentNode.OutputName, packageFullName)
@@ -124,7 +122,7 @@ func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(relativeFilePa
 }
 
 // GetDependencyTree ensures that the dependency tree has no loops and then returns the dependency tree.
-func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion string, outputName string, parameters *types.GenericMap) (*DependencyTree, error) {
+func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion string, outputName string, parameters *templates.GenericMap) (*DependencyTree, error) {
 	var err error
 	var ok bool
 
@@ -134,8 +132,8 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 	}
 
 	// Create the package definition for the root node
-	var rootNodePackageDefinition = &types.PackageDefinition{
-		PackageInfo: &types.PackageInfo{
+	var rootNodePackageDefinition = &templates.PackageDefinition{
+		PackageInfo: &templates.PackageInfo{
 			Name:    packageName,
 			Version: packageVersion,
 		},
@@ -185,7 +183,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 		}
 
 		// Get the package's full name
-		var currentPackageFullName = template_package.GetPackageFullName(currentPackageName, currentPackageVersion)
+		var currentPackageFullName = GetPackageFullName(currentPackageName, currentPackageVersion)
 
 		// Make sure that the parameters were provided
 		if currentParameters == nil {
@@ -229,7 +227,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 					panic("")
 				}
 
-				segments[i] = GetOutputFriendlyName(nodeVal.OutputName, template_package.GetPackageFullName(packageInfoVal.Name, packageInfoVal.Version))
+				segments[i] = GetOutputFriendlyName(nodeVal.OutputName, GetPackageFullName(packageInfoVal.Name, packageInfoVal.Version))
 
 				i++
 			}
@@ -241,7 +239,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 		}
 
 		// Get the package directory
-		var currentPackageDirPath = template_package.GetPackageDir(kpmHomeDir, currentPackageFullName)
+		var currentPackageDirPath = GetPackageDir(kpmHomeDir, currentPackageFullName)
 
 		// Create shared template (with common options, functions and helper templates for this package)
 		var sharedTemplate *template.Template
@@ -251,7 +249,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 		}
 
 		// Calculate values to be used as inputs to the templates in this package
-		var templateInput *types.GenericMap
+		var templateInput *templates.GenericMap
 		templateInput, err = GetTemplateInput(kpmHomeDir, currentPackageFullName, sharedTemplate, currentParameters)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get template input in package: %s\n%s", getFriendlyPath(), err)
@@ -287,7 +285,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 					} else {
 						var dependencyPackageName = value.packageDefinition.PackageInfo.Name
 						var dependencyPackageVersion = value.packageDefinition.PackageInfo.Version
-						var dependencyPackageFullName = template_package.GetPackageFullName(dependencyPackageName, dependencyPackageVersion)
+						var dependencyPackageFullName = GetPackageFullName(dependencyPackageName, dependencyPackageVersion)
 						dependencyLoop[i] = GetOutputFriendlyName(value.OutputName, dependencyPackageFullName)
 
 						// Add a special symbol to identify the package causing the problem
@@ -329,7 +327,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 				}
 
 				// Create an object from the package definition
-				var dependencyDefinition = new(types.PackageDefinition)
+				var dependencyDefinition = new(templates.PackageDefinition)
 				err = yaml.BytesToObject(dependencyDefinitionBytes, dependencyDefinition)
 				if err != nil {
 					return nil, err
@@ -378,7 +376,7 @@ func GetDependencyTree(kpmHomeDir string, packageName string, packageVersion str
 	return tree, nil
 }
 
-func getPackageNode(parentNode *dependencyTreeNode, packageDefinition *types.PackageDefinition, outputName string, packageDirPath string) (*dependencyTreeNode, error) {
+func getPackageNode(parentNode *dependencyTreeNode, packageDefinition *templates.PackageDefinition, outputName string, packageDirPath string) (*dependencyTreeNode, error) {
 	var err error
 
 	// Validate inputs
@@ -428,8 +426,8 @@ func (node *dependencyTreeNode) getPackageNodeHash() string {
 	}
 
 	var hashedValues = struct {
-		PackageInfo   *types.PackageInfo
-		PackageInputs *types.GenericMap
+		PackageInfo   *templates.PackageInfo
+		PackageInputs *templates.GenericMap
 	}{
 		node.packageDefinition.PackageInfo,
 		node.TemplateInput,

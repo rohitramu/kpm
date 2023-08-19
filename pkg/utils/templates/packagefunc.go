@@ -18,7 +18,7 @@ func GetPackageFuncMap(tmpl *template.Template) map[string]interface{} {
 func getPackageFuncOrPlaceholder(tmpl *template.Template, fn packageFuncFactory) interface{} {
 	if tmpl == nil {
 		return func(...interface{}) (interface{}, error) {
-			return nil, fmt.Errorf("Not implemented")
+			return nil, fmt.Errorf("not implemented")
 		}
 	}
 

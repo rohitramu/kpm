@@ -3,7 +3,6 @@ package templates
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
-	"github.com/rohitramu/kpm/pkg/utils/types"
 )
 
 // NewRootTemplate returns a new root template with options and functions provided.
@@ -126,13 +124,13 @@ func ExecuteNamedTemplate(tmpl *template.Template, templateName string, values i
 
 	// Check that the template name is not empty
 	if templateName == "" {
-		return nil, fmt.Errorf("Template name cannot be empty: %s", tmpl.Name())
+		return nil, fmt.Errorf("template name cannot be empty: %s", tmpl.Name())
 	}
 
 	// Get the named template
 	var namedTemplate = tmpl.Lookup(templateName)
 	if namedTemplate == nil {
-		return nil, fmt.Errorf("Failed to find named template: %s", templateName)
+		return nil, fmt.Errorf("failed to find named template: %s", templateName)
 	}
 
 	// Execute the named template with the provided values
@@ -148,11 +146,11 @@ func ExecuteTemplate(tmpl *template.Template, values interface{}) ([]byte, error
 
 	// Create template object
 	if tmpl == nil {
-		return nil, fmt.Errorf("The template to execute cannot be nil")
+		return nil, fmt.Errorf("the template to execute cannot be nil")
 	}
 
 	if values == nil {
-		return nil, fmt.Errorf("The values to execute the template with cannot be nil")
+		return nil, fmt.Errorf("the values to execute the template with cannot be nil")
 	}
 
 	// Apply values to template
@@ -171,12 +169,12 @@ func ExecuteTemplate(tmpl *template.Template, values interface{}) ([]byte, error
 
 // visitTemplatesFromDir visits each template found in the given directory, sets the parent using the given "getParentTemplate" function
 // and then consumes the template using the given "consumeTemplate" function.
-func visitTemplatesFromDir(templatesDirPath string, getParentTemplate types.TemplateSupplier, consumeTemplate types.TemplateConsumer) error {
+func visitTemplatesFromDir(templatesDirPath string, getParentTemplate TemplateSupplier, consumeTemplate TemplateConsumer) error {
 	var err error
 
 	// Get the list of filesystem objects in the helpers directory
-	var filesystemObjects []os.FileInfo
-	filesystemObjects, err = ioutil.ReadDir(templatesDirPath)
+	var filesystemObjects []os.DirEntry
+	filesystemObjects, err = os.ReadDir(templatesDirPath)
 	if err != nil {
 		return err
 	}
