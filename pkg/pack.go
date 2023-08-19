@@ -1,11 +1,10 @@
 package pkg
 
 import (
-	"github.com/rohitramu/kpm/pkg/common"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
-	"github.com/rohitramu/kpm/pkg/utils/types"
+	"github.com/rohitramu/kpm/pkg/utils/templates"
 )
 
 // PackCmd packs a local template package so it is available for use in the given local KPM repository.
@@ -33,8 +32,8 @@ func PackCmd(packageDirPath string, kpmHomeDirPath string, userHasConfirmed bool
 
 	// Validate package and get package info
 	log.Debugf("Getting package info")
-	var packageInfo *types.PackageInfo
-	packageInfo, err = common.GetPackageInfo(kpmHomeDir, packageDir)
+	var packageInfo *templates.PackageInfo
+	packageInfo, err = template_package.GetPackageInfo(kpmHomeDir, packageDir)
 	if err != nil {
 		return err
 	}

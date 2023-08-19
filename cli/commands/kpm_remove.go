@@ -6,7 +6,7 @@ import (
 	"github.com/rohitramu/kpm/cli/commands/command_groups"
 	"github.com/rohitramu/kpm/cli/flags"
 	"github.com/rohitramu/kpm/pkg"
-	"github.com/rohitramu/kpm/pkg/common"
+	"github.com/rohitramu/kpm/pkg/utils/template_package"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,7 @@ var RemoveCmd = newKpmCommandBuilder(&cobra.Command{
 		if !flags.PackageVersionFlag.IsSetByUser(cmd) {
 			// Since the package version was not provided, check the local repository for the highest version.
 			var err error
-			if packageVersion, err = common.GetHighestPackageVersion(kpmHomeDir, packageName); err != nil {
+			if packageVersion, err = template_package.GetHighestPackageVersion(kpmHomeDir, packageName); err != nil {
 				return fmt.Errorf("could not find package '%s' in the local KPM repository: %s", packageName, err)
 			}
 		}

@@ -2,8 +2,7 @@ package main
 
 import (
 	"github.com/rohitramu/kpm/cli"
-	"github.com/rohitramu/kpm/cli/config"
-	"github.com/rohitramu/kpm/pkg/common"
+	"github.com/rohitramu/kpm/pkg/utils/config"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 )
 
@@ -17,7 +16,7 @@ var VersionString = "0.0.0"
 func main() {
 	var err error
 
-	err = config.InitConfig(common.KpmConfig)
+	err = cli.InitConfig(config.KpmConfig)
 	if err != nil {
 		log.Fatalf("Failed to read KPM configuration: %s", err)
 	}

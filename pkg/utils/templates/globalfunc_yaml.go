@@ -1,7 +1,6 @@
 package templates
 
 import (
-	"github.com/rohitramu/kpm/pkg/utils/types"
 	"github.com/rohitramu/kpm/pkg/utils/yaml"
 )
 
@@ -24,9 +23,9 @@ func ToYamlFunc(value interface{}) (string, error) {
 }
 
 // FromYamlFunc converts yaml strings to objects.
-func FromYamlFunc(yamlString string) (*types.GenericMap, error) {
+func FromYamlFunc(yamlString string) (*GenericMap, error) {
 	var err error
-	var resultObj = new(types.GenericMap)
+	var resultObj = new(GenericMap)
 	err = yaml.BytesToObject([]byte(yamlString), yamlString)
 	if err != nil {
 		return nil, err

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rohitramu/kpm/pkg/common"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
@@ -25,8 +24,8 @@ func PurgeCmd(packageName string, userHasConfirmed bool, kpmHomeDirPath string) 
 	}
 
 	// Find all packages and versions
-	var packages common.PackageNamesAndVersions
-	packages, err = common.GetAvailablePackagesAndVersions(kpmHomeDir)
+	var packages template_package.PackageNamesAndVersions
+	packages, err = template_package.GetAvailablePackagesAndVersions(kpmHomeDir)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve the list of available packages in the local KPM repository: %s", err)
 	}

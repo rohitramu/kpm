@@ -1,4 +1,4 @@
-package common
+package config
 
 type KpmConfigSchema struct {
 	LogLevel string

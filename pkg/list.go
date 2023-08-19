@@ -1,9 +1,9 @@
 package pkg
 
 import (
-	"github.com/rohitramu/kpm/pkg/common"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
+	"github.com/rohitramu/kpm/pkg/utils/template_package"
 )
 
 // ListCmd lists all packages that are available for use in the given KPM home directory.
@@ -19,7 +19,7 @@ func ListCmd(kpmHomeDirPath string) error {
 
 	// Get package full names
 	var packages []string
-	packages, err = common.GetPackageFullNamesFromLocalRepository(kpmHomeDir)
+	packages, err = template_package.GetPackageFullNamesFromLocalRepository(kpmHomeDir)
 	if err != nil {
 		return err
 	}

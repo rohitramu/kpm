@@ -7,12 +7,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/rohitramu/kpm/pkg/common"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
 	"github.com/rohitramu/kpm/pkg/utils/templates"
-	"github.com/rohitramu/kpm/pkg/utils/types"
 	"github.com/rohitramu/kpm/pkg/utils/validation"
 )
 
@@ -64,15 +62,15 @@ func RunCmd(packageName string, packageVersion string, optionalParametersFilePat
 	log.Verbosef("====")
 
 	// Get the default parameters
-	var packageParameters *types.GenericMap
-	packageParameters, err = common.GetPackageParameters(parametersFilePath)
+	var packageParameters *templates.GenericMap
+	packageParameters, err = template_package.GetPackageParameters(parametersFilePath)
 	if err != nil {
 		return err
 	}
 
 	// Get the dependency tree
-	var dependencyTree *common.DependencyTree
-	if dependencyTree, err = common.GetDependencyTree(kpmHomeDir, packageName, packageVersion, outputName, packageParameters); err != nil {
+	var dependencyTree *template_package.DependencyTree
+	if dependencyTree, err = template_package.GetDependencyTree(kpmHomeDir, packageName, packageVersion, outputName, packageParameters); err != nil {
 		return err
 	}
 
@@ -83,7 +81,7 @@ func RunCmd(packageName string, packageVersion string, optionalParametersFilePat
 
 	// Execute template packages in the dependency tree and write the output to the filesystem
 	var numPackages int
-	numPackages, err = dependencyTree.VisitNodesDepthFirst(func(relativeFilePath []string, friendlyNamePath []string, executableTemplates []*template.Template, templateInput *types.GenericMap) error {
+	numPackages, err = dependencyTree.VisitNodesDepthFirst(func(relativeFilePath []string, friendlyNamePath []string, executableTemplates []*template.Template, templateInput *templates.GenericMap) error {
 		// Get the output directory
 		var outputDir = filepath.Join(outputDirPath, filepath.Join(relativeFilePath...))
 
