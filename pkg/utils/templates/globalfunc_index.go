@@ -8,7 +8,7 @@ import (
 const FuncNameIndex = "index"
 
 // IndexFunc gets a single value from a generic map (of any depth), given an ordered list of keys.
-func IndexFunc(data interface{}, keys ...string) (interface{}, error) {
+func IndexFunc(data any, keys ...string) (any, error) {
 	var ok bool
 
 	// If there are no keys, return the object as-is
@@ -29,7 +29,7 @@ func IndexFunc(data interface{}, keys ...string) (interface{}, error) {
 		return nil, fmt.Errorf("invalid object supplied to the \"%s\" function: %s", FuncNameIndex, data)
 	}
 
-	var result interface{}
+	var result any
 	for _, key := range keys {
 		// Make sure that the current map is not nil, otherwise there were too many keys provided
 		if currentMap == nil {

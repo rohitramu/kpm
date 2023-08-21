@@ -11,12 +11,12 @@ import (
 const FuncNameInclude = "include"
 
 // GetIncludeFunc creates a new instance of the Include function, which allows helper templates to be executed so their output can be used in other functions.
-func GetIncludeFunc(tmpl *template.Template) interface{} {
+func GetIncludeFunc(tmpl *template.Template) any {
 	if tmpl == nil {
 		log.Panicf("Template cannot be nil")
 	}
 
-	return func(templateName string, data interface{}) (string, error) {
+	return func(templateName string, data any) (string, error) {
 		var err error
 
 		// Execute the named template

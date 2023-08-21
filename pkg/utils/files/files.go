@@ -3,7 +3,6 @@ package files
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
@@ -123,7 +122,7 @@ func ReadString(filePath string) (string, error) {
 
 // ReadBytes returns the contents of the given file as a byte array.
 func ReadBytes(filePath string) ([]byte, error) {
-	var fileData, err = ioutil.ReadFile(filePath)
+	var fileData, err = os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +243,7 @@ func DeleteDirIfExists(absoluteDirPath string, lowercaseHumanFriendlyName string
 	if !dirIsEmpty {
 		// If the user hasn't already confirmed, ask for a confirmation now
 		if !userHasConfirmed {
-			if userHasConfirmed, err = user_prompts.ConfirmWithUser("%s directory exists, so it will be deleted before continuing.", toTitleCase(lowercaseHumanFriendlyName)); err != nil {
+			if userHasConfirmed, err = user_prompts.ConfirmWithUser("%s directory exists, so it will be deleted before continuing: %s", toTitleCase(lowercaseHumanFriendlyName), absoluteDirPath); err != nil {
 				return err
 			}
 		}

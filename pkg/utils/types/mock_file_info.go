@@ -12,7 +12,7 @@ type MockFileInfo struct {
 	MockMode    os.FileMode
 	MockModTime time.Time
 	MockIsDir   bool
-	MockSys     interface{}
+	MockSys     any
 }
 
 // Name returns the base name of the file
@@ -31,4 +31,4 @@ func (f MockFileInfo) ModTime() time.Time { return f.MockModTime }
 func (f MockFileInfo) IsDir() bool { return f.MockIsDir }
 
 // Sys is an underlying data source (can return nil)
-func (f MockFileInfo) Sys() interface{} { return f.MockSys }
+func (f MockFileInfo) Sys() any { return f.MockSys }

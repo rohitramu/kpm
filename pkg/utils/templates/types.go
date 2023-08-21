@@ -5,7 +5,7 @@ import (
 )
 
 // GenericMap is a generic map.
-type GenericMap map[string]interface{}
+type GenericMap map[string]any
 
 // TemplateSupplier is a function that supplies templates.
 type TemplateSupplier func() *template.Template

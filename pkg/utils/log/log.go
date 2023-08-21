@@ -11,6 +11,9 @@ import (
 	"github.com/vishalkuo/bimap"
 )
 
+// Level identifies the severity of a log line.
+type Level int
+
 // Level enum
 const (
 	// LevelNone indicates that logs should not be sent to output.
@@ -75,9 +78,6 @@ var logLevelNamesBidiMap = bimap.NewBiMapFromMap[Level, string](map[Level]string
 
 var LevelNames = logLevelNamesBidiMap.GetForwardMap()
 
-// Level identifies the severity of a log line.
-type Level int
-
 // Parse converts a string representation of a log level to a Level object.
 func Parse(logLevelString string) (Level, error) {
 	// Get log level value
@@ -100,6 +100,23 @@ func (logLevel Level) String() (string, error) {
 	return result, nil
 }
 
+// UnmarshalYAML implements the "yaml.Unmarshaler" interface.
+func (result *Level) UnmarshalYAML(unmarshal func(any) error) error {
+	var err error
+
+	var resultString string
+	if err = unmarshal(&resultString); err != nil {
+		return fmt.Errorf("failed to unmarshal log level string: %s", err)
+	}
+
+	// Value was a string - parse it to get the LogLevel enum value.
+	if *result, err = Parse(resultString); err != nil {
+		return fmt.Errorf("value is a string, but not a valid log level: %s", err)
+	}
+
+	return nil
+}
+
 // currentLogLevel is the currently selected log level.
 var currentLogLevel = DefaultLevel
 
@@ -120,7 +137,7 @@ func SetLevel(level Level) {
 }
 
 // Outputf logs the formatted message as output, without any prefixes or logging flags turned on.
-func Outputf(format string, toLog ...interface{}) {
+func Outputf(format string, toLog ...any) {
 	var output = fmt.Sprintf(format, toLog...)
 	var _, err = fmt.Fprintln(WriterOut, output)
 	if err != nil {
@@ -137,7 +154,7 @@ func OutputStream(reader io.Reader) {
 }
 
 // Panicf logs the formatted message as an error, and then panics.
-func Panicf(format string, toLog ...interface{}) {
+func Panicf(format string, toLog ...any) {
 	_, filename, line, _ := runtime.Caller(1)
 	checkAndLog(LevelDebug, func(logger *stdLog.Logger) {
 		userMessage := fmt.Sprintf(format, toLog...)
@@ -147,10 +164,13 @@ func Panicf(format string, toLog ...interface{}) {
 	checkAndLog(LevelError, func(logger *stdLog.Logger) {
 		logger.Panicf(format, toLog...)
 	})
+
+	// Suppress compiler warnings.
+	panic("")
 }
 
 // Fatalf logs the formatted message as an error, and then exits.
-func Fatalf(format string, toLog ...interface{}) {
+func Fatalf(format string, toLog ...any) {
 	_, filename, line, _ := runtime.Caller(1)
 	checkAndLog(LevelDebug, func(logger *stdLog.Logger) {
 		userMessage := fmt.Sprintf(format, toLog...)
@@ -163,35 +183,35 @@ func Fatalf(format string, toLog ...interface{}) {
 }
 
 // Errorf logs the formatted message as an error.
-func Errorf(format string, toLog ...interface{}) {
+func Errorf(format string, toLog ...any) {
 	checkAndLog(LevelError, func(logger *stdLog.Logger) {
 		logger.Printf(format, toLog...)
 	})
 }
 
 // Warningf logs the formatted message as a warning.
-func Warningf(format string, toLog ...interface{}) {
+func Warningf(format string, toLog ...any) {
 	checkAndLog(LevelWarning, func(logger *stdLog.Logger) {
 		logger.Printf(format, toLog...)
 	})
 }
 
 // Infof logs the formatted message as an informational message.
-func Infof(format string, toLog ...interface{}) {
+func Infof(format string, toLog ...any) {
 	checkAndLog(LevelInfo, func(logger *stdLog.Logger) {
 		logger.Printf(format, toLog...)
 	})
 }
 
 // Verbosef logs the formatted message as a verbose message.
-func Verbosef(format string, toLog ...interface{}) {
+func Verbosef(format string, toLog ...any) {
 	checkAndLog(LevelVerbose, func(logger *stdLog.Logger) {
 		logger.Printf(format, toLog...)
 	})
 }
 
 // Debugf logs the formatted message as a debug message.
-func Debugf(format string, toLog ...interface{}) {
+func Debugf(format string, toLog ...any) {
 	_, filename, line, _ := runtime.Caller(1)
 	checkAndLog(LevelDebug, func(logger *stdLog.Logger) {
 		userMessage := fmt.Sprintf(format, toLog...)

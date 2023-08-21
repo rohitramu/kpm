@@ -16,18 +16,23 @@ func PurgeCmd(packageName string, userHasConfirmed bool, kpmHomeDirPath string) 
 	var err error
 	var ok bool
 
-	// Get KPM home directory
+	// Get KPM home directory.
 	var kpmHomeDir string
 	kpmHomeDir, err = files.GetAbsolutePath(kpmHomeDirPath)
 	if err != nil {
 		return err
 	}
 
-	// Find all packages and versions
+	// Find all packages and versions.
 	var packages template_package.PackageNamesAndVersions
 	packages, err = template_package.GetAvailablePackagesAndVersions(kpmHomeDir)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve the list of available packages in the local KPM repository: %s", err)
+	}
+
+	// Exit early if there are no packages.
+	if len(packages) == 0 {
+		return nil
 	}
 
 	// Create function to remove all versions of a package
@@ -37,16 +42,6 @@ func PurgeCmd(packageName string, userHasConfirmed bool, kpmHomeDirPath string) 
 		versions, ok = packages[currentPackageName]
 		if !ok {
 			return fmt.Errorf("failed to find package in the local KPM repository: %s", currentPackageName)
-		}
-
-		if !userHasConfirmed {
-			if userHasConfirmed, err = user_prompts.ConfirmWithUser("All versions of package '%s' will be deleted from the local KPM repository.", currentPackageName); err != nil {
-				log.Panicf("Failed to get user confirmation. \n%s", err)
-			}
-
-			if !userHasConfirmed {
-				return fmt.Errorf("purge operation cancelled - user did not confirm the delete action")
-			}
 		}
 
 		// Remove the package
@@ -62,19 +57,42 @@ func PurgeCmd(packageName string, userHasConfirmed bool, kpmHomeDirPath string) 
 		return nil
 	}
 
-	// If we only want to remove all versions of a single package, iterate over just that package's versions
+	// If we only want to remove all versions of a single package, iterate over just that package's versions.
 	if packageName != "" {
-		// Validate package name
+		// Validate package name.
 		err = validation.ValidatePackageName(packageName)
 		if err != nil {
 			return err
 		}
 
+		// Get user confirmation.
+		if !userHasConfirmed {
+			if userHasConfirmed, err = user_prompts.ConfirmWithUser("All versions of package '%s' will be deleted from the local KPM repository.", packageName); err != nil {
+				log.Panicf("Failed to get user confirmation. \n%s", err)
+			}
+
+			if !userHasConfirmed {
+				return fmt.Errorf("purge operation cancelled - user did not confirm the delete action")
+			}
+		}
+
+		// Remove the package.
 		err = removeAllVersions(packageName)
 		if err != nil {
 			return err
 		}
 	} else {
+		// Get user confirmation.
+		if !userHasConfirmed {
+			if userHasConfirmed, err = user_prompts.ConfirmWithUser("All versions of all %d packages will be deleted from the local KPM repository.", len(packages)); err != nil {
+				log.Panicf("Failed to get user confirmation. \n%s", err)
+			}
+
+			if !userHasConfirmed {
+				return fmt.Errorf("purge operation cancelled - user did not confirm the delete action")
+			}
+		}
+
 		// Purge the local KPM repository of all packages
 		for packageName := range packages {
 			err = removeAllVersions(packageName)

@@ -114,7 +114,7 @@ func ChainTemplatesFromDir(parentTemplate *template.Template, templatesDirPath s
 }
 
 // ExecuteNamedTemplate executes a named template that can be found in the provided template.
-func ExecuteNamedTemplate(tmpl *template.Template, templateName string, values interface{}) ([]byte, error) {
+func ExecuteNamedTemplate(tmpl *template.Template, templateName string, values any) ([]byte, error) {
 	var err error
 
 	// Check that the parent template is not nil
@@ -141,7 +141,7 @@ func ExecuteNamedTemplate(tmpl *template.Template, templateName string, values i
 }
 
 // ExecuteTemplate executes a template given the template object and the values.
-func ExecuteTemplate(tmpl *template.Template, values interface{}) ([]byte, error) {
+func ExecuteTemplate(tmpl *template.Template, values any) ([]byte, error) {
 	var err error
 
 	// Create template object

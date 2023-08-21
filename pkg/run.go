@@ -75,7 +75,7 @@ func RunCmd(packageName string, packageVersion string, optionalParametersFilePat
 	}
 
 	// Delete the output directory in case it isn't empty
-	if err = files.DeleteDirIfExists(packageOutputDirPath, "package output", userHasConfirmed); err != nil {
+	if err = files.DeleteDirIfExists(packageOutputDirPath, "output", userHasConfirmed); err != nil {
 		return err
 	}
 

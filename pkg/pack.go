@@ -27,11 +27,11 @@ func PackCmd(packageDirPath string, kpmHomeDirPath string, userHasConfirmed bool
 
 	// Log resolved paths
 	log.Verbosef("====")
-	log.Verbosef("Package directory:             %s", packageDir)
+	log.Verbosef("Template package directory:             %s", packageDir)
 	log.Verbosef("====")
 
 	// Validate package and get package info
-	log.Debugf("Getting package info")
+	log.Debugf("Getting template package info")
 	var packageInfo *templates.PackageInfo
 	packageInfo, err = template_package.GetPackageInfo(kpmHomeDir, packageDir)
 	if err != nil {
@@ -42,8 +42,8 @@ func PackCmd(packageDirPath string, kpmHomeDirPath string, userHasConfirmed bool
 	var packageNameWithVersion = template_package.GetPackageFullName(packageInfo.Name, packageInfo.Version)
 	var outputDir = template_package.GetPackageDir(kpmHomeDir, packageNameWithVersion)
 
-	// Delete the output directory
-	if err = files.DeleteDirIfExists(outputDir, "output", userHasConfirmed); err != nil {
+	// Delete the package directory
+	if err = files.DeleteDirIfExists(outputDir, "template package", userHasConfirmed); err != nil {
 		return err
 	}
 
