@@ -7,8 +7,8 @@ import (
 type Repository interface {
 	GetName() string
 	GetType() string
-	Packages() ([]templates.PackageInfo, error)
-	PackageVersions() ([]string, error)
-	Push(templates.PackageInfo) error
-	Pull(templates.PackageInfo) error
+	Packages() ([]*templates.PackageInfo, error)
+	PackageVersions(packageName string) ([]string, error)
+	Push(kpmHomeDir string, packageInfo *templates.PackageInfo, userHasConfirmed bool) error
+	Pull(kpmHomeDir string, packageInfo *templates.PackageInfo, userHasConfirmed bool) error
 }

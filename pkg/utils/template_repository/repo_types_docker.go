@@ -27,19 +27,27 @@ func (repo *dockerRepository) GetType() string {
 	return repositoryTypeNameFilesystem
 }
 
-func (repo *dockerRepository) Packages() ([]templates.PackageInfo, error) {
+func (repo *dockerRepository) Packages() ([]*templates.PackageInfo, error) {
 	return nil, fmt.Errorf("not yet implemented")
 }
 
-func (repo *dockerRepository) PackageVersions() ([]string, error) {
+func (repo *dockerRepository) PackageVersions(packageName string) ([]string, error) {
 	return nil, fmt.Errorf("not yet implemented")
 }
 
-func (repo dockerRepository) Push(templates.PackageInfo) error {
+func (repo dockerRepository) Push(
+	kpmHomeDir string,
+	packageInfo *templates.PackageInfo,
+	userHasConfirmed bool,
+) error {
 	return fmt.Errorf("not yet implemented")
 }
 
-func (repo *dockerRepository) Pull(templates.PackageInfo) error {
+func (repo *dockerRepository) Pull(
+	kpmHomeDir string,
+	packageInfo *templates.PackageInfo,
+	userHasConfirmed bool,
+) error {
 	return fmt.Errorf("not yet implemented")
 }
 

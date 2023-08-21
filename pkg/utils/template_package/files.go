@@ -18,6 +18,8 @@ import (
 	"github.com/rohitramu/kpm/pkg/utils/yaml"
 )
 
+// TODO: Move repo-specific methods to the "template_repository" package.
+
 // GetDefaultParametersFile returns the path of the default parameters file in a template package.
 func GetDefaultParametersFile(packageDir string) string {
 	var parametersFilePath = filepath.Join(packageDir, constants.ParametersFileName)
@@ -117,18 +119,18 @@ func GetSharedTemplate(packageDir string) (*template.Template, error) {
 }
 
 // GetPackageInfo validates the package directory and returns the package info object for a given package.
-func GetPackageInfo(kpmHomeDir string, packageDir string) (*templates.PackageInfo, error) {
+func GetPackageInfo(packageRepoDir string, fullPackageName string) (*templates.PackageInfo, error) {
 	var err error
 
 	// Make sure that the package exists
-	err = files.DirExists(packageDir, "package")
+	err = files.DirExists(fullPackageName, "package")
 	if err != nil {
 		return nil, err
 	}
 
 	// Check that the package info file exists
-	var packageInfoFile = GetPackageInfoFile(packageDir)
-	err = files.FileExists(packageInfoFile, "package information")
+	var packageInfoFile = GetPackageInfoFile(fullPackageName)
+	err = files.FileExists(packageInfoFile, "template package information")
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +139,7 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*templates.PackageInf
 	var yamlBytes []byte
 	yamlBytes, err = files.ReadBytes(packageInfoFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read package information file: %s\n%s", packageInfoFile, err)
+		return nil, fmt.Errorf("failed to read template package information file: %s\n%s", packageInfoFile, err)
 	}
 
 	// Get package info object from file content
@@ -162,21 +164,21 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*templates.PackageInf
 	}
 
 	// Make sure that the interface file exists
-	var interfaceFilePath = GetInterfaceFile(packageDir)
+	var interfaceFilePath = GetInterfaceFile(fullPackageName)
 	err = files.FileExists(interfaceFilePath, "interface")
 	if err != nil {
 		return nil, err
 	}
 
 	// Make sure that the parameters file exists
-	var parametersFile = GetDefaultParametersFile(packageDir)
+	var parametersFile = GetDefaultParametersFile(fullPackageName)
 	err = files.FileExists(parametersFile, "default parameters")
 	if err != nil {
 		return nil, err
 	}
 
 	// Validate the templates directory if it exists
-	var templatesDir = GetTemplatesDir(packageDir)
+	var templatesDir = GetTemplatesDir(fullPackageName)
 	if files.DirExists(templatesDir, "templates") == nil {
 		var fileInfos []os.DirEntry
 		fileInfos, err = os.ReadDir(templatesDir)
@@ -197,7 +199,7 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*templates.PackageInf
 	}
 
 	// Validate the helpers directory if it exists
-	var helpersDir = GetHelpersDir(packageDir)
+	var helpersDir = GetHelpersDir(fullPackageName)
 	if files.DirExists(helpersDir, "helpers") == nil {
 		// Make sure all helper template files have the extension ".tpl"
 		var fileInfos []os.DirEntry
@@ -225,7 +227,7 @@ func GetPackageInfo(kpmHomeDir string, packageDir string) (*templates.PackageInf
 	}
 
 	// Validate the dependencies directory if it exists
-	var dependenciesDir = GetDependenciesDir(packageDir)
+	var dependenciesDir = GetDependenciesDir(fullPackageName)
 	if files.DirExists(dependenciesDir, "dependencies") == nil {
 		// Make sure all dependencies files have the extension ".yaml"
 		var fileInfos []os.DirEntry
