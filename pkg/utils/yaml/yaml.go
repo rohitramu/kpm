@@ -10,7 +10,7 @@ import (
 
 // BytesToObject populates an object's properties from the contents of a yaml file.
 // NOTE: ALWAYS pass objToPopulate as a pointer.
-func BytesToObject(yamlBytes []byte, objToPopulate interface{}) error {
+func BytesToObject(yamlBytes []byte, objToPopulate any) error {
 	// Don't bother trying to deserialize bytes into an object if there are no bytes
 	if yamlBytes != nil && len(yamlBytes) > 0 {
 		// NOTE: ALWAYS pass "UnmarshalStrict()" a pointer rather than a real value
@@ -24,7 +24,7 @@ func BytesToObject(yamlBytes []byte, objToPopulate interface{}) error {
 }
 
 // ObjectToBytes converts an object into yaml bytes.
-func ObjectToBytes(obj interface{}) ([]byte, error) {
+func ObjectToBytes(obj any) ([]byte, error) {
 	var err error
 
 	// Check for a nil object

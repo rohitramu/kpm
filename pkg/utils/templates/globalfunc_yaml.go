@@ -11,7 +11,7 @@ const FuncNameToYaml = "toYaml"
 const FuncNameFromYaml = "fromYaml"
 
 // ToYamlFunc converts objects to yaml strings.
-func ToYamlFunc(value interface{}) (string, error) {
+func ToYamlFunc(value any) (string, error) {
 	var err error
 	var resultBytes []byte
 	resultBytes, err = yaml.ObjectToBytes(value)

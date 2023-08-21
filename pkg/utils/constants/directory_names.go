@@ -20,3 +20,6 @@ const GeneratedDirName = ".kpm_generated"
 
 // ExportDirName is the name of the directory in which exported files are written.
 const ExportDirName = ".kpm_exported"
+
+// NewTemplatePackageDefaultDirName is the name of the directory in which new template packages are created.
+const NewTemplatePackageDirName = ".kpm_template_packages"

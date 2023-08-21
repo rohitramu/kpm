@@ -46,7 +46,7 @@ func (tree *DependencyTree) VisitNodesDepthFirst(consumeNode func(relativeFilePa
 	toVisitStack.Push(tree.root)
 	for !toVisitStack.Empty() {
 		// Get the next item to visit off of the stack
-		var nodeObj interface{}
+		var nodeObj any
 		if nodeObj, ok = toVisitStack.Pop(); !ok {
 			log.Panicf("Failed to get next node")
 		}
