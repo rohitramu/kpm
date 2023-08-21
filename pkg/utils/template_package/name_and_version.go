@@ -19,32 +19,18 @@ func GetOutputFriendlyName(outputName string, packageFullName string) string {
 }
 
 // GetHighestPackageVersion returns the highest available package version found in the local KPM repository.
-func GetHighestPackageVersion(kpmHomeDir string, packageName string) (string, error) {
+func GetHighestPackageVersion(repoDir string, packageName string) (string, error) {
 	var err error
 
-	// Get all available package names and versions
-	var availablePackagesAndVersions PackageNamesAndVersions
-	availablePackagesAndVersions, err = GetAvailablePackagesAndVersions(kpmHomeDir)
+	var packageVersions []string
+	packageVersions, err = GetPackageVersions(repoDir, packageName)
 	if err != nil {
 		return "", err
 	}
 
-	// For each version, resolve the version number
-	var availableVersions []string
-	var found bool
-	availableVersions, found = availablePackagesAndVersions[packageName]
-	if !found {
-		return "", fmt.Errorf("unable to find template package \"%s\" in local KPM package repository: %s", packageName, kpmHomeDir)
-	}
-
-	// Make sure the array is not empty
-	if len(availableVersions) == 0 {
-		return "", fmt.Errorf("no versions of the template package \"%s\" were found in the local KPM repository: %s", packageName, kpmHomeDir)
-	}
-
 	// Get the highest available version
 	var highestVersion *string
-	for _, currentVersion := range availableVersions {
+	for _, currentVersion := range packageVersions {
 		// Keep replacing the current version if we found a higher matching version until we get to the end of the matched list
 		if highestVersion == nil || currentVersion > *highestVersion {
 			highestVersion = &currentVersion
@@ -55,6 +41,30 @@ func GetHighestPackageVersion(kpmHomeDir string, packageName string) (string, er
 	var result = *highestVersion
 
 	return result, nil
+}
+
+func GetPackageVersions(repoDir string, packageName string) (result []string, err error) {
+	// Get all available package names and versions
+	var availablePackagesAndVersions PackageNamesAndVersions
+	availablePackagesAndVersions, err = GetAvailablePackagesAndVersions(repoDir)
+	if err != nil {
+		return result, err
+	}
+
+	// For each version, resolve the version number
+	var availableVersions []string
+	var found bool
+	availableVersions, found = availablePackagesAndVersions[packageName]
+	if !found {
+		return result, fmt.Errorf("unable to find template package \"%s\" in local KPM package repository: %s", packageName, repoDir)
+	}
+
+	// Make sure the array is not empty
+	if len(availableVersions) == 0 {
+		return result, fmt.Errorf("no versions of the template package \"%s\" were found in the local KPM repository: %s", packageName, repoDir)
+	}
+
+	return availableVersions, nil
 }
 
 // GetAvailablePackagesAndVersions retrieves the list of available packages and their versions.

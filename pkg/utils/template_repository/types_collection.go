@@ -11,8 +11,13 @@ import (
 
 type RepositoryCollection interface {
 	RepositoryNames() []string
-	Pull(templates.PackageInfo) error
-	Push(repositoryName string, packageInfo templates.PackageInfo) error
+	Pull(kpmHomeDir string, packageInfo *templates.PackageInfo, userHasConfirmed bool) error
+	Push(
+		kpmHomeDir string,
+		repositoryName string,
+		packageInfo *templates.PackageInfo,
+		userHasConfirmed bool,
+	) error
 }
 
 type repositoryCollection struct {
@@ -33,7 +38,11 @@ func (rc *repositoryCollection) RepositoryNames() []string {
 	return result
 }
 
-func (rc *repositoryCollection) Pull(packageInfo templates.PackageInfo) error {
+func (rc *repositoryCollection) Pull(
+	kpmHomeDir string,
+	packageInfo *templates.PackageInfo,
+	userHasConfirmed bool,
+) error {
 	var err error
 
 	var it = rc.repos.Iterator()
@@ -48,7 +57,7 @@ func (rc *repositoryCollection) Pull(packageInfo templates.PackageInfo) error {
 			packageInfo.Name,
 			packageInfo.Version, repo.GetName(),
 		)
-		err = repo.Pull(packageInfo)
+		err = repo.Pull(kpmHomeDir, packageInfo, userHasConfirmed)
 		if err == nil {
 			// We succesfully pulled the package
 			return nil
@@ -68,11 +77,16 @@ func (rc *repositoryCollection) Pull(packageInfo templates.PackageInfo) error {
 	// If we get to this point, that means we didn't find the package in any repos.
 	return fmt.Errorf(
 		"failed to find package in any repositories: %s",
-		ErrPackageNotFoundType{PackageInfo: packageInfo},
+		ErrPackageNotFoundType{PackageInfo: *packageInfo},
 	)
 }
 
-func (rc *repositoryCollection) Push(repoName string, packageInfo templates.PackageInfo) error {
+func (rc *repositoryCollection) Push(
+	kpmHomeDir string,
+	repoName string,
+	packageInfo *templates.PackageInfo,
+	userHasConfirmed bool,
+) error {
 	// Get the repo from the map.
 	var repo, err = rc.getRepo(repoName)
 	if err != nil {
@@ -80,7 +94,7 @@ func (rc *repositoryCollection) Push(repoName string, packageInfo templates.Pack
 	}
 
 	// Push the template package to the repository.
-	err = repo.Push(packageInfo)
+	err = repo.Push(kpmHomeDir, packageInfo, userHasConfirmed)
 
 	return err
 }
