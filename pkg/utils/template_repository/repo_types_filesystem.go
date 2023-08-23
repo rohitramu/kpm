@@ -2,7 +2,6 @@ package template_repository
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
@@ -89,27 +88,34 @@ func (repo *filesystemRepository) Pull(kpmHomeDir string, packageInfo *templates
 	return copyPackage(packageDirSrc, packageDirDst, userHasConfirmed)
 }
 
-func repoInfoToFilesystemRepo(repoInfo RepositoryInfo) (Repository, error) {
+func repoInfoToFilesystemRepo(repoInfo *RepositoryInfo) (Repository, error) {
+	var err error
 	var result = &filesystemRepository{name: repoInfo.Name}
 
-	dirPath, ok := repoInfo.ConnectionInfo.(string)
+	dirPath, ok := repoInfo.Location.(string)
 	if !ok {
 		return result, fmt.Errorf("filesystem repository connection info is not a string directory path")
 	}
 
-	// Make sure it's an absolute path.
-	if !filepath.IsAbs(dirPath) {
+	// Make sure it's an absolute path or rooted in the home directory.
+	if !files.IsAbsFromHomeOrRoot(dirPath) {
 		return result, fmt.Errorf("the provided filesystem repository path is not an absolute path")
 	}
 
+	var absDirPath string
+	absDirPath, err = files.GetAbsolutePath(dirPath)
+	if err != nil {
+		return result, err
+	}
+
 	// Make sure the directory exists.
-	if err := files.DirExists(dirPath, fmt.Sprintf("%s repo", repoInfo.Name)); err != nil {
+	if err = files.DirExists(absDirPath, fmt.Sprintf("%s repo", repoInfo.Name)); err != nil {
 		return result, fmt.Errorf("the provided filesystem repository path does not point to a directory: %s", err)
 	}
 
 	// TODO: Make sure all folders inside this local repo are valid template packages.
 
-	result.absoluteFilePath = dirPath
+	result.absoluteFilePath = absDirPath
 
 	return result, nil
 }

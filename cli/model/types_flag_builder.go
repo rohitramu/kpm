@@ -4,13 +4,17 @@ import (
 	"github.com/rohitramu/kpm/pkg/utils/log"
 )
 
+type DefaultValueFunc[T any] func(*KpmConfig) T
+
 type FlagBuilder[T any] interface {
 	SetAlias(rune) FlagBuilder[T]
 	SetShortDescription(string) FlagBuilder[T]
-	SetDefaultValue(T) FlagBuilder[T]
+	SetDefaultValueFunc(DefaultValueFunc[T]) FlagBuilder[T]
 	SetValidationFunc(FlagIsValidFunc[T]) FlagBuilder[T]
 	Build() Flag[T]
 }
+
+var _ FlagBuilder[any] = &flagBuilder[any]{}
 
 type flagBuilder[T any] struct {
 	value flag[T]
@@ -22,7 +26,15 @@ func NewFlagBuilder[T any](flagName string) FlagBuilder[T] {
 	}
 
 	return &flagBuilder[T]{
-		value: flag[T]{name: flagName},
+		value: flag[T]{
+			name: flagName,
+			// Set the defaultValueFunc so we don't get nil reference errors.
+			defaultValueFunc: func(kc *KpmConfig) T {
+				// Return the zero value for the type.
+				var result T
+				return result
+			},
+		},
 	}
 }
 
@@ -38,12 +50,8 @@ func (thisBuilder *flagBuilder[T]) SetShortDescription(shortDescription string) 
 	return thisBuilder
 }
 
-func (thisBuilder *flagBuilder[T]) SetDefaultValue(value T) FlagBuilder[T] {
-	thisBuilder.value.defaultValue = value
-
-	// Make sure that the default value doesn't change when the value itself changes.
-	var temp = value
-	thisBuilder.value.valueRef = &temp
+func (thisBuilder *flagBuilder[T]) SetDefaultValueFunc(defaultValueFunc DefaultValueFunc[T]) FlagBuilder[T] {
+	thisBuilder.value.defaultValueFunc = defaultValueFunc
 
 	return thisBuilder
 }

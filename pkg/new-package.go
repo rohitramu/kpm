@@ -9,7 +9,11 @@ import (
 	"github.com/rohitramu/kpm/pkg/utils/validation"
 )
 
-func NewTemplatePackageCmd(packageName string, packagePath string, userHasConfirmed bool) error {
+func NewTemplatePackageCmd(
+	packageName string,
+	packagePath string,
+	userHasConfirmed bool,
+) error {
 	var err error
 
 	// Validate package name

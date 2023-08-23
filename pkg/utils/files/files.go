@@ -71,23 +71,20 @@ func GetAbsolutePathOrDefaultFunc(path *string, defaultPathFunc func() (string, 
 // GetAbsolutePath returns the absolute path of the provided path.
 func GetAbsolutePath(path string) (string, error) {
 	var err error
-
-	var outputPath = path
+	var result = path
 
 	// Resolve "~" to the user's home directory if required
-	if strings.HasPrefix(outputPath, "~") {
-		var usrHomeDir string
-		usrHomeDir, err = GetUserHomeDir()
+	if IsAbsFromHome(result) {
+		result, err = GetExpandedHomeDirPath(result)
 		if err != nil {
 			return "", err
 		}
-		outputPath = usrHomeDir + strings.TrimPrefix(outputPath, "~")
 	}
 
 	// Check if path is already absolute
-	if !filepath.IsAbs(outputPath) {
+	if !filepath.IsAbs(result) {
 		// Get absolute path
-		outputPath, err = filepath.Abs(outputPath)
+		result, err = filepath.Abs(result)
 
 		// Exit on error
 		if err != nil {
@@ -95,7 +92,41 @@ func GetAbsolutePath(path string) (string, error) {
 		}
 	}
 
-	return outputPath, nil
+	return result, nil
+}
+
+func IsAbsFromHomeOrRoot(path string) bool {
+	return IsAbsFromHome(path) || filepath.IsAbs(path)
+}
+
+func IsAbsFromHome(path string) bool {
+	if path == "~" || strings.HasPrefix(path, "~/") {
+		return true
+	}
+
+	return false
+}
+
+func GetExpandedHomeDirPath(path string) (string, error) {
+	if !IsAbsFromHome(path) {
+		return path, nil
+	}
+
+	if path == "~" {
+		return GetUserHomeDir()
+	}
+
+	if strings.HasPrefix(path, "~/") {
+		homeDir, err := GetUserHomeDir()
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("%s/%s", homeDir, path[2:]), nil
+	}
+
+	// In all other cases, return the path untouched.
+	return path, nil
 }
 
 // GetUserHomeDir returns the path to the home directory of the current user.

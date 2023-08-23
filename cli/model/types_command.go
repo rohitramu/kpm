@@ -1,7 +1,7 @@
 package model
 
-type CommandExecuteFunc func(args ArgCollection) error
-type CommandIsValidFunc func(args ArgCollection) (bool, error)
+type CommandExecuteFunc func(config *KpmConfig, args ArgCollection) error
+type CommandIsValidFunc func(config *KpmConfig, args ArgCollection) error
 
 type Command struct {
 	Name             string

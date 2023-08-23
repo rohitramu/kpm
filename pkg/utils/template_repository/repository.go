@@ -8,16 +8,16 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type repoInfoParsingFunc func(RepositoryInfo) (Repository, error)
+type repoInfoParsingFunc func(*RepositoryInfo) (Repository, error)
 
 var repoTypeToParsingFunc = map[string]repoInfoParsingFunc{
 	repositoryTypeNameFilesystem: repoInfoToFilesystemRepo,
 	repositoryTypeNameDocker:     repoInfoToDockerRepo,
 }
 
-func GetRepositoriesFromInfo(repoInfos ...RepositoryInfo) (RepositoryCollection, error) {
+func GetRepositoriesFromInfo(repoInfos ...*RepositoryInfo) (*RepositoryCollection, error) {
 	var errs []error
-	var result = &repositoryCollection{repos: *linkedhashmap.New()}
+	var result = &RepositoryCollection{repos: *linkedhashmap.New()}
 
 	// Create a Repository object based on the user-provided repository information.
 	for repoNum, repoInfo := range repoInfos {
@@ -42,7 +42,7 @@ func GetRepositoriesFromInfo(repoInfos ...RepositoryInfo) (RepositoryCollection,
 	return result, err
 }
 
-func parseRepoInfo(repoCollection *repositoryCollection, repoInfo RepositoryInfo) (Repository, error) {
+func parseRepoInfo(repoCollection *RepositoryCollection, repoInfo *RepositoryInfo) (Repository, error) {
 	var err error
 	var result Repository
 
@@ -76,7 +76,7 @@ func validateRepoName(repoName string) error {
 	return nil
 }
 
-func ensureRepoHasntBeenParsed(repoCollection *repositoryCollection, repoName string) error {
+func ensureRepoHasntBeenParsed(repoCollection *RepositoryCollection, repoName string) error {
 	if existingRepoUncasted, alreadyExists := repoCollection.repos.Get(repoName); alreadyExists {
 		// Found a repo that already exists.  Cast it so we can get its type name.
 		if existingRepo, ok := existingRepoUncasted.(Repository); ok {

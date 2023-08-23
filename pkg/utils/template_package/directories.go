@@ -10,8 +10,6 @@ import (
 	"github.com/rohitramu/kpm/pkg/utils/files"
 )
 
-const KpmHomeDirEnvVar = "KPM_HOME"
-
 // GetDefaultKpmHomeDir returns the default location of the KPM home directory.
 func getDefaultKpmHomeDir() (string, error) {
 	var err error
@@ -31,14 +29,14 @@ func GetKpmHomeDir() (string, error) {
 	var err error
 
 	// Try to get the KPM home directory from the environment variable.
-	var kpmHomeDir = strings.TrimSpace(os.ExpandEnv("$" + KpmHomeDirEnvVar))
+	var kpmHomeDir = strings.TrimSpace(os.ExpandEnv("$" + constants.KpmHomeDirEnvVariable))
 	if kpmHomeDir != "" {
 		var kpmHomeDirAbs string
 		kpmHomeDirAbs, err = files.GetAbsolutePath(kpmHomeDir)
 		if err != nil {
 			return "", fmt.Errorf(
 				"invalid directory specified for the \"%s\" environment variable '%s': %s",
-				KpmHomeDirEnvVar,
+				constants.KpmHomeDirEnvVariable,
 				kpmHomeDir,
 				err,
 			)

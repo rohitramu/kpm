@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/vishalkuo/bimap"
+	"gopkg.in/yaml.v3"
 )
 
 // Level identifies the severity of a log line.
@@ -101,17 +102,22 @@ func (logLevel Level) String() (string, error) {
 }
 
 // UnmarshalYAML implements the "yaml.Unmarshaler" interface.
-func (result *Level) UnmarshalYAML(unmarshal func(any) error) error {
+func (result *Level) UnmarshalYAML(unmarshaller *yaml.Node) error {
 	var err error
 
 	var resultString string
-	if err = unmarshal(&resultString); err != nil {
+	if err = unmarshaller.Decode(&resultString); err != nil {
 		return fmt.Errorf("failed to unmarshal log level string: %s", err)
 	}
 
 	// Value was a string - parse it to get the LogLevel enum value.
 	if *result, err = Parse(resultString); err != nil {
 		return fmt.Errorf("value is a string, but not a valid log level: %s", err)
+	}
+
+	if result == nil {
+		var temp = DefaultLevel
+		result = &temp
 	}
 
 	return nil

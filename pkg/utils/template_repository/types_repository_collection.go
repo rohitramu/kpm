@@ -7,24 +7,33 @@ import (
 	"github.com/emirpasic/gods/maps/linkedhashmap"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 	"github.com/rohitramu/kpm/pkg/utils/templates"
+	"gopkg.in/yaml.v3"
 )
 
-type RepositoryCollection interface {
-	RepositoryNames() []string
-	Pull(kpmHomeDir string, packageInfo *templates.PackageInfo, userHasConfirmed bool) error
-	Push(
-		kpmHomeDir string,
-		repositoryName string,
-		packageInfo *templates.PackageInfo,
-		userHasConfirmed bool,
-	) error
-}
-
-type repositoryCollection struct {
+type RepositoryCollection struct {
 	repos linkedhashmap.Map
 }
 
-func (rc *repositoryCollection) RepositoryNames() []string {
+func (result *RepositoryCollection) UnmarshalYAML(unmarshaller *yaml.Node) (err error) {
+	var repoInfos *[]*RepositoryInfo
+
+	err = unmarshaller.Decode(&repoInfos)
+	if err != nil {
+		return err
+	}
+
+	var tmp *RepositoryCollection
+	tmp, err = GetRepositoriesFromInfo(*repoInfos...)
+	if err != nil {
+		return fmt.Errorf("failed to parse repository information: %s", err)
+	}
+
+	*result = *tmp
+
+	return nil
+}
+
+func (rc *RepositoryCollection) GetRepositoryNames() []string {
 	var result = make([]string, 0, rc.repos.Size())
 	for _, repoNameUncasted := range rc.repos.Keys() {
 		var repoName, ok = repoNameUncasted.(string)
@@ -38,7 +47,7 @@ func (rc *repositoryCollection) RepositoryNames() []string {
 	return result
 }
 
-func (rc *repositoryCollection) Pull(
+func (rc *RepositoryCollection) Pull(
 	kpmHomeDir string,
 	packageInfo *templates.PackageInfo,
 	userHasConfirmed bool,
@@ -81,7 +90,7 @@ func (rc *repositoryCollection) Pull(
 	)
 }
 
-func (rc *repositoryCollection) Push(
+func (rc *RepositoryCollection) Push(
 	kpmHomeDir string,
 	repoName string,
 	packageInfo *templates.PackageInfo,
@@ -99,7 +108,7 @@ func (rc *repositoryCollection) Push(
 	return err
 }
 
-func (rc *repositoryCollection) getRepo(repoName string) (Repository, error) {
+func (rc *RepositoryCollection) getRepo(repoName string) (Repository, error) {
 	// Get the repo from the map.
 	var repoUncasted, found = rc.repos.Get(repoName)
 	if !found {

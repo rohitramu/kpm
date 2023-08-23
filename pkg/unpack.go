@@ -12,7 +12,14 @@ import (
 )
 
 // UnpackCmd exports a template package to the specified path.
-func UnpackCmd(packageName string, packageVersion string, exportDir string, exportName string, kpmHomeDirPath string, userHasConfirmed bool) error {
+func UnpackCmd(
+	packageName string,
+	packageVersion string,
+	exportDir string,
+	exportName string,
+	kpmHomeDirPath string,
+	userHasConfirmed bool,
+) error {
 	var err error
 
 	// Get KPM home directory
