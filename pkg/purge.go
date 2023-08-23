@@ -12,7 +12,11 @@ import (
 )
 
 // PurgeCmd removes all versions of a template package from the local KPM repository.
-func PurgeCmd(packageName string, userHasConfirmed bool, kpmHomeDirPath string) error {
+func PurgeCmd(
+	packageName string,
+	userHasConfirmed bool,
+	kpmHomeDirPath string,
+) error {
 	var err error
 	var ok bool
 

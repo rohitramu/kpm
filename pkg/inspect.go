@@ -12,7 +12,11 @@ import (
 )
 
 // InspectCmd displays the given template package's parameters file.
-func InspectCmd(packageName string, packageVersion string, kpmHomeDirPath string) error {
+func InspectCmd(
+	packageName string,
+	packageVersion string,
+	kpmHomeDirPath string,
+) error {
 	var err error
 
 	// Get KPM home directory

@@ -16,7 +16,15 @@ import (
 
 // RunCmd runs the given template package directory and parameters file,
 // and then writes the output files to the given output directory.
-func RunCmd(packageName string, packageVersion string, optionalParametersFilePath *string, outputDirPath string, optionalOutputName *string, kpmHomeDirPath string, userHasConfirmed bool) error {
+func RunCmd(
+	packageName string,
+	packageVersion string,
+	optionalParametersFilePath *string,
+	outputDirPath string,
+	optionalOutputName *string,
+	kpmHomeDirPath string,
+	userHasConfirmed bool,
+) error {
 	var err error
 
 	// Get KPM home directory

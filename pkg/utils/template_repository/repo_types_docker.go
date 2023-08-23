@@ -51,10 +51,10 @@ func (repo *dockerRepository) Pull(
 	return fmt.Errorf("not yet implemented")
 }
 
-func repoInfoToDockerRepo(repoInfo RepositoryInfo) (Repository, error) {
+func repoInfoToDockerRepo(repoInfo *RepositoryInfo) (Repository, error) {
 	var result = &dockerRepository{name: repoInfo.Name}
 
-	connectionInfo, ok := repoInfo.ConnectionInfo.(dockerRepositoryConnectionInfo)
+	connectionInfo, ok := repoInfo.Location.(dockerRepositoryConnectionInfo)
 	if !ok {
 		return result, fmt.Errorf("docker repository connection info is not a valid structure")
 	}

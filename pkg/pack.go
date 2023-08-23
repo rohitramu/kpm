@@ -8,7 +8,11 @@ import (
 )
 
 // PackCmd packs a local template package so it is available for use in the given local KPM repository.
-func PackCmd(packageDirPath string, kpmHomeDirPath string, userHasConfirmed bool) error {
+func PackCmd(
+	packageDirPath string,
+	kpmHomeDirPath string,
+	userHasConfirmed bool,
+) error {
 	var err error
 
 	// Package directory

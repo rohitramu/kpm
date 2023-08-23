@@ -13,7 +13,7 @@ import (
 
 type ExecuteRootCommand func() error
 
-func GetCobraImplementation(rootCmd *model.Command) ExecuteRootCommand {
+func GetCobraImplementation(config *model.KpmConfig, rootCmd *model.Command) ExecuteRootCommand {
 	var result ExecuteRootCommand
 
 	var toVisit = linkedliststack.New()
@@ -27,7 +27,7 @@ func GetCobraImplementation(rootCmd *model.Command) ExecuteRootCommand {
 		}
 
 		// Convert to a Cobra command.
-		var currentCobraCmd = convertToCobraCommand(currentCobraStackItem.toAdd)
+		var currentCobraCmd = convertToCobraCommand(config, currentCobraStackItem.toAdd)
 
 		// Use the root command's "Execute()" method as the result.
 		if currentCobraStackItem.parent == nil {
@@ -54,7 +54,7 @@ type cobraStackItem struct {
 	toAdd  *model.Command
 }
 
-func convertToCobraCommand(modelCmd *model.Command) *cobra.Command {
+func convertToCobraCommand(config *model.KpmConfig, modelCmd *model.Command) *cobra.Command {
 	// Create result object and set basic info.
 	var result = &cobra.Command{
 		Use:   modelCmd.Name,
@@ -67,7 +67,7 @@ func convertToCobraCommand(modelCmd *model.Command) *cobra.Command {
 	}
 
 	// Add flags.
-	addFlags(result, modelCmd)
+	addFlags(result, modelCmd, config)
 
 	// Args validation.
 	var numMandatoryArgs = len(modelCmd.Args.MandatoryArgs)
@@ -90,48 +90,68 @@ func convertToCobraCommand(modelCmd *model.Command) *cobra.Command {
 	}
 	result.Use = fmt.Sprintf("%s%s", result.Use, argsString.String())
 
+	// Set pre-execute validation if there is any.
+	if modelCmd.IsValidFunc != nil {
+		result.PreRunE = func(cmd *cobra.Command, args []string) error {
+			// Set args.
+			setArgs(&modelCmd.Args, args)
+
+			return modelCmd.IsValidFunc(config, modelCmd.Args)
+		}
+	}
+
 	// Set behavior of command if there is any.
 	if modelCmd.ExecuteFunc != nil {
 		result.RunE = func(cmd *cobra.Command, args []string) error {
 			// Set args.
-			for i := 0; i < len(modelCmd.Args.MandatoryArgs); i++ {
-				modelCmd.Args.MandatoryArgs[i].Value = args[i]
-			}
-			if modelCmd.Args.OptionalArg != nil && len(args) > len(modelCmd.Args.MandatoryArgs) {
-				modelCmd.Args.OptionalArg.Value = args[len(modelCmd.Args.MandatoryArgs)]
-			}
+			setArgs(&modelCmd.Args, args)
 
-			return modelCmd.ExecuteFunc(modelCmd.Args)
+			return modelCmd.ExecuteFunc(config, modelCmd.Args)
 		}
 	}
 
 	return result
 }
 
-func addFlags(cobraCmd *cobra.Command, modelCmd *model.Command) {
+func setArgs(argCollection *model.ArgCollection, args []string) {
+	for i := 0; i < len(argCollection.MandatoryArgs); i++ {
+		argCollection.MandatoryArgs[i].Value = args[i]
+	}
+	if argCollection.OptionalArg != nil && len(args) > len(argCollection.MandatoryArgs) {
+		argCollection.OptionalArg.Value = args[len(argCollection.MandatoryArgs)]
+	}
+}
+
+func addFlags(cobraCmd *cobra.Command, modelCmd *model.Command, config *model.KpmConfig) {
 	// String flags.
 	for _, modelFlag := range modelCmd.Flags.StringFlags {
-		addFlag(cobraCmd.PersistentFlags().StringVarP, modelFlag)
+		addFlag(cobraCmd.PersistentFlags().StringVarP, modelFlag, config)
 	}
 
 	// Bool flags.
 	for _, modelFlag := range modelCmd.Flags.BoolFlags {
-		addFlag(cobraCmd.PersistentFlags().BoolVarP, modelFlag)
+		addFlag(cobraCmd.PersistentFlags().BoolVarP, modelFlag, config)
 	}
 }
 
 func addFlag[T any](
 	addFlagPFunc func(p *T, name string, alias string, value T, usage string),
 	modelFlag model.Flag[T],
+	config *model.KpmConfig,
 ) {
+	// Get alias.
 	var alias string
 	if modelFlag.GetAlias() != nil {
 		alias = string(*modelFlag.GetAlias())
 	}
 
+	// Get default value.
+	var defaultValue T
+	defaultValue = modelFlag.GetDefaultValue(config)
+
 	// Cobra can't handle a nil pointer.
 	if modelFlag.GetValueRef() == nil {
-		var temp T
+		var temp = defaultValue
 		modelFlag.SetValueRef(&temp)
 	}
 
@@ -139,7 +159,7 @@ func addFlag[T any](
 		modelFlag.GetValueRef(),
 		modelFlag.GetName(),
 		alias,
-		modelFlag.GetDefaultValue(),
+		defaultValue,
 		modelFlag.GetShortDescription(),
 	)
 }

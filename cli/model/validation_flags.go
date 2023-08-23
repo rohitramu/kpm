@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/rohitramu/kpm/pkg/utils/files"
+	"github.com/rohitramu/kpm/pkg/utils/validation"
 )
 
 func CombineValidationFuncs[T any](flagValidationFuncs ...FlagIsValidFunc[T]) FlagIsValidFunc[T] {
@@ -80,4 +81,15 @@ func validateDirExists(flagName string, dirPath string) (absoluteDirPath string,
 	}
 
 	return absoluteDirPath, nil
+}
+
+func ValidatePackageVersion() FlagIsValidFunc[string] {
+	return func(flagName string, flagValueRef *string) error {
+		// Skip this validation if the value isn't set.
+		if flagValueRef == nil {
+			return nil
+		}
+
+		return validation.ValidatePackageVersion(*flagValueRef)
+	}
 }

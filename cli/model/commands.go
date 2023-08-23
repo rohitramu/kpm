@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/rohitramu/kpm/pkg"
@@ -24,6 +25,7 @@ var KpmCmd = &Command{
 		inspectCmd,
 		runCmd,
 		newCmd,
+		repoCmd,
 	},
 }
 
@@ -31,17 +33,25 @@ var listCmd = &Command{
 	Name:             "list",
 	Alias:            "ls",
 	ShortDescription: "Lists all template packages.",
-	IsValidFunc: func(args ArgCollection) (bool, error) {
-		log.Infof("Command validation executed!")
-		return true, nil
-	},
-	ExecuteFunc: func(args ArgCollection) (err error) {
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
 		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
-		return pkg.ListCmd(kpmHomeDir)
+		// Get the list of package names.
+		var packages []string
+		packages, err = pkg.ListCmd(kpmHomeDir)
+		if err != nil {
+			return err
+		}
+
+		// Print package names.
+		for _, packageName := range packages {
+			log.Outputf(packageName)
+		}
+
+		return nil
 	},
 }
 
@@ -51,7 +61,7 @@ var removeCmd = &Command{
 	ShortDescription: "Removes a template package.",
 	Flags: FlagCollection{
 		StringFlags: []Flag[string]{packageVersionFlag},
-		BoolFlags:   []Flag[bool]{skipUserConfirmationFlag},
+		BoolFlags:   []Flag[bool]{userConfirmationFlag},
 	},
 	Args: ArgCollection{
 		MandatoryArgs: []*Arg{{
@@ -59,15 +69,15 @@ var removeCmd = &Command{
 			ShortDescription: "The name of the template package to remove.",
 		}},
 	},
-	ExecuteFunc: func(args ArgCollection) (err error) {
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
 		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
 		// Flags
-		var shouldSkipUserConfirmation = skipUserConfirmationFlag.GetValueOrDefault()
-		var packageVersion = packageVersionFlag.GetValueOrDefault()
+		var shouldSkipUserConfirmation = userConfirmationFlag.GetValueOrDefault(config)
+		var packageVersion = packageVersionFlag.GetValueOrDefault(config)
 
 		// Args
 		var packageName string = args.MandatoryArgs[0].Value
@@ -93,7 +103,7 @@ var purgeCmd = &Command{
 	Name:             "purge",
 	ShortDescription: "Removes all versions of a template package.",
 	Flags: FlagCollection{
-		BoolFlags: []Flag[bool]{skipUserConfirmationFlag},
+		BoolFlags: []Flag[bool]{userConfirmationFlag},
 	},
 	Args: ArgCollection{
 		OptionalArg: &Arg{
@@ -101,14 +111,14 @@ var purgeCmd = &Command{
 			ShortDescription: "The name of the template package to purge.  If this is not provided, all versions of all template packages will be deleted.",
 		},
 	},
-	ExecuteFunc: func(args ArgCollection) (err error) {
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
 		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
 		// Flags
-		var skipConfirmation = skipUserConfirmationFlag.GetValueOrDefault()
+		var skipConfirmation = userConfirmationFlag.GetValueOrDefault(config)
 
 		// Args
 		var packageName string
@@ -124,7 +134,7 @@ var packCmd = &Command{
 	Name:             "pack",
 	ShortDescription: "Validates a template package and makes it available for use.",
 	Flags: FlagCollection{
-		BoolFlags: []Flag[bool]{skipUserConfirmationFlag},
+		BoolFlags: []Flag[bool]{userConfirmationFlag},
 	},
 	Args: ArgCollection{
 		MandatoryArgs: []*Arg{{
@@ -132,14 +142,14 @@ var packCmd = &Command{
 			ShortDescription: "The location of the template package directory which should be packed.",
 		}},
 	},
-	ExecuteFunc: func(args ArgCollection) (err error) {
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
 		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
 		// Flags
-		var skipConfirmation = skipUserConfirmationFlag.GetValueOrDefault()
+		var skipConfirmation = userConfirmationFlag.GetValueOrDefault(config)
 
 		// Args
 		var packageDir = args.MandatoryArgs[0].Value
@@ -158,20 +168,20 @@ var unpackCmd = &Command{
 			exportNameFlag,
 		},
 		BoolFlags: []Flag[bool]{
-			skipUserConfirmationFlag,
+			userConfirmationFlag,
 		},
 	},
-	ExecuteFunc: func(args ArgCollection) (err error) {
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
 		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
 		// Flags
-		var skipConfirmation = skipUserConfirmationFlag.GetValueOrDefault()
-		var packageVersion = packageVersionFlag.GetValueOrDefault()
-		var exportDir = exportDirFlag.GetValueOrDefault()
-		var exportName = exportNameFlag.GetValueOrDefault()
+		var skipConfirmation = userConfirmationFlag.GetValueOrDefault(config)
+		var packageVersion = packageVersionFlag.GetValueOrDefault(config)
+		var exportDir = exportDirFlag.GetValueOrDefault(config)
+		var exportName = exportNameFlag.GetValueOrDefault(config)
 
 		// Args
 		var packageName = args.MandatoryArgs[0].Value
@@ -205,7 +215,7 @@ var inspectCmd = &Command{
 			packageVersionFlag,
 		},
 		BoolFlags: []Flag[bool]{
-			skipUserConfirmationFlag,
+			userConfirmationFlag,
 		},
 	},
 	Args: ArgCollection{
@@ -214,7 +224,7 @@ var inspectCmd = &Command{
 			ShortDescription: "The name of the template package to run.",
 		}},
 	},
-	ExecuteFunc: func(args ArgCollection) (err error) {
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
 		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
 			return err
@@ -224,7 +234,7 @@ var inspectCmd = &Command{
 		var packageName = args.MandatoryArgs[0].Value
 
 		// Flags
-		var packageVersion = packageVersionFlag.GetValueOrDefault()
+		var packageVersion = packageVersionFlag.GetValueOrDefault(config)
 
 		// Validation
 		{
@@ -253,7 +263,7 @@ var runCmd = &Command{
 			outputNameFlag,
 		},
 		BoolFlags: []Flag[bool]{
-			skipUserConfirmationFlag,
+			userConfirmationFlag,
 		},
 	},
 	Args: ArgCollection{
@@ -262,7 +272,7 @@ var runCmd = &Command{
 			ShortDescription: "The name of the template package to run.",
 		}},
 	},
-	ExecuteFunc: func(args ArgCollection) (err error) {
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
 		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
 			return err
@@ -272,11 +282,11 @@ var runCmd = &Command{
 		var packageName = args.MandatoryArgs[0].Value
 
 		// Flags
-		var packageVersion = packageVersionFlag.GetValueOrDefault()
-		var paramFile = parametersFileFlag.GetValueOrDefault()
-		var outputDir = outputDirFlag.GetValueOrDefault()
-		var outputName = outputNameFlag.GetValueOrDefault()
-		var skipConfirmation = skipUserConfirmationFlag.GetValueOrDefault()
+		var packageVersion = packageVersionFlag.GetValueOrDefault(config)
+		var paramFile = parametersFileFlag.GetValueOrDefault(config)
+		var outputDir = outputDirFlag.GetValueOrDefault(config)
+		var outputName = outputNameFlag.GetValueOrDefault(config)
+		var skipConfirmation = userConfirmationFlag.GetValueOrDefault(config)
 
 		// Validation
 		var optionalParamFile = &paramFile
@@ -313,7 +323,7 @@ var newCmd = &Command{
 			newPackageOutputDirFlag,
 		},
 		BoolFlags: []Flag[bool]{
-			skipUserConfirmationFlag,
+			userConfirmationFlag,
 		},
 	},
 	Args: ArgCollection{
@@ -323,14 +333,94 @@ var newCmd = &Command{
 			Value:            "hello-kpm",
 		},
 	},
-	ExecuteFunc: func(args ArgCollection) error {
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) error {
 		// Flags
-		var skipConfirmation = skipUserConfirmationFlag.GetValueOrDefault()
-		var packageDir = newPackageOutputDirFlag.GetValueOrDefault()
+		var skipConfirmation = userConfirmationFlag.GetValueOrDefault(config)
+		var packageDir = newPackageOutputDirFlag.GetValueOrDefault(config)
 
 		// Args
 		var packageName = args.OptionalArg.Value
 
 		return pkg.NewTemplatePackageCmd(packageName, packageDir, skipConfirmation)
+	},
+}
+
+var repoCmdName = "repositories"
+var repoCmd = &Command{
+	Name:             repoCmdName,
+	Alias:            "repo",
+	ShortDescription: "Commands for interacting with template package repositories.",
+	SubCommands: []*Command{
+		repoListCmd,
+		repoPushCmd,
+	},
+}
+
+var repoListCmd = &Command{
+	Name:             "list",
+	Alias:            "ls",
+	ShortDescription: "Lists the names of available repositories.",
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
+		var repos []string
+		repos, err = pkg.ListPackageRepositories(&config.Repositories)
+		if err != nil {
+			return err
+		}
+
+		for _, repo := range repos {
+			log.Outputf(repo)
+		}
+
+		return nil
+	},
+}
+
+var repoPushCmd = &Command{
+	Name:             "push",
+	ShortDescription: "Pushes a template package to a repository.",
+	Flags: FlagCollection{
+		StringFlags: []Flag[string]{
+			repoNameFlag,
+			packageVersionFlag,
+		},
+		BoolFlags: []Flag[bool]{
+			userConfirmationFlag,
+		},
+	},
+	Args: ArgCollection{MandatoryArgs: []*Arg{
+		{
+			Name:             "package-name",
+			ShortDescription: "The name of the template package to push.",
+			IsValidFunc:      validatePackageName,
+		},
+	}},
+	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
+		var kpmHomeDir string
+		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
+			return err
+		}
+
+		var packageName = args.MandatoryArgs[0].Value
+		var packageVersion = packageVersionFlag.GetValueOrDefault(config)
+
+		// If the repo name isn't provided, pick the first one.
+		var repoName = repoNameFlag.GetValueOrDefault(config)
+		if repoName == "" {
+			var repoNames = config.Repositories.GetRepositoryNames()
+			if len(repoNames) == 0 {
+				return errors.New("no repositories configured")
+			}
+
+			repoName = repoNames[0]
+		}
+
+		return pkg.PushToRepository(
+			kpmHomeDir,
+			&config.Repositories,
+			repoName,
+			packageName,
+			packageVersion,
+			userConfirmationFlag.GetValueOrDefault(config),
+		)
 	},
 }

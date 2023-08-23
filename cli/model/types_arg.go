@@ -5,7 +5,7 @@ type ArgCollection struct {
 	OptionalArg   *Arg
 }
 
-type ArgIsValidFunc func() (bool, error)
+type ArgIsValidFunc func(value string) error
 
 type Arg struct {
 	Name             string

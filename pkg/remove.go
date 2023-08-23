@@ -9,7 +9,12 @@ import (
 )
 
 // RemoveCmd removes a template package from the local KPM repository.
-func RemoveCmd(packageName string, packageVersion string, kpmHomeDirPath string, userHasConfirmed bool) error {
+func RemoveCmd(
+	packageName string,
+	packageVersion string,
+	kpmHomeDirPath string,
+	userHasConfirmed bool,
+) error {
 	var err error
 
 	// Get absolute path of KPM home directory
