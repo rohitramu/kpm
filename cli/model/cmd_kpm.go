@@ -1,41 +1,22 @@
 package model
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/rohitramu/kpm/cli/model/utils/constants"
+	"github.com/rohitramu/kpm/cli/model/utils/directories"
 	"github.com/rohitramu/kpm/pkg"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
 )
 
-var KpmCmd = &Command{
-	Name: "kpm",
-	Flags: FlagCollection{
-		StringFlags: []Flag[string]{
-			logLevelFlag,
-		},
-	},
-	SubCommands: []*Command{
-		listCmd,
-		removeCmd,
-		purgeCmd,
-		packCmd,
-		unpackCmd,
-		inspectCmd,
-		runCmd,
-		newCmd,
-		repoCmd,
-	},
-}
-
 var listCmd = &Command{
-	Name:             "list",
+	Name:             constants.CmdList,
 	Alias:            "ls",
 	ShortDescription: "Lists all template packages.",
 	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
-		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
@@ -56,7 +37,7 @@ var listCmd = &Command{
 }
 
 var removeCmd = &Command{
-	Name:             "remove",
+	Name:             constants.CmdRemove,
 	Alias:            "rm",
 	ShortDescription: "Removes a template package.",
 	Flags: FlagCollection{
@@ -71,7 +52,7 @@ var removeCmd = &Command{
 	},
 	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
-		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
@@ -100,7 +81,7 @@ var removeCmd = &Command{
 
 // TODO: Merge the "purge" command into the "remove" command (use flags to determine behavior).
 var purgeCmd = &Command{
-	Name:             "purge",
+	Name:             constants.CmdPurge,
 	ShortDescription: "Removes all versions of a template package.",
 	Flags: FlagCollection{
 		BoolFlags: []Flag[bool]{userConfirmationFlag},
@@ -113,7 +94,7 @@ var purgeCmd = &Command{
 	},
 	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
-		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
@@ -131,7 +112,7 @@ var purgeCmd = &Command{
 }
 
 var packCmd = &Command{
-	Name:             "pack",
+	Name:             constants.CmdPack,
 	ShortDescription: "Validates a template package and makes it available for use.",
 	Flags: FlagCollection{
 		BoolFlags: []Flag[bool]{userConfirmationFlag},
@@ -144,7 +125,7 @@ var packCmd = &Command{
 	},
 	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
-		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
@@ -159,7 +140,7 @@ var packCmd = &Command{
 }
 
 var unpackCmd = &Command{
-	Name:             "unpack",
+	Name:             constants.CmdUnpack,
 	ShortDescription: "Exports a template package to the specified location.",
 	Flags: FlagCollection{
 		StringFlags: []Flag[string]{
@@ -173,7 +154,7 @@ var unpackCmd = &Command{
 	},
 	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
-		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
@@ -208,7 +189,7 @@ var unpackCmd = &Command{
 }
 
 var inspectCmd = &Command{
-	Name:             "inpect",
+	Name:             constants.CmdInspect,
 	ShortDescription: "Prints the contents of the default parameters file in a template package.",
 	Flags: FlagCollection{
 		StringFlags: []Flag[string]{
@@ -226,7 +207,7 @@ var inspectCmd = &Command{
 	},
 	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
-		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
@@ -253,7 +234,7 @@ var inspectCmd = &Command{
 }
 
 var runCmd = &Command{
-	Name:             "run",
+	Name:             constants.CmdRun,
 	ShortDescription: "Runs a template package.",
 	Flags: FlagCollection{
 		StringFlags: []Flag[string]{
@@ -274,7 +255,7 @@ var runCmd = &Command{
 	},
 	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
 		var kpmHomeDir string
-		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
 			return err
 		}
 
@@ -315,7 +296,7 @@ var runCmd = &Command{
 }
 
 var newCmd = &Command{
-	Name:             "new-package",
+	Name:             constants.CmdNewPackage,
 	Alias:            "new",
 	ShortDescription: "Creates a new template package.",
 	Flags: FlagCollection{
@@ -345,82 +326,14 @@ var newCmd = &Command{
 	},
 }
 
-var repoCmdName = "repositories"
 var repoCmd = &Command{
-	Name:             repoCmdName,
+	Name:             constants.CmdRepo,
 	Alias:            "repo",
 	ShortDescription: "Commands for interacting with template package repositories.",
 	SubCommands: []*Command{
-		repoListCmd,
+		repoRemotesCmd,
 		repoPushCmd,
-	},
-}
-
-var repoListCmd = &Command{
-	Name:             "list",
-	Alias:            "ls",
-	ShortDescription: "Lists the names of available repositories.",
-	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
-		var repos []string
-		repos, err = pkg.ListPackageRepositories(&config.Repositories)
-		if err != nil {
-			return err
-		}
-
-		for _, repo := range repos {
-			log.Outputf(repo)
-		}
-
-		return nil
-	},
-}
-
-var repoPushCmd = &Command{
-	Name:             "push",
-	ShortDescription: "Pushes a template package to a repository.",
-	Flags: FlagCollection{
-		StringFlags: []Flag[string]{
-			repoNameFlag,
-			packageVersionFlag,
-		},
-		BoolFlags: []Flag[bool]{
-			userConfirmationFlag,
-		},
-	},
-	Args: ArgCollection{MandatoryArgs: []*Arg{
-		{
-			Name:             "package-name",
-			ShortDescription: "The name of the template package to push.",
-			IsValidFunc:      validatePackageName,
-		},
-	}},
-	ExecuteFunc: func(config *KpmConfig, args ArgCollection) (err error) {
-		var kpmHomeDir string
-		if kpmHomeDir, err = template_package.GetKpmHomeDir(); err != nil {
-			return err
-		}
-
-		var packageName = args.MandatoryArgs[0].Value
-		var packageVersion = packageVersionFlag.GetValueOrDefault(config)
-
-		// If the repo name isn't provided, pick the first one.
-		var repoName = repoNameFlag.GetValueOrDefault(config)
-		if repoName == "" {
-			var repoNames = config.Repositories.GetRepositoryNames()
-			if len(repoNames) == 0 {
-				return errors.New("no repositories configured")
-			}
-
-			repoName = repoNames[0]
-		}
-
-		return pkg.PushToRepository(
-			kpmHomeDir,
-			&config.Repositories,
-			repoName,
-			packageName,
-			packageVersion,
-			userConfirmationFlag.GetValueOrDefault(config),
-		)
+		repoPullCmd,
+		repoFindCmd,
 	},
 }

@@ -1,12 +1,10 @@
 package template_repository
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/emirpasic/gods/maps/linkedhashmap"
 	"github.com/rohitramu/kpm/pkg/utils/log"
-	"github.com/rohitramu/kpm/pkg/utils/templates"
 	"gopkg.in/yaml.v3"
 )
 
@@ -35,8 +33,9 @@ func (result *RepositoryCollection) UnmarshalYAML(unmarshaller *yaml.Node) (err 
 
 func (rc *RepositoryCollection) GetRepositoryNames() []string {
 	var result = make([]string, 0, rc.repos.Size())
-	for _, repoNameUncasted := range rc.repos.Keys() {
-		var repoName, ok = repoNameUncasted.(string)
+	var it = rc.repos.Iterator()
+	for it.Next() {
+		var repoName, ok = it.Key().(string)
 		if !ok {
 			log.Panicf("Failed to cast repository name to string.")
 		}
@@ -47,65 +46,9 @@ func (rc *RepositoryCollection) GetRepositoryNames() []string {
 	return result
 }
 
-func (rc *RepositoryCollection) Pull(
-	kpmHomeDir string,
-	packageInfo *templates.PackageInfo,
-	userHasConfirmed bool,
-) error {
-	var err error
-
-	var it = rc.repos.Iterator()
-	it.Begin()
-	for it.Next() {
-		// Get repo.
-		var repo = castObjToRepo(it.Value())
-
-		// Attempt to pull package from repo.
-		log.Verbosef(
-			"Pulling package '%s', version '%s' from repository '%s'.",
-			packageInfo.Name,
-			packageInfo.Version, repo.GetName(),
-		)
-		err = repo.Pull(kpmHomeDir, packageInfo, userHasConfirmed)
-		if err == nil {
-			// We succesfully pulled the package
-			return nil
-		}
-
-		// Failed to pull package from this repo - keep checking other repos.
-		if errors.Is(err, ErrPackageNotFound) {
-			log.Infof(
-				"Could not find package '%s', version '%s' in repository '%s'.",
-				packageInfo.Name,
-				packageInfo.Version,
-				repo.GetName(),
-			)
-		}
-	}
-
-	// If we get to this point, that means we didn't find the package in any repos.
-	return fmt.Errorf(
-		"failed to find package in any repositories: %s",
-		ErrPackageNotFoundType{PackageInfo: *packageInfo},
-	)
-}
-
-func (rc *RepositoryCollection) Push(
-	kpmHomeDir string,
-	repoName string,
-	packageInfo *templates.PackageInfo,
-	userHasConfirmed bool,
-) error {
-	// Get the repo from the map.
+func (rc *RepositoryCollection) GetRepository(repoName string) (Repository, error) {
 	var repo, err = rc.getRepo(repoName)
-	if err != nil {
-		return err
-	}
-
-	// Push the template package to the repository.
-	err = repo.Push(kpmHomeDir, packageInfo, userHasConfirmed)
-
-	return err
+	return repo, err
 }
 
 func (rc *RepositoryCollection) getRepo(repoName string) (Repository, error) {
