@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"fmt"
 	"text/template"
 )
 
@@ -23,4 +24,8 @@ type PackageInfo struct {
 type PackageDefinition struct {
 	PackageInfo *PackageInfo `yaml:"package" json:"package"`
 	Parameters  *GenericMap  `yaml:"parameters" json:"parameters"`
+}
+
+func (p PackageInfo) String() string {
+	return fmt.Sprintf("%s-%s", p.Name, p.Version)
 }

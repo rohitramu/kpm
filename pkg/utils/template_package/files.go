@@ -2,13 +2,12 @@ package template_package
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
 	"text/template"
 
 	"github.com/emirpasic/gods/sets/treeset"
-	"github.com/emirpasic/gods/stacks/linkedliststack"
 
 	"github.com/rohitramu/kpm/pkg/utils/constants"
 	"github.com/rohitramu/kpm/pkg/utils/files"
@@ -119,17 +118,25 @@ func GetSharedTemplate(packageDir string) (*template.Template, error) {
 }
 
 // GetPackageInfo validates the package directory and returns the package info object for a given package.
-func GetPackageInfo(packageRepoDir string, fullPackageName string) (*templates.PackageInfo, error) {
+func GetPackageInfo(repoDir string, fullPackageName string) (*templates.PackageInfo, error) {
 	var err error
 
+	var packagesDir = GetRepoPackagesDir(repoDir)
+
+	var packageDir string
+	packageDir, err = files.GetAbsolutePath(filepath.Join(packagesDir, fullPackageName))
+	if err != nil {
+		return nil, err
+	}
+
 	// Make sure that the package exists
-	err = files.DirExists(fullPackageName, "package")
+	err = files.DirExists(packageDir, "package")
 	if err != nil {
 		return nil, err
 	}
 
 	// Check that the package info file exists
-	var packageInfoFile = GetPackageInfoFile(fullPackageName)
+	var packageInfoFile = GetPackageInfoFile(packageDir)
 	err = files.FileExists(packageInfoFile, "template package information")
 	if err != nil {
 		return nil, err
@@ -164,21 +171,21 @@ func GetPackageInfo(packageRepoDir string, fullPackageName string) (*templates.P
 	}
 
 	// Make sure that the interface file exists
-	var interfaceFilePath = GetInterfaceFile(fullPackageName)
+	var interfaceFilePath = GetInterfaceFile(packageDir)
 	err = files.FileExists(interfaceFilePath, "interface")
 	if err != nil {
 		return nil, err
 	}
 
 	// Make sure that the parameters file exists
-	var parametersFile = GetDefaultParametersFile(fullPackageName)
+	var parametersFile = GetDefaultParametersFile(packageDir)
 	err = files.FileExists(parametersFile, "default parameters")
 	if err != nil {
 		return nil, err
 	}
 
 	// Validate the templates directory if it exists
-	var templatesDir = GetTemplatesDir(fullPackageName)
+	var templatesDir = GetTemplatesDir(packageDir)
 	if files.DirExists(templatesDir, "templates") == nil {
 		var fileInfos []os.DirEntry
 		fileInfos, err = os.ReadDir(templatesDir)
@@ -199,7 +206,7 @@ func GetPackageInfo(packageRepoDir string, fullPackageName string) (*templates.P
 	}
 
 	// Validate the helpers directory if it exists
-	var helpersDir = GetHelpersDir(fullPackageName)
+	var helpersDir = GetHelpersDir(packageDir)
 	if files.DirExists(helpersDir, "helpers") == nil {
 		// Make sure all helper template files have the extension ".tpl"
 		var fileInfos []os.DirEntry
@@ -227,7 +234,7 @@ func GetPackageInfo(packageRepoDir string, fullPackageName string) (*templates.P
 	}
 
 	// Validate the dependencies directory if it exists
-	var dependenciesDir = GetDependenciesDir(fullPackageName)
+	var dependenciesDir = GetDependenciesDir(packageDir)
 	if files.DirExists(dependenciesDir, "dependencies") == nil {
 		// Make sure all dependencies files have the extension ".yaml"
 		var fileInfos []os.DirEntry
@@ -357,91 +364,98 @@ func getValuesFromInterface(parentTemplate *template.Template, packageDir string
 	return result, nil
 }
 
-// GetPackageFullNamesFromLocalRepository returns the list of package names in the local KPM package repository, in alphabetical order.
-func GetPackageFullNamesFromLocalRepository(kpmHomeDir string) ([]string, error) {
+// GetPackageFullNamesFromLocalRepository returns the list of package names in a local package repository, in alphabetical order.
+func GetPackageFullNamesFromLocalRepository(repoDir string) ([]string, error) {
 	var err error
 	var ok bool
 
-	var packageRepositoryDir = GetPackageRepositoryDir(kpmHomeDir)
+	var packagesDir = GetRepoPackagesDir(repoDir)
 
 	// Exit early if the packages directory doesn't exist
-	err = files.DirExists(packageRepositoryDir, "packages repository")
+	err = files.DirExists(packagesDir, "packages repository")
 	if err != nil {
-		return []string{}, nil
+		return []string{}, err
 	}
 
-	// Traverse the packages directory
+	// Get the items inside the repo directory.
+	var namespaceDirEntries []fs.DirEntry
+	namespaceDirEntries, err = os.ReadDir(packagesDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Traverse the packages directory.
 	var packages = treeset.NewWithStringComparator()
-	var toVisit = linkedliststack.New()
-	toVisit.Push(packageRepositoryDir)
-	for currentPathObj, ok := toVisit.Pop(); ok; currentPathObj, ok = toVisit.Pop() {
-		// Assert type as string
-		var currentPath string
-		currentPath, ok = currentPathObj.(string)
-		if !ok {
-			// We should never fail here since we are providing the values
-			log.Panicf("Unexpected object when string was expected: %s", reflect.TypeOf(currentPathObj))
-		}
+	for _, namespaceDirEntry := range namespaceDirEntries {
+		var namespaceDirAbsPath = filepath.Join(packagesDir, namespaceDirEntry.Name())
 
-		// Get the file info
-		var fileInfo os.FileInfo
-		fileInfo, err = os.Stat(currentPath)
-		if err != nil {
-			// We should never fail here since we are providing the values
-			log.Panicf("Unexpected file path: %s", err)
-		}
-
-		// Ignore files
-		if !fileInfo.IsDir() {
+		// Skip files.
+		if !namespaceDirEntry.IsDir() {
+			log.Warningf("Found a file in the namespace directory '%s'", namespaceDirAbsPath)
 			continue
 		}
 
-		// Check if this is a valid package directory
-		var packageInfo *templates.PackageInfo
-		packageInfo, err = GetPackageInfo(kpmHomeDir, currentPath)
-		if err == nil {
-			// Get the package's full name
-			var packageFullName = GetPackageFullName(packageInfo.Name, packageInfo.Version)
+		var packageDirEntries []fs.DirEntry
+		packageDirEntries, err = os.ReadDir(namespaceDirAbsPath)
+		if err != nil {
+			log.Warningf(
+				"Failed to read the contents of namespace directory '%s': %s",
+				namespaceDirAbsPath,
+				err,
+			)
+			continue
+		}
 
-			// Calculate what the full name of the package should be
-			var packageFullNameFromPath string
-			packageFullNameFromPath, err = filepath.Rel(packageRepositoryDir, currentPath)
+		for _, packageDirEntry := range packageDirEntries {
+			var packageAbsPath = filepath.Join(namespaceDirAbsPath, packageDirEntry.Name())
+
+			// Get the expected package name based on the path.
+			var expectedPackageFullName string
+			expectedPackageFullName, err = filepath.Rel(packagesDir, packageAbsPath)
 			if err != nil {
-				log.Panicf("Failed to get relative path: %s -> %s", packageRepositoryDir, currentPath)
+				// This should never fail (we just calculated the path).
+				log.Panicf(
+					"Unexpectedly failed to get relative path: filepath.Rel(\"%s\", \"%s\")",
+					namespaceDirAbsPath,
+					packageAbsPath,
+				)
+			}
+			// We always expect forward slashes.
+			expectedPackageFullName = filepath.ToSlash(expectedPackageFullName)
+
+			// Skip files.
+			if !packageDirEntry.IsDir() {
+				log.Warningf("Found a file in the packages directory: %s", packageAbsPath)
+				continue
 			}
 
-			// We always expect forward slashes for namespaces
-			packageFullNameFromPath = filepath.ToSlash(packageFullNameFromPath)
+			// Check if this is a valid package directory
+			var packageInfo *templates.PackageInfo
+			packageInfo, err = GetPackageInfo(repoDir, expectedPackageFullName)
+			if err != nil {
+				log.Warningf("Found invalid package '%s': %s", packageAbsPath, err)
+				continue
+			}
+
+			// Get the package's full name from the package info file.
+			var packageFullName = GetPackageFullName(packageInfo.Name, packageInfo.Version)
 
 			// Check that the name of the directory matches the package's full name
-			if packageFullNameFromPath != packageFullName {
+			if expectedPackageFullName != packageFullName {
 				// Log a warning
-				log.Warningf("Found corrupted package in local repository (directory name does not match package name): %s", currentPath)
+				log.Warningf(
+					"Directory name '%s' does not match package name '%s': %s",
+					packageDirEntry.Name(),
+					packageFullName,
+					packageAbsPath,
+				)
 
 				// Don't return this package, just continue looking for other packages
 				continue
 			}
 
 			// Found a valid package, so add it to the list of found packages
-			packages.Add(packageFullNameFromPath)
-
-			// We don't want to add subdirectories, since packages cannot be nested
-			continue
-		}
-
-		// Since this is not a valid package directory, visit all subdirectories if this is the root directory or the directory's name is a valid namespace name
-		if currentPath == packageRepositoryDir || validation.ValidateNamespaceSegment(filepath.Base(currentPath)) == nil {
-			var subdirectories []os.DirEntry
-			subdirectories, err = os.ReadDir(currentPath)
-			if err != nil {
-				return nil, err
-			}
-			for _, dir := range subdirectories {
-				var dirName = dir.Name()
-				if dir.IsDir() {
-					toVisit.Push(filepath.Join(currentPath, dirName))
-				}
-			}
+			packages.Add(packageFullName)
 		}
 	}
 
@@ -452,7 +466,7 @@ func GetPackageFullNamesFromLocalRepository(kpmHomeDir string) ([]string, error)
 		var value = it.Value()
 		packageName, ok = value.(string)
 		if !ok {
-			log.Panicf("Unexpected value in tree map: %s", value)
+			log.Panicf("Unexpected non-string value in tree map: %s", value)
 		}
 
 		result[i] = packageName

@@ -7,10 +7,10 @@ import (
 	"github.com/caarlos0/env/v9"
 	"gopkg.in/yaml.v3"
 
-	"github.com/rohitramu/kpm/pkg/utils/constants"
+	"github.com/rohitramu/kpm/cli/model/utils/constants"
+	"github.com/rohitramu/kpm/cli/model/utils/directories"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
-	"github.com/rohitramu/kpm/pkg/utils/template_package"
 	"github.com/rohitramu/kpm/pkg/utils/template_repository"
 )
 
@@ -31,7 +31,7 @@ func ReadConfig() (*KpmConfig, error) {
 	}
 
 	var kpmHomeDir string
-	kpmHomeDir, err = template_package.GetKpmHomeDir()
+	kpmHomeDir, err = directories.GetKpmHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to locate KPM home directory: %s", err)
 	}

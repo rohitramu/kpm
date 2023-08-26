@@ -1,7 +1,9 @@
 package template_repository
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
@@ -26,7 +28,7 @@ func (repo *filesystemRepository) GetType() string {
 	return repositoryTypeNameFilesystem
 }
 
-func (repo *filesystemRepository) Packages() (result []*templates.PackageInfo, err error) {
+func (repo *filesystemRepository) FindPackages(searchTerm string) (result []*templates.PackageInfo, err error) {
 	var packageRepoDir = repo.absoluteFilePath
 
 	var fullPackageNames []string
@@ -41,9 +43,14 @@ func (repo *filesystemRepository) Packages() (result []*templates.PackageInfo, e
 
 	for _, fullPackageName := range fullPackageNames {
 		var packageInfo *templates.PackageInfo
-		packageInfo, err = template_package.GetPackageInfo(packageRepoDir, fullPackageName)
+		packageInfo, err = template_package.GetPackageInfo(repo.absoluteFilePath, fullPackageName)
 		if err != nil {
 			return nil, err
+		}
+
+		// If the package name doesn't contain the search term, ignore it.
+		if searchTerm != "" && !strings.Contains(packageInfo.Name, searchTerm) {
+			continue
 		}
 
 		result = append(result, packageInfo)
@@ -56,7 +63,14 @@ func (repo *filesystemRepository) PackageVersions(packageName string) (result []
 	return template_package.GetPackageVersions(repo.absoluteFilePath, packageName)
 }
 
-func (repo *filesystemRepository) Push(kpmHomeDir string, packageInfo *templates.PackageInfo, userHasConfirmed bool) (err error) {
+func (repo *filesystemRepository) Push(
+	kpmHomeDir string,
+	packageInfo *templates.PackageInfo,
+) (err error) {
+	if packageInfo == nil {
+		log.Panicf("packageInfo is nil")
+	}
+
 	// Get the source directory.
 	var packageDirSrc = template_package.GetPackageDir(
 		kpmHomeDir,
@@ -69,15 +83,28 @@ func (repo *filesystemRepository) Push(kpmHomeDir string, packageInfo *templates
 		template_package.GetPackageFullName(packageInfo.Name, packageInfo.Version),
 	)
 
-	return copyPackage(packageDirSrc, packageDirDst, userHasConfirmed)
+	return copyPackage(packageDirSrc, packageDirDst)
 }
 
-func (repo *filesystemRepository) Pull(kpmHomeDir string, packageInfo *templates.PackageInfo, userHasConfirmed bool) error {
+func (repo *filesystemRepository) Pull(
+	kpmHomeDir string,
+	packageInfo *templates.PackageInfo,
+) (err error) {
+	if packageInfo == nil {
+		log.Panicf("packageInfo is nil")
+	}
+
 	// Get the source directory.
 	var packageDirSrc = template_package.GetPackageDir(
 		repo.absoluteFilePath,
 		template_package.GetPackageFullName(packageInfo.Name, packageInfo.Version),
 	)
+
+	// If the directory doesn't exist, return an error.
+	err = files.DirExists(packageDirSrc, packageInfo.Name)
+	if err != nil {
+		return errors.Join(PackageNotFoundError{PackageInfo: *packageInfo})
+	}
 
 	// Get the destination directory.
 	var packageDirDst = template_package.GetPackageDir(
@@ -85,16 +112,20 @@ func (repo *filesystemRepository) Pull(kpmHomeDir string, packageInfo *templates
 		template_package.GetPackageFullName(packageInfo.Name, packageInfo.Version),
 	)
 
-	return copyPackage(packageDirSrc, packageDirDst, userHasConfirmed)
+	return copyPackage(packageDirSrc, packageDirDst)
 }
 
 func repoInfoToFilesystemRepo(repoInfo *RepositoryInfo) (Repository, error) {
+	if repoInfo == nil {
+		log.Panicf("repoInfo is nil")
+	}
+
 	var err error
 	var result = &filesystemRepository{name: repoInfo.Name}
 
 	dirPath, ok := repoInfo.Location.(string)
 	if !ok {
-		return result, fmt.Errorf("filesystem repository connection info is not a string directory path")
+		return result, fmt.Errorf("filesystem repository connection info is not an absolute directory path")
 	}
 
 	// Make sure it's an absolute path or rooted in the home directory.
@@ -120,9 +151,9 @@ func repoInfoToFilesystemRepo(repoInfo *RepositoryInfo) (Repository, error) {
 	return result, nil
 }
 
-func copyPackage(packageDirSrc string, packageDirDst string, userHasConfirmed bool) (err error) {
+func copyPackage(packageDirSrc string, packageDirDst string) (err error) {
 	// Delete the destination directory.
-	if err = files.DeleteDirIfExists(packageDirDst, "destination template package", userHasConfirmed); err != nil {
+	if err = files.DeleteDirIfExists(packageDirDst, "destination template package", true); err != nil {
 		return err
 	}
 

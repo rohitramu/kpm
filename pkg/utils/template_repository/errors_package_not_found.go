@@ -12,12 +12,8 @@ type ErrPackageNotFoundType struct {
 
 var ErrPackageNotFound = ErrPackageNotFoundType{}
 
-func (thisErr ErrPackageNotFoundType) Error() string {
-	return fmt.Sprintf(
-		"failed to find package '%s', version '%s'",
-		thisErr.PackageInfo.Name,
-		thisErr.PackageInfo.Version,
-	)
+func (err ErrPackageNotFoundType) Error() string {
+	return fmt.Sprintf("failed to find package '%s'", err.PackageInfo)
 }
 
 func (thisErr ErrPackageNotFoundType) Is(target error) bool {

@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 
-	"github.com/rohitramu/kpm/pkg/utils/constants"
+	"github.com/rohitramu/kpm/cli/model/utils/constants"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 )
@@ -91,7 +91,7 @@ var newPackageOutputDirFlag = NewFlagBuilder[string]("output-dir").
 var repoNameFlag = NewFlagBuilder[string]("repo").
 	SetShortDescription(fmt.Sprintf(
 		"The repository to interact with.  Defaults to the first repository in the list of available repositories.  Run \"%s %s\" to get the repositories list.",
-		repoCmdName,
-		repoListCmd.Name,
+		constants.CmdRepo,
+		repoRemotesCmd.Name,
 	)).
 	Build()
