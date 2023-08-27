@@ -17,8 +17,8 @@ func IndexFunc(data any, keys ...string) (any, error) {
 	}
 
 	// Make sure the data is either a map or a value type
-	var currentMap *GenericMap
-	currentMap, ok = data.(*GenericMap)
+	var currentMap *map[string]any
+	currentMap, ok = data.(*map[string]any)
 	if !ok {
 		if len(keys) == 0 {
 			// Data is a value type and it was expected (i.e. no keys were supplied), so return it as-is
@@ -43,7 +43,7 @@ func IndexFunc(data any, keys ...string) (any, error) {
 		}
 
 		// Try to assign the next map if the type is a map
-		currentMap, ok = result.(*GenericMap)
+		currentMap, ok = result.(*map[string]any)
 		if !ok {
 			// If the type is not a map, set this to nil so we don't reuse the old map
 			currentMap = nil

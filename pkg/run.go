@@ -70,7 +70,7 @@ func RunCmd(
 	log.Verbosef("====")
 
 	// Get the default parameters
-	var packageParameters *templates.GenericMap
+	var packageParameters *map[string]any
 	packageParameters, err = template_package.GetPackageParameters(parametersFilePath)
 	if err != nil {
 		return err
@@ -89,7 +89,12 @@ func RunCmd(
 
 	// Execute template packages in the dependency tree and write the output to the filesystem
 	var numPackages int
-	numPackages, err = dependencyTree.VisitNodesDepthFirst(func(relativeFilePath []string, friendlyNamePath []string, executableTemplates []*template.Template, templateInput *templates.GenericMap) error {
+	numPackages, err = dependencyTree.VisitNodesDepthFirst(func(
+		relativeFilePath []string,
+		friendlyNamePath []string,
+		executableTemplates []*template.Template,
+		templateInput *map[string]any,
+	) error {
 		// Get the output directory
 		var outputDir = filepath.Join(outputDirPath, filepath.Join(relativeFilePath...))
 

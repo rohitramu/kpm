@@ -25,6 +25,21 @@ func GetWorkingDir() (string, error) {
 	return result, nil
 }
 
+// GetUserHomeDir returns the path to the home directory of the current user.
+func GetUserHomeDir() (string, error) {
+	var usr, err = user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return usr.HomeDir, nil
+}
+
+// GetTempDir returns the path to the system's temporary directory.
+func GetTempDir() (string, error) {
+	return os.TempDir(), nil
+}
+
 // GetAbsolutePathOrDefault returns the absolute path of the provided path if
 // it is not null, otherwise the absolute path of the default path.
 func GetAbsolutePathOrDefault(path *string, defaultPath string) (string, error) {
@@ -127,16 +142,6 @@ func GetExpandedHomeDirPath(path string) (string, error) {
 
 	// In all other cases, return the path untouched.
 	return path, nil
-}
-
-// GetUserHomeDir returns the path to the home directory of the current user.
-func GetUserHomeDir() (string, error) {
-	var usr, err = user.Current()
-	if err != nil {
-		return "", err
-	}
-
-	return usr.HomeDir, nil
 }
 
 // ReadString returns the contents of the given file as a string.

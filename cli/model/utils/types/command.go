@@ -1,7 +1,11 @@
-package model
+package types
 
-type CommandExecuteFunc func(config *KpmConfig, args ArgCollection) error
-type CommandIsValidFunc func(config *KpmConfig, args ArgCollection) error
+import (
+	"github.com/rohitramu/kpm/cli/model/utils/config"
+)
+
+type CommandExecuteFunc func(config *config.KpmConfig, args ArgCollection) error
+type CommandIsValidFunc func(config *config.KpmConfig, args ArgCollection) error
 
 type Command struct {
 	Name             string

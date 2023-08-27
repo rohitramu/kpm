@@ -4,7 +4,6 @@ import (
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
-	"github.com/rohitramu/kpm/pkg/utils/templates"
 )
 
 // PackCmd packs a local template package so it is available for use in the given local KPM repository.
@@ -16,8 +15,8 @@ func PackCmd(
 	var err error
 
 	// Package directory
-	var packageDir string
-	packageDir, err = files.GetAbsolutePath(packageDirPath)
+	var packageDirAbsPath string
+	packageDirAbsPath, err = files.GetAbsolutePath(packageDirPath)
 	if err != nil {
 		return err
 	}
@@ -31,13 +30,13 @@ func PackCmd(
 
 	// Log resolved paths
 	log.Verbosef("====")
-	log.Verbosef("Template package directory:             %s", packageDir)
+	log.Verbosef("Template package directory:             %s", packageDirAbsPath)
 	log.Verbosef("====")
 
 	// Validate package and get package info
 	log.Debugf("Getting template package info")
-	var packageInfo *templates.PackageInfo
-	packageInfo, err = template_package.GetPackageInfo(kpmHomeDir, packageDir)
+	var packageInfo *template_package.PackageInfo
+	packageInfo, err = template_package.GetPackageInfo(packageDirAbsPath)
 	if err != nil {
 		return err
 	}
@@ -53,7 +52,7 @@ func PackCmd(
 
 	// Copy package to output directory
 	log.Debugf("Copying package to: %s", outputDir)
-	files.CopyDir(packageDir, outputDir)
+	files.CopyDir(packageDirAbsPath, outputDir)
 
 	log.Verbosef("====")
 	log.Verbosef("Template package name:    %s", packageInfo.Name)

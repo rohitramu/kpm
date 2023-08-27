@@ -5,7 +5,6 @@ import (
 
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
 	"github.com/rohitramu/kpm/pkg/utils/template_repository"
-	"github.com/rohitramu/kpm/pkg/utils/templates"
 	"github.com/rohitramu/kpm/pkg/utils/user_prompts"
 )
 
@@ -29,7 +28,7 @@ func PushPackage(
 		}
 	}
 
-	var packageInfo = &templates.PackageInfo{
+	var packageInfo = &template_package.PackageInfo{
 		Name:    packageName,
 		Version: packageVersion,
 	}

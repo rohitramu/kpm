@@ -1,6 +1,7 @@
 package template_repository
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/emirpasic/gods/maps/linkedhashmap"
@@ -8,12 +9,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var _ yaml.Unmarshaler = &RepositoryCollection{}
+var _ yaml.Marshaler = &RepositoryCollection{}
+
 type RepositoryCollection struct {
 	repos linkedhashmap.Map
 }
 
 func (result *RepositoryCollection) UnmarshalYAML(unmarshaller *yaml.Node) (err error) {
-	var repoInfos *[]*RepositoryInfo
+	var repoInfos RepositoryInfoCollection
 
 	err = unmarshaller.Decode(&repoInfos)
 	if err != nil {
@@ -21,7 +25,7 @@ func (result *RepositoryCollection) UnmarshalYAML(unmarshaller *yaml.Node) (err 
 	}
 
 	var tmp *RepositoryCollection
-	tmp, err = GetRepositoriesFromInfo(*repoInfos...)
+	tmp, err = repoInfos.ToRepositoryCollection()
 	if err != nil {
 		return fmt.Errorf("failed to parse repository information: %s", err)
 	}
@@ -29,6 +33,10 @@ func (result *RepositoryCollection) UnmarshalYAML(unmarshaller *yaml.Node) (err 
 	*result = *tmp
 
 	return nil
+}
+
+func (rc *RepositoryCollection) MarshalYAML() (any, error) {
+	return nil, errors.New("not yet implemented")
 }
 
 func (rc *RepositoryCollection) GetRepositoryNames() []string {
@@ -47,11 +55,6 @@ func (rc *RepositoryCollection) GetRepositoryNames() []string {
 }
 
 func (rc *RepositoryCollection) GetRepository(repoName string) (Repository, error) {
-	var repo, err = rc.getRepo(repoName)
-	return repo, err
-}
-
-func (rc *RepositoryCollection) getRepo(repoName string) (Repository, error) {
 	// Get the repo from the map.
 	var repoUncasted, found = rc.repos.Get(repoName)
 	if !found {
@@ -62,6 +65,36 @@ func (rc *RepositoryCollection) getRepo(repoName string) (Repository, error) {
 	var repo = castObjToRepo(repoUncasted)
 
 	return repo, nil
+}
+
+func (rc *RepositoryCollection) AddRepository(repo Repository) error {
+	var repoName = repo.GetName()
+	if _, found := rc.repos.Get(repoName); found {
+		return fmt.Errorf("repository named '%s' already exists", repoName)
+	}
+
+	rc.repos.Put(repoName, repo)
+	return nil
+}
+
+func (rc *RepositoryCollection) AddRepositoryInfo(repoInfo repositoryInfo) (err error) {
+	var repo Repository
+
+	repo, err = repoInfo.ToRepository()
+	if err != nil {
+		return err
+	}
+
+	return rc.AddRepository(repo)
+}
+
+func (rc *RepositoryCollection) RemoveRepository(repoName string) error {
+	if _, found := rc.repos.Get(repoName); !found {
+		return fmt.Errorf("unknown repository '%s'", repoName)
+	}
+
+	rc.repos.Remove(repoName)
+	return nil
 }
 
 func castObjToRepo(uncasted any) Repository {

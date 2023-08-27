@@ -1,4 +1,4 @@
-package model
+package types
 
 type ArgCollection struct {
 	MandatoryArgs []*Arg

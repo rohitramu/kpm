@@ -46,25 +46,30 @@ func GetPackageFullName(packageName string, packageVersion string) string {
 }
 
 // GetTemplateInput creates the input values for a template by combining the interface, parameters and package info.
-func GetTemplateInput(kpmHomeDir string, packageFullName string, parentTemplate *template.Template, parameters *templates.GenericMap) (*templates.GenericMap, error) {
+func GetTemplateInput(
+	kpmHomeDir string,
+	packageFullName string,
+	parentTemplate *template.Template,
+	parameters *map[string]any,
+) (*map[string]any, error) {
 	var err error
 
 	var packageDir = GetPackageDir(kpmHomeDir, packageFullName)
-	var result = templates.GenericMap{}
+	var result = map[string]any{}
 
 	// Add package info
-	var packageInfo *templates.PackageInfo
-	packageInfo, err = GetPackageInfo(kpmHomeDir, packageDir)
+	var packageInfo *PackageInfo
+	packageInfo, err = GetPackageInfo(packageDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get information about package: %s\n%s", packageFullName, err)
 	}
-	var packageInfoMap = templates.GenericMap{}
+	var packageInfoMap = map[string]any{}
 	packageInfoMap["name"] = packageInfo.Name
 	packageInfoMap["version"] = packageInfo.Version
 	result[constants.TemplateFieldPackage] = &packageInfoMap
 
 	// Get the default values
-	var inputParameters *templates.GenericMap
+	var inputParameters *map[string]any
 	inputParameters, err = GetPackageParameters(GetDefaultParametersFile(packageDir))
 	if err != nil {
 		return nil, err
@@ -72,7 +77,7 @@ func GetTemplateInput(kpmHomeDir string, packageFullName string, parentTemplate 
 
 	// If the file didn't exist, create an empty map
 	if inputParameters == nil {
-		inputParameters = new(templates.GenericMap)
+		inputParameters = new(map[string]any)
 	}
 
 	// Allow default values to be overridden by the provided parameters
@@ -118,25 +123,17 @@ func GetSharedTemplate(packageDir string) (*template.Template, error) {
 }
 
 // GetPackageInfo validates the package directory and returns the package info object for a given package.
-func GetPackageInfo(repoDir string, fullPackageName string) (*templates.PackageInfo, error) {
+func GetPackageInfo(packageDirAbsPath string) (*PackageInfo, error) {
 	var err error
 
-	var packagesDir = GetRepoPackagesDir(repoDir)
-
-	var packageDir string
-	packageDir, err = files.GetAbsolutePath(filepath.Join(packagesDir, fullPackageName))
-	if err != nil {
-		return nil, err
-	}
-
 	// Make sure that the package exists
-	err = files.DirExists(packageDir, "package")
+	err = files.DirExists(packageDirAbsPath, "package")
 	if err != nil {
 		return nil, err
 	}
 
 	// Check that the package info file exists
-	var packageInfoFile = GetPackageInfoFile(packageDir)
+	var packageInfoFile = GetPackageInfoFile(packageDirAbsPath)
 	err = files.FileExists(packageInfoFile, "template package information")
 	if err != nil {
 		return nil, err
@@ -150,7 +147,7 @@ func GetPackageInfo(repoDir string, fullPackageName string) (*templates.PackageI
 	}
 
 	// Get package info object from file content
-	var packageInfo = new(templates.PackageInfo)
+	var packageInfo = new(PackageInfo)
 	err = yaml.BytesToObject(yamlBytes, packageInfo)
 	if err != nil {
 		return nil, fmt.Errorf("invalid package information file: %s\n%s", packageInfoFile, err)
@@ -171,21 +168,21 @@ func GetPackageInfo(repoDir string, fullPackageName string) (*templates.PackageI
 	}
 
 	// Make sure that the interface file exists
-	var interfaceFilePath = GetInterfaceFile(packageDir)
+	var interfaceFilePath = GetInterfaceFile(packageDirAbsPath)
 	err = files.FileExists(interfaceFilePath, "interface")
 	if err != nil {
 		return nil, err
 	}
 
 	// Make sure that the parameters file exists
-	var parametersFile = GetDefaultParametersFile(packageDir)
+	var parametersFile = GetDefaultParametersFile(packageDirAbsPath)
 	err = files.FileExists(parametersFile, "default parameters")
 	if err != nil {
 		return nil, err
 	}
 
 	// Validate the templates directory if it exists
-	var templatesDir = GetTemplatesDir(packageDir)
+	var templatesDir = GetTemplatesDir(packageDirAbsPath)
 	if files.DirExists(templatesDir, "templates") == nil {
 		var fileInfos []os.DirEntry
 		fileInfos, err = os.ReadDir(templatesDir)
@@ -206,7 +203,7 @@ func GetPackageInfo(repoDir string, fullPackageName string) (*templates.PackageI
 	}
 
 	// Validate the helpers directory if it exists
-	var helpersDir = GetHelpersDir(packageDir)
+	var helpersDir = GetHelpersDir(packageDirAbsPath)
 	if files.DirExists(helpersDir, "helpers") == nil {
 		// Make sure all helper template files have the extension ".tpl"
 		var fileInfos []os.DirEntry
@@ -234,7 +231,7 @@ func GetPackageInfo(repoDir string, fullPackageName string) (*templates.PackageI
 	}
 
 	// Validate the dependencies directory if it exists
-	var dependenciesDir = GetDependenciesDir(packageDir)
+	var dependenciesDir = GetDependenciesDir(packageDirAbsPath)
 	if files.DirExists(dependenciesDir, "dependencies") == nil {
 		// Make sure all dependencies files have the extension ".yaml"
 		var fileInfos []os.DirEntry
@@ -265,7 +262,7 @@ func GetPackageInfo(repoDir string, fullPackageName string) (*templates.PackageI
 }
 
 // GetPackageParameters returns the parameters in a file as an object which can be used as input to the interface template in a package.
-func GetPackageParameters(parametersFile string) (*templates.GenericMap, error) {
+func GetPackageParameters(parametersFile string) (*map[string]any, error) {
 	var err error
 
 	// Make sure that the parameters file exists
@@ -282,7 +279,7 @@ func GetPackageParameters(parametersFile string) (*templates.GenericMap, error) 
 	}
 
 	// Get parameters
-	var parameters = new(templates.GenericMap)
+	var parameters = new(map[string]any)
 	err = yaml.BytesToObject(parametersFileBytes, parameters)
 	if err != nil {
 		return nil, err
@@ -336,7 +333,11 @@ func GetDependencyDefinitionTemplates(parentTemplate *template.Template, package
 }
 
 // getValuesFromInterface creates the values which can be used as input to templates by executing the interface with parameters.
-func getValuesFromInterface(parentTemplate *template.Template, packageDir string, parameters *templates.GenericMap) (*templates.GenericMap, error) {
+func getValuesFromInterface(
+	parentTemplate *template.Template,
+	packageDir string,
+	parameters *map[string]any,
+) (*map[string]any, error) {
 	var err error
 
 	// Create template object from interface file
@@ -355,7 +356,7 @@ func getValuesFromInterface(parentTemplate *template.Template, packageDir string
 	}
 
 	// Get values object from generated values yaml file
-	var result = new(templates.GenericMap)
+	var result = new(map[string]any)
 	err = yaml.BytesToObject(interfaceBytes, result)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse generated values from interface file: %s\n%s", interfaceFile, err)
@@ -430,8 +431,9 @@ func GetPackageFullNamesFromLocalRepository(repoDir string) ([]string, error) {
 			}
 
 			// Check if this is a valid package directory
-			var packageInfo *templates.PackageInfo
-			packageInfo, err = GetPackageInfo(repoDir, expectedPackageFullName)
+			var packageDirAbsPath = GetPackageDir(repoDir, expectedPackageFullName)
+			var packageInfo *PackageInfo
+			packageInfo, err = GetPackageInfo(packageDirAbsPath)
 			if err != nil {
 				log.Warningf("Found invalid package '%s': %s", packageAbsPath, err)
 				continue

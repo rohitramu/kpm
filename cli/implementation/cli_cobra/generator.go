@@ -7,13 +7,14 @@ import (
 	"github.com/emirpasic/gods/stacks/linkedliststack"
 	"github.com/spf13/cobra"
 
-	"github.com/rohitramu/kpm/cli/model"
+	"github.com/rohitramu/kpm/cli/model/utils/config"
+	"github.com/rohitramu/kpm/cli/model/utils/types"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 )
 
 type ExecuteRootCommand func() error
 
-func GetCobraImplementation(config *model.KpmConfig, rootCmd *model.Command) ExecuteRootCommand {
+func GetCobraImplementation(config *config.KpmConfig, rootCmd *types.Command) ExecuteRootCommand {
 	var result ExecuteRootCommand
 
 	var toVisit = linkedliststack.New()
@@ -32,6 +33,8 @@ func GetCobraImplementation(config *model.KpmConfig, rootCmd *model.Command) Exe
 		// Use the root command's "Execute()" method as the result.
 		if currentCobraStackItem.parent == nil {
 			result = currentCobraCmd.Execute
+			currentCobraCmd.SilenceUsage = true  // this is too annoying on every error
+			currentCobraCmd.SilenceErrors = true // will use our own logger
 		} else {
 			// Add this command as a subcommand on the parent.
 			currentCobraStackItem.parent.AddCommand(currentCobraCmd)
@@ -51,10 +54,10 @@ func GetCobraImplementation(config *model.KpmConfig, rootCmd *model.Command) Exe
 
 type cobraStackItem struct {
 	parent *cobra.Command
-	toAdd  *model.Command
+	toAdd  *types.Command
 }
 
-func convertToCobraCommand(config *model.KpmConfig, modelCmd *model.Command) *cobra.Command {
+func convertToCobraCommand(config *config.KpmConfig, modelCmd *types.Command) *cobra.Command {
 	// Create result object and set basic info.
 	var result = &cobra.Command{
 		Use:   modelCmd.Name,
@@ -113,7 +116,7 @@ func convertToCobraCommand(config *model.KpmConfig, modelCmd *model.Command) *co
 	return result
 }
 
-func setArgs(argCollection *model.ArgCollection, args []string) {
+func setArgs(argCollection *types.ArgCollection, args []string) {
 	for i := 0; i < len(argCollection.MandatoryArgs); i++ {
 		argCollection.MandatoryArgs[i].Value = args[i]
 	}
@@ -122,7 +125,7 @@ func setArgs(argCollection *model.ArgCollection, args []string) {
 	}
 }
 
-func addFlags(cobraCmd *cobra.Command, modelCmd *model.Command, config *model.KpmConfig) {
+func addFlags(cobraCmd *cobra.Command, modelCmd *types.Command, config *config.KpmConfig) {
 	// String flags.
 	for _, modelFlag := range modelCmd.Flags.StringFlags {
 		addFlag(cobraCmd.PersistentFlags().StringVarP, modelFlag, config)
@@ -136,8 +139,8 @@ func addFlags(cobraCmd *cobra.Command, modelCmd *model.Command, config *model.Kp
 
 func addFlag[T any](
 	addFlagPFunc func(p *T, name string, alias string, value T, usage string),
-	modelFlag model.Flag[T],
-	config *model.KpmConfig,
+	modelFlag types.Flag[T],
+	config *config.KpmConfig,
 ) {
 	// Get alias.
 	var alias string
