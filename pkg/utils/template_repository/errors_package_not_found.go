@@ -3,11 +3,11 @@ package template_repository
 import (
 	"fmt"
 
-	"github.com/rohitramu/kpm/pkg/utils/templates"
+	"github.com/rohitramu/kpm/pkg/utils/template_package"
 )
 
 type ErrPackageNotFoundType struct {
-	PackageInfo templates.PackageInfo
+	PackageInfo template_package.PackageInfo
 }
 
 var ErrPackageNotFound = ErrPackageNotFoundType{}

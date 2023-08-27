@@ -1,4 +1,8 @@
-package model
+package types
+
+import (
+	"github.com/rohitramu/kpm/cli/model/utils/config"
+)
 
 type FlagCollection struct {
 	StringFlags []Flag[string]
@@ -11,10 +15,10 @@ type Flag[T any] interface {
 	GetName() string
 	GetAlias() *rune
 	GetShortDescription() string
-	GetDefaultValue(*KpmConfig) T
+	GetDefaultValue(*config.KpmConfig) T
 	GetValueRef() *T
 	SetValueRef(*T)
-	GetValueOrDefault(*KpmConfig) T
+	GetValueOrDefault(*config.KpmConfig) T
 	GetIsValidFunc() FlagIsValidFunc[T]
 }
 
@@ -41,11 +45,11 @@ func (this *flag[T]) GetShortDescription() string {
 	return this.shortDescription
 }
 
-func (this *flag[T]) GetDefaultValue(config *KpmConfig) T {
+func (this *flag[T]) GetDefaultValue(config *config.KpmConfig) T {
 	return this.defaultValueFunc(config)
 }
 
-func (this *flag[T]) GetValueOrDefault(config *KpmConfig) T {
+func (this *flag[T]) GetValueOrDefault(config *config.KpmConfig) T {
 	if this.valueRef != nil {
 		return *this.valueRef
 	}

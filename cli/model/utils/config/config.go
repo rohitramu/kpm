@@ -1,4 +1,4 @@
-package model
+package config
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ import (
 // TODO: Reduce amount of error wrapping.
 
 type KpmConfig struct {
-	LogLevel     log.Level                                `yaml:"logLevel"     env:"LOG_LEVEL"`
-	Repositories template_repository.RepositoryCollection `yaml:"repositories" env:"REPOSITORIES"`
+	LogLevel     log.Level                                 `yaml:"logLevel"     env:"LOG_LEVEL"`
+	Repositories *template_repository.RepositoryCollection `yaml:"repositories" env:"REPOSITORIES"`
 }
 
 func ReadConfig() (*KpmConfig, error) {
@@ -27,7 +27,7 @@ func ReadConfig() (*KpmConfig, error) {
 	// Set defaults
 	var result = &KpmConfig{
 		LogLevel:     log.DefaultLevel,
-		Repositories: template_repository.RepositoryCollection{},
+		Repositories: &template_repository.RepositoryCollection{},
 	}
 
 	var kpmHomeDir string

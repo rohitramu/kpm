@@ -1,13 +1,14 @@
-package model
+package flags
 
 import (
 	"fmt"
 
+	"github.com/rohitramu/kpm/cli/model/utils/types"
 	"github.com/rohitramu/kpm/pkg/utils/files"
 	"github.com/rohitramu/kpm/pkg/utils/validation"
 )
 
-func CombineValidationFuncs[T any](flagValidationFuncs ...FlagIsValidFunc[T]) FlagIsValidFunc[T] {
+func CombineValidationFuncs[T any](flagValidationFuncs ...types.FlagIsValidFunc[T]) types.FlagIsValidFunc[T] {
 	return func(flagName string, flagValueRef *T) error {
 		for _, isValidFunc := range flagValidationFuncs {
 			if err := isValidFunc(flagName, flagValueRef); err != nil {
@@ -20,7 +21,7 @@ func CombineValidationFuncs[T any](flagValidationFuncs ...FlagIsValidFunc[T]) Fl
 	}
 }
 
-func ValidateStringFlagIsSet() FlagIsValidFunc[string] {
+func ValidateStringFlagIsSet() types.FlagIsValidFunc[string] {
 	return func(flagName string, flagValueRef *string) error {
 		if flagValueRef == nil {
 			return fmt.Errorf("flag '--%s' must be set", flagName)
@@ -30,7 +31,7 @@ func ValidateStringFlagIsSet() FlagIsValidFunc[string] {
 	}
 }
 
-func ValidateDirExists() FlagIsValidFunc[string] {
+func ValidateDirExists() types.FlagIsValidFunc[string] {
 	return func(flagName string, flagValueRef *string) (err error) {
 		// Skip this validation if the value isn't set.
 		if flagValueRef == nil {
@@ -42,7 +43,7 @@ func ValidateDirExists() FlagIsValidFunc[string] {
 	}
 }
 
-func ValidateDirIsEmpty() FlagIsValidFunc[string] {
+func ValidateDirIsEmpty() types.FlagIsValidFunc[string] {
 	return func(flagName string, flagValueRef *string) (err error) {
 		// Skip this validation if the value isn't set.
 		if flagValueRef == nil {
@@ -83,7 +84,7 @@ func validateDirExists(flagName string, dirPath string) (absoluteDirPath string,
 	return absoluteDirPath, nil
 }
 
-func ValidatePackageVersion() FlagIsValidFunc[string] {
+func ValidatePackageVersion() types.FlagIsValidFunc[string] {
 	return func(flagName string, flagValueRef *string) error {
 		// Skip this validation if the value isn't set.
 		if flagValueRef == nil {

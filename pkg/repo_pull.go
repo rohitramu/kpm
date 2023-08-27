@@ -3,8 +3,8 @@ package pkg
 import (
 	"errors"
 
+	"github.com/rohitramu/kpm/pkg/utils/template_package"
 	"github.com/rohitramu/kpm/pkg/utils/template_repository"
-	"github.com/rohitramu/kpm/pkg/utils/templates"
 )
 
 func PullPackage(
@@ -19,7 +19,7 @@ func PullPackage(
 		return errors.New("no repositories configured")
 	}
 
-	var packageInfo = &templates.PackageInfo{
+	var packageInfo = &template_package.PackageInfo{
 		Name:    packageName,
 		Version: packageVersion,
 	}

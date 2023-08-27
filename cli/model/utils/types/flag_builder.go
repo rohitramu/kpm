@@ -1,10 +1,11 @@
-package model
+package types
 
 import (
+	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/pkg/utils/log"
 )
 
-type DefaultValueFunc[T any] func(*KpmConfig) T
+type DefaultValueFunc[T any] func(*config.KpmConfig) T
 
 type FlagBuilder[T any] interface {
 	SetAlias(rune) FlagBuilder[T]
@@ -29,7 +30,7 @@ func NewFlagBuilder[T any](flagName string) FlagBuilder[T] {
 		value: flag[T]{
 			name: flagName,
 			// Set the defaultValueFunc so we don't get nil reference errors.
-			defaultValueFunc: func(kc *KpmConfig) T {
+			defaultValueFunc: func(kc *config.KpmConfig) T {
 				// Return the zero value for the type.
 				var result T
 				return result

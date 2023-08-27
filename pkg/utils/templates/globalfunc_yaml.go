@@ -23,9 +23,9 @@ func ToYamlFunc(value any) (string, error) {
 }
 
 // FromYamlFunc converts yaml strings to objects.
-func FromYamlFunc(yamlString string) (*GenericMap, error) {
+func FromYamlFunc(yamlString string) (*map[string]any, error) {
 	var err error
-	var resultObj = new(GenericMap)
+	var resultObj = new(map[string]any)
 	err = yaml.BytesToObject([]byte(yamlString), yamlString)
 	if err != nil {
 		return nil, err

@@ -3,20 +3,20 @@ package template_repository
 import (
 	"fmt"
 
-	"github.com/rohitramu/kpm/pkg/utils/templates"
+	"github.com/rohitramu/kpm/pkg/utils/template_package"
 )
 
 type Repository interface {
 	GetName() string
 	GetType() string
-	FindPackages(searchTerm string) ([]*templates.PackageInfo, error)
-	PackageVersions(packageName string) ([]string, error)
-	Push(kpmHomeDir string, packageInfo *templates.PackageInfo) error
-	Pull(kpmHomeDir string, packageInfo *templates.PackageInfo) error
+	FindPackages(ch chan<- *template_package.PackageInfo, searchTerm string) error
+	PackageVersions(ch chan<- string, packageName string) error
+	Push(kpmHomeDir string, packageInfo *template_package.PackageInfo) error
+	Pull(kpmHomeDir string, packageInfo *template_package.PackageInfo) error
 }
 
 type PackageNotFoundError struct {
-	PackageInfo templates.PackageInfo
+	PackageInfo template_package.PackageInfo
 }
 
 func (err PackageNotFoundError) Error() string {
