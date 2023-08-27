@@ -6,6 +6,8 @@ import (
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
 )
 
+// TODO: Add a repo type for git.
+
 type Repository interface {
 	GetName() string
 	GetType() string

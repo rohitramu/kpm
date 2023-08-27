@@ -149,8 +149,7 @@ func addFlag[T any](
 	}
 
 	// Get default value.
-	var defaultValue T
-	defaultValue = modelFlag.GetDefaultValue(config)
+	var defaultValue = modelFlag.GetDefaultValue(config)
 
 	// Cobra can't handle a nil pointer.
 	if modelFlag.GetValueRef() == nil {

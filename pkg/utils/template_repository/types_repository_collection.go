@@ -36,6 +36,7 @@ func (result *RepositoryCollection) UnmarshalYAML(unmarshaller *yaml.Node) (err 
 }
 
 func (rc *RepositoryCollection) MarshalYAML() (any, error) {
+	// TODO: Implement a way to write a config file.
 	return nil, errors.New("not yet implemented")
 }
 
