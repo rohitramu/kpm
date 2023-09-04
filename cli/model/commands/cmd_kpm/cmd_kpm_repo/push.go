@@ -32,16 +32,21 @@ var PushCmd = &types.Command{
 		},
 	}},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
+		// Flags
+		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
+		var repoName = flags.RepoName.GetValueOrDefault(config)
+		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
+
+		// Args
+		var packageName = args.MandatoryArgs[0].Value
+
+		// Get KPM home directory or create it if it doesn't exist.
 		var kpmHomeDir string
-		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetOrCreateKpmHomeDir(skipConfirmation); err != nil {
 			return err
 		}
 
-		var packageName = args.MandatoryArgs[0].Value
-		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
-
 		// If the repo name isn't provided, pick the first one.
-		var repoName = flags.RepoName.GetValueOrDefault(config)
 		if repoName == "" {
 			var repoNames = config.Repositories.GetRepositoryNames()
 			if len(repoNames) == 0 {
@@ -57,7 +62,7 @@ var PushCmd = &types.Command{
 			repoName,
 			packageName,
 			packageVersion,
-			flags.UserConfirmation.GetValueOrDefault(config),
+			skipConfirmation,
 		)
 	},
 }

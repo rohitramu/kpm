@@ -4,13 +4,29 @@ import (
 	"path/filepath"
 
 	"github.com/rohitramu/kpm/pkg/utils/constants"
+	"github.com/rohitramu/kpm/pkg/utils/files"
 )
+
+func CreateFilesystemRepoDir(repoAbsPath string, lowercaseHumanFriendlyName string, userHasConfirmed bool) (err error) {
+	err = files.CreateDirIfNotExists(repoAbsPath, lowercaseHumanFriendlyName, userHasConfirmed)
+	if err != nil {
+		return err
+	}
+	userHasConfirmed = true
+
+	err = files.CreateDirIfNotExists(GetRepoPackagesDir(repoAbsPath), "packages", userHasConfirmed)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // GetRepoPackagesDir returns the location of the local package repository.
 func GetRepoPackagesDir(repoDir string) string {
-	var packageRepositoryDir = filepath.Join(repoDir, constants.PackageRepositoryDirName)
+	var packagesRepositoryDir = filepath.Join(repoDir, constants.PackagesRepositoryDirName)
 
-	return packageRepositoryDir
+	return packagesRepositoryDir
 }
 
 // GetDefaultOutputName returns the default output name when executing a package.

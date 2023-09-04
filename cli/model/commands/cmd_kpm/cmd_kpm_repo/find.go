@@ -14,21 +14,28 @@ import (
 var FindCmd = &types.Command{
 	Name:             constants.CmdRepoFind,
 	ShortDescription: "Finds packages.",
-	Flags: types.FlagCollection{StringFlags: []types.Flag[string]{
-		flags.RepoName,
-	}},
+	Flags: types.FlagCollection{
+		StringFlags: []types.Flag[string]{flags.RepoName},
+		BoolFlags:   []types.Flag[bool]{flags.UserConfirmation},
+	},
 	Args: types.ArgCollection{OptionalArg: &types.Arg{
 		Name:             "search-term",
 		ShortDescription: "A search term to use for finding packages.",
 	}},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
+		// Flags
+		var repoName = flags.RepoName.GetValueOrDefault(config)
+		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
+
+		// Args
 		var searchTerm = ""
 		if args.OptionalArg != nil {
 			searchTerm = args.OptionalArg.Value
 		}
 
+		// Get KPM home directory or create it if it doesn't exist.
 		var kpmHomeDir string
-		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetOrCreateKpmHomeDir(skipConfirmation); err != nil {
 			return err
 		}
 
@@ -49,7 +56,7 @@ var FindCmd = &types.Command{
 			ch,
 			kpmHomeDir,
 			config.Repositories,
-			flags.RepoName.GetValueOrDefault(config),
+			repoName,
 			searchTerm,
 		)
 		if err != nil {

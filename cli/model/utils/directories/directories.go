@@ -8,6 +8,7 @@ import (
 
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
 	"github.com/rohitramu/kpm/pkg/utils/files"
+	"github.com/rohitramu/kpm/pkg/utils/template_package"
 )
 
 // GetDefaultOutputDir returns the default path of the root directory for generated files.
@@ -22,6 +23,20 @@ func GetDefaultExportDir(exportParentDir string) string {
 	var outputDirPath = filepath.Join(exportParentDir, constants.ExportDirName)
 
 	return outputDirPath
+}
+
+func GetOrCreateKpmHomeDir(userHasConfirmed bool) (kpmHomeDir string, err error) {
+	kpmHomeDir, err = GetKpmHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	err = template_package.CreateFilesystemRepoDir(kpmHomeDir, "KPM home", userHasConfirmed)
+	if err != nil {
+		return "", err
+	}
+
+	return kpmHomeDir, nil
 }
 
 func GetKpmHomeDir() (string, error) {

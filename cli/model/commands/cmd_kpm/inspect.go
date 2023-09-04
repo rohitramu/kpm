@@ -30,16 +30,18 @@ var Inspect = &types.Command{
 		}},
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
-		var kpmHomeDir string
-		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
-			return err
-		}
+		// Flags
+		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
+		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
 
 		// Args
 		var packageName = args.MandatoryArgs[0].Value
 
-		// Flags
-		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
+		// Get KPM home directory or create it if it doesn't exist.
+		var kpmHomeDir string
+		if kpmHomeDir, err = directories.GetOrCreateKpmHomeDir(skipConfirmation); err != nil {
+			return err
+		}
 
 		// Validation
 		{

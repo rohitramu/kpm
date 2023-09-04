@@ -26,11 +26,6 @@ var Unpack = &types.Command{
 		},
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
-		var kpmHomeDir string
-		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
-			return err
-		}
-
 		// Flags
 		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
 		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
@@ -39,6 +34,12 @@ var Unpack = &types.Command{
 
 		// Args
 		var packageName = args.MandatoryArgs[0].Value
+
+		// Get KPM home directory or create it if it doesn't exist.
+		var kpmHomeDir string
+		if kpmHomeDir, err = directories.GetOrCreateKpmHomeDir(skipConfirmation); err != nil {
+			return err
+		}
 
 		// Validation
 		{

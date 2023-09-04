@@ -9,5 +9,5 @@ const TemplatesDirName = "templates"
 // HelpersDirName is the name of the directory where package helpers are defined.
 const HelpersDirName = "helpers"
 
-// PackageRepositoryDirName is the name of the directory that contains packages available for use.
-const PackageRepositoryDirName = "packages"
+// PackagesRepositoryDirName is the name of the directory that contains packages available for use.
+const PackagesRepositoryDirName = "packages"

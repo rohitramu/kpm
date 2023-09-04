@@ -32,7 +32,13 @@ func GetUserHomeDir() (string, error) {
 		return "", err
 	}
 
-	return usr.HomeDir, nil
+	var userHomeDir string
+	userHomeDir, err = GetAbsolutePath(usr.HomeDir)
+	if err != nil {
+		return "", nil
+	}
+
+	return userHomeDir, nil
 }
 
 // GetTempDir returns the path to the system's temporary directory.
@@ -321,6 +327,18 @@ func CreateDir(absoluteDirPath string, lowercaseHumanFriendlyName string, userHa
 	// Create the directory.
 	if err = os.MkdirAll(absoluteDirPath, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create %s directory: %s", toTitleCase(lowercaseHumanFriendlyName), err)
+	}
+
+	return nil
+}
+
+func CreateDirIfNotExists(absoluteDirPath string, lowercaseHumanFriendlyName string, userHasConfirmed bool) (err error) {
+	err = DirExists(absoluteDirPath, lowercaseHumanFriendlyName)
+	if err != nil {
+		err = CreateDir(absoluteDirPath, lowercaseHumanFriendlyName, userHasConfirmed)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

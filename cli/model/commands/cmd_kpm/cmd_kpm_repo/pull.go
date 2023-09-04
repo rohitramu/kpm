@@ -22,6 +22,7 @@ var PullCmd = &types.Command{
 			flags.RepoName,
 			flags.PackageVersion,
 		},
+		BoolFlags: []types.Flag[bool]{flags.UserConfirmation},
 	},
 	Args: types.ArgCollection{MandatoryArgs: []*types.Arg{
 		{
@@ -36,16 +37,21 @@ var PullCmd = &types.Command{
 			return errors.New("no repositories configured")
 		}
 
+		// Flags
+		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
+		var repoName = flags.RepoName.GetValueOrDefault(config)
+		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
+
+		// Args
+		var packageName = args.MandatoryArgs[0].Value
+
+		// Get KPM home directory or create it if it doesn't exist.
 		var kpmHomeDir string
-		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
+		if kpmHomeDir, err = directories.GetOrCreateKpmHomeDir(skipConfirmation); err != nil {
 			return err
 		}
 
-		var packageName = args.MandatoryArgs[0].Value
-		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
-
 		// If the repo name isn't provided, pick the first one.
-		var repoName = flags.RepoName.GetValueOrDefault(config)
 		if repoName != "" {
 			return pkg.PullPackage(
 				kpmHomeDir,

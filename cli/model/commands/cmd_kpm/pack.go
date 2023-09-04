@@ -22,16 +22,17 @@ var Pack = &types.Command{
 		}},
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
-		var kpmHomeDir string
-		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
-			return err
-		}
-
 		// Flags
 		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
 
 		// Args
 		var packageDir = args.MandatoryArgs[0].Value
+
+		// Get KPM home directory or create it if it doesn't exist.
+		var kpmHomeDir string
+		if kpmHomeDir, err = directories.GetOrCreateKpmHomeDir(skipConfirmation); err != nil {
+			return err
+		}
 
 		return pkg.PackCmd(packageDir, kpmHomeDir, skipConfirmation)
 	},
