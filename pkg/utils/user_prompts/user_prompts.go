@@ -13,7 +13,7 @@ func ConfirmWithUser(format string, args ...any) (bool, error) {
 
 	reader := bufio.NewReader(os.Stdin)
 	message := fmt.Sprintf(format, args...)
-	fmt.Printf("%s\nContinue? (Y/N) ", message)
+	fmt.Printf("%s\nContinue? (y/N) ", message)
 
 	var text string
 	if text, err = reader.ReadString('\n'); err != nil && err != io.EOF {

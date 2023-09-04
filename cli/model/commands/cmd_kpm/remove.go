@@ -27,17 +27,18 @@ var Remove = &types.Command{
 		}},
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
-		var kpmHomeDir string
-		if kpmHomeDir, err = directories.GetKpmHomeDir(); err != nil {
-			return err
-		}
-
 		// Flags
-		var shouldSkipUserConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
+		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
 		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
 
 		// Args
 		var packageName string = args.MandatoryArgs[0].Value
+
+		// Get KPM home directory or create it if it doesn't exist.
+		var kpmHomeDir string
+		if kpmHomeDir, err = directories.GetOrCreateKpmHomeDir(skipConfirmation); err != nil {
+			return err
+		}
 
 		if packageVersion == "" {
 			// Since the package version was not provided, check the local repository for the highest version.
@@ -51,6 +52,6 @@ var Remove = &types.Command{
 			packageName,
 			packageVersion,
 			kpmHomeDir,
-			shouldSkipUserConfirmation)
+			skipConfirmation)
 	},
 }
