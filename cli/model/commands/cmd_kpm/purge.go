@@ -9,7 +9,6 @@ import (
 	"github.com/rohitramu/kpm/pkg"
 )
 
-// TODO: Merge the "purge" command into the "remove" command (use flags to determine behavior).
 var Purge = &types.Command{
 	Name:             constants.CmdPurge,
 	ShortDescription: "Removes all versions of a template package.",
