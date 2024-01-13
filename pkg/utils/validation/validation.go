@@ -86,10 +86,18 @@ func ValidatePackageVersion(packageVersion string) error {
 	return nil
 }
 
+// ValidateSearchTerm validates a search term.
+func ValidateSearchTerm(searchTerm string) error {
+	// Check for empty string
+	if searchTerm == "" {
+		return fmt.Errorf("search term cannot be empty")
+	}
+
+	return nil
+}
+
 // ValidateOutputName validates the output name when generating output.
 func ValidateOutputName(outputName string) error {
-	var err error
-
 	// Check for empty string
 	if outputName == "" {
 		return fmt.Errorf("output name cannot be empty")
@@ -103,8 +111,7 @@ func ValidateOutputName(outputName string) error {
 	var alphaNumeric = "[a-zA-Z0-9]"
 	var symbols = "[.\\-_/]"
 	var regex = fmt.Sprintf("^%s+(%s?%s)+$", alphaNumeric, symbols, alphaNumeric)
-	var matched bool
-	matched, err = regexp.MatchString(regex, outputName)
+	matched, err := regexp.MatchString(regex, outputName)
 	if err != nil {
 		log.Panicf("Regex execution failed: %s", err)
 	}

@@ -8,6 +8,8 @@ import (
 
 // TODO: Add a repo type for git.
 
+// TODO: Don't use PackageInfo type for repository operations.
+
 type Repository interface {
 	GetName() string
 	GetType() string

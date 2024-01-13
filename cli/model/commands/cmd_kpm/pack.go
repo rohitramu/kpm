@@ -1,6 +1,7 @@
 package cmd_kpm
 
 import (
+	"github.com/rohitramu/kpm/cli/model/args"
 	"github.com/rohitramu/kpm/cli/model/flags"
 	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
@@ -16,10 +17,7 @@ var Pack = &types.Command{
 		BoolFlags: []types.Flag[bool]{flags.UserConfirmation},
 	},
 	Args: types.ArgCollection{
-		MandatoryArgs: []*types.Arg{{
-			Name:             "package-directory",
-			ShortDescription: "The location of the template package directory which should be packed.",
-		}},
+		MandatoryArgs: []*types.Arg{args.PackageDirectory("The location of the template package directory which should be packed.")},
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
 		// Flags

@@ -1,6 +1,7 @@
 package cmd_kpm
 
 import (
+	"github.com/rohitramu/kpm/cli/model/args"
 	"github.com/rohitramu/kpm/cli/model/flags"
 	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
@@ -21,11 +22,7 @@ var New = &types.Command{
 		},
 	},
 	Args: types.ArgCollection{
-		OptionalArg: &types.Arg{
-			Name:             "package-name",
-			ShortDescription: "The name of the new package.",
-			Value:            "hello-kpm",
-		},
+		OptionalArg: args.PackageNameWithDefault("The name of the new package.", "hello-kpm"),
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) error {
 		// Flags

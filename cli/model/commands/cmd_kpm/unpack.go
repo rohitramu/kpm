@@ -3,6 +3,7 @@ package cmd_kpm
 import (
 	"fmt"
 
+	"github.com/rohitramu/kpm/cli/model/args"
 	"github.com/rohitramu/kpm/cli/model/flags"
 	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
@@ -17,7 +18,6 @@ var Unpack = &types.Command{
 	ShortDescription: "Exports a template package to the specified location.",
 	Flags: types.FlagCollection{
 		StringFlags: []types.Flag[string]{
-			flags.PackageVersion,
 			flags.ExportDir,
 			flags.ExportName,
 		},
@@ -25,15 +25,19 @@ var Unpack = &types.Command{
 			flags.UserConfirmation,
 		},
 	},
-	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
+	Args: types.ArgCollection{
+		MandatoryArgs: []*types.Arg{args.PackageName("The name of the template package to unpack.")},
+		OptionalArg:   args.PackageVersion("The version of the template package to unpack.  If not provided, the latest package version will be used."),
+	},
+	ExecuteFunc: func(config *config.KpmConfig, inputArgs types.ArgCollection) (err error) {
 		// Flags
 		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
-		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
 		var exportDir = flags.ExportDir.GetValueOrDefault(config)
 		var exportName = flags.ExportName.GetValueOrDefault(config)
 
 		// Args
-		var packageName = args.MandatoryArgs[0].Value
+		var packageName = inputArgs.MandatoryArgs[0].Value
+		var packageVersion = inputArgs.OptionalArg.Value
 
 		// Get KPM home directory or create it if it doesn't exist.
 		var kpmHomeDir string

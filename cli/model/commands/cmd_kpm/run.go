@@ -3,6 +3,7 @@ package cmd_kpm
 import (
 	"fmt"
 
+	"github.com/rohitramu/kpm/cli/model/args"
 	"github.com/rohitramu/kpm/cli/model/flags"
 	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
@@ -17,7 +18,6 @@ var Run = &types.Command{
 	ShortDescription: "Runs a template package.",
 	Flags: types.FlagCollection{
 		StringFlags: []types.Flag[string]{
-			flags.PackageVersion,
 			flags.ParametersFile,
 			flags.OutputDir,
 			flags.OutputName,
@@ -27,17 +27,15 @@ var Run = &types.Command{
 		},
 	},
 	Args: types.ArgCollection{
-		MandatoryArgs: []*types.Arg{{
-			Name:             "package-name",
-			ShortDescription: "The name of the template package to run.",
-		}},
+		MandatoryArgs: []*types.Arg{args.PackageName("The name of the template package to run.")},
+		OptionalArg:   args.PackageVersion("The version of the template package to run.  If not set, the latest version will be run."),
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
 		// Args
 		var packageName = args.MandatoryArgs[0].Value
+		var packageVersion = args.OptionalArg.Value
 
 		// Flags
-		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
 		var paramFile = flags.ParametersFile.GetValueOrDefault(config)
 		var outputDir = flags.OutputDir.GetValueOrDefault(config)
 		var outputName = flags.OutputName.GetValueOrDefault(config)
