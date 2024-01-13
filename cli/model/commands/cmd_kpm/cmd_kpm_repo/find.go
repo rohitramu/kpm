@@ -1,6 +1,7 @@
 package cmd_kpm_repo
 
 import (
+	"github.com/rohitramu/kpm/cli/model/args"
 	"github.com/rohitramu/kpm/cli/model/flags"
 	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
@@ -18,10 +19,7 @@ var FindCmd = &types.Command{
 		StringFlags: []types.Flag[string]{flags.RepoName},
 		BoolFlags:   []types.Flag[bool]{flags.UserConfirmation},
 	},
-	Args: types.ArgCollection{OptionalArg: &types.Arg{
-		Name:             "search-term",
-		ShortDescription: "A search term to use for finding packages.",
-	}},
+	Args: types.ArgCollection{OptionalArg: args.SearchTerm("A search term to use for finding packages.")},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
 		// Flags
 		var repoName = flags.RepoName.GetValueOrDefault(config)

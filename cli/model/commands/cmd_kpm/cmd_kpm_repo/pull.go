@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/rohitramu/kpm/cli/model/args"
 	"github.com/rohitramu/kpm/cli/model/flags"
 	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
@@ -11,7 +12,6 @@ import (
 	"github.com/rohitramu/kpm/cli/model/utils/types"
 	"github.com/rohitramu/kpm/pkg"
 	"github.com/rohitramu/kpm/pkg/utils/template_repository"
-	"github.com/rohitramu/kpm/pkg/utils/validation"
 )
 
 var PullCmd = &types.Command{
@@ -20,30 +20,26 @@ var PullCmd = &types.Command{
 	Flags: types.FlagCollection{
 		StringFlags: []types.Flag[string]{
 			flags.RepoName,
-			flags.PackageVersion,
 		},
 		BoolFlags: []types.Flag[bool]{flags.UserConfirmation},
 	},
-	Args: types.ArgCollection{MandatoryArgs: []*types.Arg{
-		{
-			Name:             "package-name",
-			ShortDescription: "The name of the template package to pull.",
-			IsValidFunc:      validation.ValidatePackageName,
-		},
-	}},
-	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
+	Args: types.ArgCollection{
+		MandatoryArgs: []*types.Arg{args.PackageName("The name of the template package to pull.")},
+		OptionalArg:   args.PackageVersion("The version of the template package to pull."),
+	},
+	ExecuteFunc: func(config *config.KpmConfig, inputArgs types.ArgCollection) (err error) {
 		var repoNames = config.Repositories.GetRepositoryNames()
 		if len(repoNames) == 0 {
 			return errors.New("no repositories configured")
 		}
 
 		// Flags
-		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
 		var repoName = flags.RepoName.GetValueOrDefault(config)
 		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
 
 		// Args
-		var packageName = args.MandatoryArgs[0].Value
+		var packageName = inputArgs.MandatoryArgs[0].Value
+		var packageVersion = inputArgs.OptionalArg.Value
 
 		// Get KPM home directory or create it if it doesn't exist.
 		var kpmHomeDir string
@@ -51,7 +47,7 @@ var PullCmd = &types.Command{
 			return err
 		}
 
-		// If the repo name isn't provided, pick the first one.
+		// If the repo name is provided, don't look in other repos.
 		if repoName != "" {
 			return pkg.PullPackage(
 				kpmHomeDir,
@@ -62,6 +58,7 @@ var PullCmd = &types.Command{
 			)
 		}
 
+		// If the repo name is not provided, search all repos in order of priority.
 		for _, repoName := range repoNames {
 			err = pkg.PullPackage(
 				kpmHomeDir,

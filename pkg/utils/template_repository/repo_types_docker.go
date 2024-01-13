@@ -7,6 +7,8 @@ import (
 	"github.com/rohitramu/kpm/pkg/utils/template_package"
 )
 
+// TODO: Implement Docker repository support.
+
 const repositoryTypeNameDocker = "docker"
 
 var _ Repository = &dockerRepository{}

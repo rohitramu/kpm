@@ -1,6 +1,7 @@
 package cmd_kpm
 
 import (
+	"github.com/rohitramu/kpm/cli/model/args"
 	"github.com/rohitramu/kpm/cli/model/flags"
 	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
@@ -16,10 +17,7 @@ var Purge = &types.Command{
 		BoolFlags: []types.Flag[bool]{flags.UserConfirmation},
 	},
 	Args: types.ArgCollection{
-		OptionalArg: &types.Arg{
-			Name:             "package-name",
-			ShortDescription: "The name of the template package to purge.  If this is not provided, all versions of all template packages will be deleted.",
-		},
+		OptionalArg: args.PackageName("The name of the template package to purge.  If this is not provided, all versions of all template packages will be deleted."),
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
 		var kpmHomeDir string

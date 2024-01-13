@@ -3,6 +3,7 @@ package cmd_kpm
 import (
 	"fmt"
 
+	"github.com/rohitramu/kpm/cli/model/args"
 	"github.com/rohitramu/kpm/cli/model/flags"
 	"github.com/rohitramu/kpm/cli/model/utils/config"
 	"github.com/rohitramu/kpm/cli/model/utils/constants"
@@ -17,22 +18,19 @@ var Remove = &types.Command{
 	Alias:            "rm",
 	ShortDescription: "Removes a template package.",
 	Flags: types.FlagCollection{
-		StringFlags: []types.Flag[string]{flags.PackageVersion},
-		BoolFlags:   []types.Flag[bool]{flags.UserConfirmation},
+		BoolFlags: []types.Flag[bool]{flags.UserConfirmation},
 	},
 	Args: types.ArgCollection{
-		MandatoryArgs: []*types.Arg{{
-			Name:             "package-name",
-			ShortDescription: "The name of the template package to remove.",
-		}},
+		MandatoryArgs: []*types.Arg{args.PackageName("The name of the template package to remove.")},
+		OptionalArg:   args.PackageVersion("The version of the template package to remove.  If not set, the latest package version will be removed."),
 	},
 	ExecuteFunc: func(config *config.KpmConfig, args types.ArgCollection) (err error) {
 		// Flags
 		var skipConfirmation = flags.UserConfirmation.GetValueOrDefault(config)
-		var packageVersion = flags.PackageVersion.GetValueOrDefault(config)
 
 		// Args
-		var packageName string = args.MandatoryArgs[0].Value
+		var packageName = args.MandatoryArgs[0].Value
+		var packageVersion = args.OptionalArg.Value
 
 		// Get KPM home directory or create it if it doesn't exist.
 		var kpmHomeDir string

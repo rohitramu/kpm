@@ -5,7 +5,6 @@ import (
 
 	"github.com/rohitramu/kpm/cli/model/utils/types"
 	"github.com/rohitramu/kpm/pkg/utils/files"
-	"github.com/rohitramu/kpm/pkg/utils/validation"
 )
 
 func CombineValidationFuncs[T any](flagValidationFuncs ...types.FlagIsValidFunc[T]) types.FlagIsValidFunc[T] {
@@ -82,15 +81,4 @@ func validateDirExists(flagName string, dirPath string) (absoluteDirPath string,
 	}
 
 	return absoluteDirPath, nil
-}
-
-func ValidatePackageVersion() types.FlagIsValidFunc[string] {
-	return func(flagName string, flagValueRef *string) error {
-		// Skip this validation if the value isn't set.
-		if flagValueRef == nil {
-			return nil
-		}
-
-		return validation.ValidatePackageVersion(*flagValueRef)
-	}
 }
