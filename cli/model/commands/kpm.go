@@ -15,6 +15,7 @@ var Kpm = &types.Command{
 		},
 	},
 	SubCommands: []*types.Command{
+		cmd_kpm.Version,
 		cmd_kpm.List,
 		cmd_kpm.Remove,
 		cmd_kpm.Purge,

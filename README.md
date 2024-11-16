@@ -4,6 +4,7 @@
 - [Setup](#setup)
   - [Installation](#installation)
   - [Command line usage](#command-line-usage)
+  - [Version information](#version-information)
   - [Golang templating](#golang-templating)
 - [Template packages](#template-packages)
   - [List the locally available template packages](#list-the-locally-available-template-packages)
@@ -45,6 +46,14 @@ To see the usage pattern for any subcommand, use the `-h` flag:
 
 ```cmd
 kpm <subcommand> -h
+```
+
+### Version information
+
+To get the version information for the KPM binary, run:
+
+```cmd
+kpm version
 ```
 
 ### Golang templating
@@ -545,7 +554,7 @@ kpm pack .
 
 The pack command will then add your package to the local KPM repository, using the name and version specified in the [package definition](#packageyaml) file.
 
-It can then be executed as normal with the ["run" subcommand](#execute-a-template-package), and will be shown by the ["list" subcommand](#list-the-locally-available-template-packages):
+It will be shown by the ["list" subcommand](#list-the-locally-available-template-packages), and can be executed with the ["run" subcommand](#execute-a-template-package):
 
 ```cmd
 kpm ls

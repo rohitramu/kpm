@@ -1,6 +1,7 @@
 package constants
 
 var CmdKpm = "kpm"
+var CmdVersion = "version"
 var CmdList = "list"
 var CmdRemove = "remove"
 var CmdPurge = "purge"
