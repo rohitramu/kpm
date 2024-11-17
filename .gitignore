@@ -17,5 +17,5 @@ kpm
 # Ignore files and folders that start with a ".", except for certain files/directories
 .*
 !.git
-!.travis.yml
+!.github
 !.pre-commit-config.yaml
