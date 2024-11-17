@@ -32,7 +32,35 @@ KPM is a command line tool which simplifies and modularizes the process of gener
 
 ### Installation
 
+First, choose and remember the appropriate operating system string, `${os}`, for your system:
+
+- `darwin`
+- `linux`
+- `windows`
+
+Also, choose and remember the appropriate architecture string, `${arch}`, for your system:
+
+- `amd64`
+- `arm64`
+- `386`
+
+These values should will be used to install the appropriate binary.
+
+#### From the GitHub website
+
 Download the KPM executable from the [Releases](https://github.com/rohitramu/kpm/releases) tab.  Add this executable to your PATH environment variable so it is available from anywhere on your machine.
+
+#### Using `wget` on Linux or MacOS
+
+```sh
+wget -P /usr/bin -O kpm "https://github.com/rohitramu/kpm/releases/latest/kpm_${os}_${arch}"
+```
+
+#### Using PowerShell on Windows
+
+```powershell
+Invoke-WebRequest -OutFile "${Env:ProgramFiles}" "https://github.com/rohitramu/kpm/releases/latest/kpm_${os}_${arch}"
+```
 
 ### Command line usage
 
@@ -45,7 +73,7 @@ kpm -h
 To see the usage pattern for any subcommand, use the `-h` flag:
 
 ```sh
-kpm <subcommand> -h
+kpm new -h
 ```
 
 ### Version information

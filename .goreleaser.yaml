@@ -1,4 +1,9 @@
+version: 2
 dist: /tmp/goreleaser
 builds:
   - ldflags:
     - -X 'github.com/rohitramu/kpm/cli/model/utils/constants.VersionString={{ .Env.APP_VERSION }}'
+archives:
+  - format: binary
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files: []
