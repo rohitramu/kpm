@@ -10,3 +10,12 @@ updates:
     schedule:
       interval: "daily"
     target-branch: "develop"
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+        - '*'
+      version-updates:
+        applies-to: version-updates
+        patterns:
+        - '*'
