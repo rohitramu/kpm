@@ -68,7 +68,6 @@ jobs:
       if: success() && github.ref_type == 'tag' && env.APP_VERSION != '0.0.0'
       uses: goreleaser/goreleaser-action@v6
       with:
-        version: "${{ env.APP_VERSION }}"
         args: release --clean
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
