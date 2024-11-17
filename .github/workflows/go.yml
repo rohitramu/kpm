@@ -9,7 +9,7 @@ on:
     - 'master'
     - 'develop'
     tags:
-    - '*.*.*'
+    - 'v*.*.*'
 
 jobs:
   build:
@@ -48,7 +48,7 @@ jobs:
         semVerRegex='(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?'
 
         # Check if the tag matches the semVer versioning scheme
-        if [[ $GITHUB_REF_NAME =~ ^(${semVerRegex})$ ]]; then
+        if [[ $GITHUB_REF_NAME =~ ^v(${semVerRegex})$ ]]; then
           # Set this GitHub action's environment variable
           echo "APP_VERSION=${BASH_REMATCH[1]}" >> $GITHUB_ENV
         fi
@@ -64,10 +64,19 @@ jobs:
       if: success()
       run: go test -v ./...
 
-    - name: Release
+    - name: Upload text files to release
+      uses: softprops/action-gh-release@v1
+      if: success() && github.ref_type == 'tag' && env.APP_VERSION != '0.0.0'
+      with:
+          files: |
+            LICENSE
+            README.md
+
+    - name: Build and upload binaries to release
       if: success() && github.ref_type == 'tag' && env.APP_VERSION != '0.0.0'
       uses: goreleaser/goreleaser-action@v6
       with:
+        version: '~> 2'
         args: release --clean
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
