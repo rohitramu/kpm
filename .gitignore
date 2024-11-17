@@ -19,3 +19,4 @@ kpm
 !.git
 !.github
 !.pre-commit-config.yaml
+!.goreleaser.yaml

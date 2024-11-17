@@ -26,7 +26,7 @@
 
 ## What is KPM?
 
-KPM is a command line tool which simplifies and modularizes the process of generating text files.  It was initially developed to generate configuration files for Kubernetes as an alternative to Helm Charts, however it can be used for any text file generation.
+KPM is a command line tool which simplifies and modularizes the process of generating text files.  It was initially developed to generate configuration files for Kubernetes as an alternative to Helm Charts, however it can be used in any situation that  requires text file generation.
 
 ## Setup
 
