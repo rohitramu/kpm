@@ -50,16 +50,28 @@ These values should will be used to install the appropriate binary.
 
 Download the KPM executable from the [Releases](https://github.com/rohitramu/kpm/releases) tab.  Add this executable to your PATH environment variable so it is available from anywhere on your machine.
 
-#### Using `wget` on Linux or MacOS
+#### Using `wget` on Linux
 
 ```sh
 wget -P /usr/bin -O kpm "https://github.com/rohitramu/kpm/releases/latest/kpm_${os}_${arch}"
 ```
 
+For example, if `os=linux` and `arch=amd64`:
+
+```sh
+wget -P /usr/bin -O kpm "https://github.com/rohitramu/kpm/releases/latest/kpm_linux_amd64"
+```
+
 #### Using PowerShell on Windows
 
 ```powershell
-Invoke-WebRequest -OutFile "${Env:ProgramFiles}" "https://github.com/rohitramu/kpm/releases/latest/kpm_${os}_${arch}"
+Invoke-WebRequest -OutFile "${Env:ProgramFiles}/kpm.exe" "https://github.com/rohitramu/kpm/releases/latest/kpm_${os}_${arch}.exe"
+```
+
+For example, if `os=windows` and `arch=amd64`:
+
+```powershell
+Invoke-WebRequest -OutFile "${Env:ProgramFiles}/kpm.exe" "https://github.com/rohitramu/kpm/releases/latest/kpm_windows_amd64.exe"
 ```
 
 ### Command line usage
