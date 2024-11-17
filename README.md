@@ -52,14 +52,18 @@ Download the KPM executable from the [Releases](https://github.com/rohitramu/kpm
 
 #### Using `wget` on Linux
 
+Note that the file needs to be made executable after download.
+
 ```sh
-wget -P /usr/bin -O kpm "https://github.com/rohitramu/kpm/releases/latest/download/kpm_${os}_${arch}"
+wget -O ~/bin/kpm "https://github.com/rohitramu/kpm/releases/latest/download/kpm_${os}_${arch}"
+chmod 777 ~/bin/kpm
 ```
 
 For example, if `os=linux` and `arch=amd64`:
 
 ```sh
-wget -P /usr/bin -O kpm "https://github.com/rohitramu/kpm/releases/latest/download/kpm_linux_amd64"
+wget -O ~/bin/kpm "https://github.com/rohitramu/kpm/releases/latest/download/kpm_linux_amd64"
+chmod 777 ~/bin/kpm
 ```
 
 #### Using PowerShell on Windows
