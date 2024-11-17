@@ -7,5 +7,3 @@ archives:
   - format: binary
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     files: []
-    builds_info:
-      mode: 0777
