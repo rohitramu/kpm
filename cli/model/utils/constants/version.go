@@ -2,7 +2,7 @@ package constants
 
 // The version of the CLI app.
 //
-// Can be set during build: `go build -ldflags="-X 'github.com/rohitramu/kpm/cli/model/utils/constants.VersionString=v0.0.0'"`
+// Can be set during build: `go build -ldflags="-X 'github.com/rohitramu/kpm/cli/model/utils/constants.VersionString=0.0.0'"`
 var VersionString = "0.0.0"
 
 // When this binary was built.
