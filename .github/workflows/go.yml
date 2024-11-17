@@ -9,7 +9,7 @@ on:
     - 'master'
     - 'develop'
     tags:
-    - 'v*.*.*'
+    - '*.*.*'
 
 jobs:
   build:
@@ -48,7 +48,7 @@ jobs:
         semVerRegex='(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?'
 
         # Check if the tag matches the semVer versioning scheme
-        if [[ $GITHUB_REF_NAME =~ ^v(${semVerRegex})$ ]]; then
+        if [[ $GITHUB_REF_NAME =~ ^(${semVerRegex})$ ]]; then
           # Set this GitHub action's environment variable
           echo "APP_VERSION=${BASH_REMATCH[1]}" >> $GITHUB_ENV
         fi
