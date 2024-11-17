@@ -58,7 +58,7 @@ jobs:
         #!/bin/bash
         set -e -x
 
-        go build -v -x -ldflags="-X 'github.com/rohitramu/kpm/cli/model/utils/constants.VersionString=${APP_VERSION}'"
+        go build -v -x -ldflags="-X 'github.com/rohitramu/kpm/src/cli/model/utils/constants.VersionString=${APP_VERSION}'"
 
     - name: Test
       if: success()
