@@ -2,51 +2,33 @@
 
 - [What is KPM?](#what-is-kpm)
 - [Setup](#setup)
-  - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Command line usage](#command-line-usage)
+  - [Version information](#version-information)
   - [Golang templating](#golang-templating)
 - [Template packages](#template-packages)
-  - [Pull a template package from a Docker registry](#pull-a-template-package-from-a-docker-registry)
   - [List the locally available template packages](#list-the-locally-available-template-packages)
   - [Create a parameters file](#create-a-parameters-file)
   - [View a template package's default parameters file](#view-a-template-packages-default-parameters-file)
   - [Execute a template package](#execute-a-template-package)
 - [Authoring a template package](#authoring-a-template-package)
   - [Directory structure](#directory-structure)
-  - [package.yaml](#packageyaml)
-  - [parameters.yaml](#parametersyaml)
-  - [interface.yaml](#interfaceyaml)
-  - [templates/](#templates)
-  - [helpers/](#helpers)
-  - [dependencies/](#dependencies)
+  - [`package.yaml`](#packageyaml)
+  - [`parameters.yaml`](#parametersyaml)
+  - [`interface.yaml`](#interfaceyaml)
+  - [`templates/`](#templates)
+  - [`helpers/`](#helpers)
+  - [`dependencies/`](#dependencies)
   - [Template functions and logic](#template-functions-and-logic)
 - [Testing your package locally](#testing-your-package-locally)
 - [Pack your template package](#pack-your-template-package)
   - [Unpack a template package](#unpack-a-template-package)
-- [Sharing your template package](#sharing-your-template-package)
-  - [Push your template package to a Docker registry](#push-your-template-package-to-a-docker-registry)
 
 ## What is KPM?
 
-KPM is a command line tool which simplifies and modularizes the process of generating text files.  It was specifically built to generate configuration files for Kubernetes, however it can be used for any text file generation.
+KPM is a command line tool which simplifies and modularizes the process of generating text files.  It was initially developed to generate configuration files for Kubernetes as an alternative to Helm Charts, however it can be used for any text file generation.
 
 ## Setup
-
-### Prerequisites
-
-#### Docker
-
-In order to [push](#push-your-template-package-to-a-docker-registry) and [pull](#pull-a-template-package-from-a-docker-registry) template packages, you must have installed and configured [Docker](https://docs.docker.com/install/).
-
-The default Docker registry used is `docker.io` (i.e. Docker Hub).  Ensure that you have a Docker Hub account and have credentials by running `docker login docker.io`.
-
-To specify a different Docker registry, set the `--docker-registry` flag on subcommands which may interact with a Docker registry (e.g. [`push`](#push-your-template-package-to-a-docker-registry), [`pull`](#pull-a-template-package-from-a-docker-registry), [`run`](#execute-a-template-package), [`view`](#view-a-template-packages-default-parameters-file)).  E.g. to log in and run a package from your own Docker registry:
-
-```cmd
-docker login my.registry.com
-kpm run mynamespace/mypackage -v 2.0.0 --docker-registry my.registry.com
-```
 
 ### Installation
 
@@ -56,14 +38,22 @@ Download the KPM executable from the [Releases](https://github.com/rohitramu/kpm
 
 To see the list of available subcommands:
 
-```cmd
+```sh
 kpm -h
 ```
 
 To see the usage pattern for any subcommand, use the `-h` flag:
 
-```cmd
+```sh
 kpm <subcommand> -h
+```
+
+### Version information
+
+To get the version information for the KPM binary, run:
+
+```sh
+kpm version
 ```
 
 ### Golang templating
@@ -76,26 +66,15 @@ A template package is simply a collection of templates.  This collection of temp
 
 Usage of a template package typically consists of these steps:
 
- 1. [Pull a template package](#pull-a-template-package-from-a-docker-registry) from a Docker registry to make it available locally.
- 2. [Create a parameters file](#create-a-parameters-file) which can be used as input to the template package.
- 3. [Run the template package](#execute-a-template-package) with your parameters file.
- 4. View your generated files!
-
-### Pull a template package from a Docker registry
-
-Pull a template package from a [Docker registry](#docker) with the "pull" subcommand.  For example, try running the following command:
-
-```cmd
-kpm pull kpmtool/example -v 1.0.0
-```
-
-The default [Docker registry](#docker) which will be used is `docker.io` (i.e. Docker Hub).  A different Docker registry can be specified by setting the `--docker-registry` flag.
+1. [Create a parameters file](#create-a-parameters-file) which can be used as input to the template package.
+1. [Run the template package](#execute-a-template-package) with your parameters file.
+1. View your generated files!
 
 ### List the locally available template packages
 
 To see the list of all template packages in the local KPM repository, run the "list" subcommand:
 
-```cmd
+```sh
 kpm ls
 ```
 
@@ -116,19 +95,17 @@ The default parameters file is provided by package authors to specify default va
 
 Users may find it useful to view the default parameters file in order to gain a better understanding of how the template package works.  The "view" command can print out the default parameters file for any template package which is available in your local KPM repository:
 
-```cmd
+```sh
 kpm view kpmtool/example -v 1.0.0
 ```
 
-If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-a-template-package-from-a-docker-registry) or [packed](#pack-your-template-package)) will be used.
-
-If a version is specified and the package cannot be found in the local KPM repository, an attempt will be made to pull the package from the `docker.io` [Docker registry](#docker) (i.e. Docker Hub).  A different Docker registry can be specified by setting the `--docker-registry` flag.
+If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [packed](#pack-your-template-package)) will be used.
 
 ### Execute a template package
 
 Execute a template package with the "run" subcommand:
 
-```cmd
+```sh
 // Pull the package if you haven't already
 kpm pull kpmtool/example -v 1.0.0
 
@@ -139,9 +116,7 @@ kpm run kpmtool/example -v 1.0.0
 kpm run kpmtool/example -v 1.0.0 -f my_params.yaml
 ```
 
-If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-a-template-package-from-a-docker-registry) or [packed](#pack-your-template-package)) will be used.
-
-If a version is specified and the package cannot be found in the local KPM repository, an attempt will be made to pull the package from the `docker.io` [Docker registry](#docker) (i.e. Docker Hub).  A different Docker registry can be specified by setting the `--docker-registry` flag.
+If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [packed](#pack-your-template-package)) will be used.
 
 If an output directory is not specified with the `--output-dir` flag, files will be generated in `<current directory>/.kpm_generated/<output name>`.
 
@@ -180,7 +155,7 @@ A template package must have the following directory structure, but not every fi
 \
 ```
 
-### package.yaml
+### `package.yaml`
 
 The package information file defines the name and version of a package.  For example, a `package.yaml` file for version `1.0.0` of the package `kpmtool/helloworld` would look like this:
 
@@ -189,18 +164,18 @@ name: kpmtool/helloworld
 version: 1.0.0
 ```
 
-The name of the package should include the namespace that will be used when pushing it to a [Docker registry](#docker).  It may only contain lowercase letters, numbers, forward slashes, underscores, dashes and dots. Also, it must start with a lowercase letter.
+The name of the package may only contain lowercase letters, numbers, forward slashes, underscores, dashes and dots. Also, it must start with a lowercase letter.
 The recommended convention for naming packages is to use dots for separating segments (i.e. creating a heirarchy), and using underscores to separate words inside a segment:
 
-```cmd
-my_username/my_company.my_product.my_package_name
+```sh
+my_username/my_organization.my_product.my_package_name
 ```
 
 The version must be in the format `"major.minor.revision"`.  Leading zeros are not permitted in the `major`, `minor` or `revision` segments of the version string, however a segment may be just `0` (zero).  The zero version (`0.0.0`) is not allowed.
 
 NOTE: This file cannot be a template, and must only contain concrete values.
 
-### parameters.yaml
+### `parameters.yaml`
 
 A package author must provide a set of default parameters which will be used whenever a user does not provide a parameter.  The default parameters file is also a great place to document each parameter using comments.
 
@@ -233,7 +208,7 @@ colors:
 - blue
 ```
 
-### interface.yaml
+### `interface.yaml`
 
 The interface is a YAML template which defines what parameters the package requires in order to correctly generate output.  Parameters which are provided by the user are used as the input to this interface.  The resulting YAML is then used as the input to all other templates in the package.
 
@@ -293,13 +268,13 @@ values:
 
 This is why all templates in the package (other than the interface) need to reference the ".values" object to get the values supplied by the interface.
 
-### templates/
+### `templates/`
 
 Files in the templates directory are the text templates which will be used to generate the output files.  These can be used to generate any text format with any filename.
 
 Here is an example of a template file which generates a text file by using values provided by the [interface example](#interfaceyaml) above:
 
-```cmd
+```sh
 Hello, {{ .values.username }}!
 
 Are you enjoying KPM?  Let me know if you have any issues: https://github.com/rohitramu/kpm/issues
@@ -335,7 +310,7 @@ configuration:
   {{- end }}
 ```
 
-### helpers/
+### `helpers/`
 
 Helper templates (a.k.a. "named templates" or "partial templates") allow the definition of templates which are useful in other templates in the package.  If you find yourself copying and pasting parts of templates, defining helper templates will allow you to simplify your templates and reduce the likelihood of copy-paste errors.
 
@@ -343,7 +318,7 @@ Helper templates can be inserted by using either the [`template` action or the `
 
 A helper template file may contain any number of helper templates, and must have the extension ".tpl".  Here is an example helper template file:
 
-```cmd
+```sh
 {{- define "my helper template" -}}
 This is my helper template!  My username is {{ .values.username }}.
 {{- end -}}
@@ -364,7 +339,7 @@ message: {{ include "my helper template" . }}
 list: {{- include "my yaml colors helper" . | trim | nindent 2 }}
 ```
 
-### dependencies/
+### `dependencies/`
 
 Dependency definitions are references to other template packages.  A package dependency must contain both the package information (i.e. package name and version) and the parameters to send to that package.
 
@@ -428,7 +403,7 @@ The dash (`-`) character after the start of the placeholder (`{{`) or before the
 
 Conditional generation of output is done using if-else statements:
 
-```cmd
+```sh
 {{- if .values.show -}}
 This text will only appear if the ".values.show" boolean property is set to true.
 {{- end -}}
@@ -436,7 +411,7 @@ This text will only appear if the ".values.show" boolean property is set to true
 
 Multiple conditions can be checked, and you can also specify default behavior if all conditions fail:
 
-```cmd
+```sh
 {{- if (eq .values.color "green") -}}
 Go!
 {{- else if (eq .values.color "red") -}}
@@ -448,7 +423,7 @@ Caution...
 
 The "with" action is useful when you need to check for whether a property has been defined/supplied:
 
-```cmd
+```sh
 {{- with .values.myProperty }}
 This will only appear if ".values.myProperty" has been set.  Its value is: {{ . }}
 {{- end }}
@@ -456,7 +431,7 @@ This will only appear if ".values.myProperty" has been set.  Its value is: {{ . 
 
 The value retrieved by "with" may also be assigned to a variable:
 
-```cmd
+```sh
 {{- with $myProperty := .values.myProperty }}
 Congratulations, you set your variable to "{{ $myProperty }}"!
 {{- end }}
@@ -466,7 +441,7 @@ Congratulations, you set your variable to "{{ $myProperty }}"!
 
 We can iterate over items in an array with the "range" action:
 
-```cmd
+```sh
 {{- range .values.myArray }}
 - {{ . }}
 {{- end }}
@@ -474,7 +449,7 @@ We can iterate over items in an array with the "range" action:
 
 Each item in the array can be assigned to a variable as well.  This is useful when the items are objects rather than value types:
 
-```cmd
+```sh
 {{- range $myObject := .values.myObjectArray }}
 - I have both {{ $myObject.property1 }} and {{ $myObject.property2 }}!
 {{- end }}
@@ -489,7 +464,7 @@ Sprig is a large library of useful template functions.  All of these functions a
 
 #### Other template functions
 
-##### index
+##### `index`
 
 It is very difficult to reference parameters which have special characters in their name, for example `my-property`.  The dash character (`-`) will break the "dot notation", so the following statement will fail:
 
@@ -519,7 +494,7 @@ The index function returns the property as-is, so you can continue to manipulate
 {{ (index .values.myObject "my-weirdly-named-object") | toYaml | trim | indent 2 }}
 ```
 
-##### include
+##### `include`
 
 The `template` action can be used for inserting helper templates.
 
@@ -538,7 +513,7 @@ However, since it does not return the helper template's output as a string, tran
 {{ index (include "my helper template" . | toYaml) "myProperty" }}
 ```
 
-##### indent vs. nindent
+##### `indent` vs. `nindent`
 
 The `indent` function is used to indent all lines of a string by the given number of spaces.  This is very useful in files where whitespace and indenting is important, however it can lead to templates which are difficult to read, since the placeholder needs to be left-justified and placed on a new line:
 
@@ -565,7 +540,7 @@ myObject:
 
 To make your package available to use locally, run the "pack" subcommand:
 
-```cmd
+```sh
 kpm pack /path/to/package/root
 ```
 
@@ -573,26 +548,26 @@ This adds the package to your local KPM repository.
 
 If you are in the root directory of the package, you can just run the following (note the dot - it represents the current directory):
 
-```cmd
+```sh
 kpm pack .
 ```
 
 The pack command will then add your package to the local KPM repository, using the name and version specified in the [package definition](#packageyaml) file.
 
-It can then be executed as normal with the ["run" subcommand](#execute-a-template-package), and will be shown by the ["list" subcommand](#list-the-locally-available-template-packages):
+It will be shown by the ["list" subcommand](#list-the-locally-available-template-packages), and can be executed with the ["run" subcommand](#execute-a-template-package):
 
-```cmd
+```sh
 kpm ls
 kpm run username/my.package -v 0.1.0
 ```
 
 ### Unpack a template package
 
-Unpacking (i.e. extracting) a template package to your file system can be useful to inspect its inner workings.  It can also be useful if you need to re-push a template package to a Docker registry that you control, by modifying the package name (e.g. in production scenarios, since package versions are mutable).
+Unpacking (i.e. extracting) a template package to your file system can be useful to inspect its inner workings.
 
 Unpack a template package by running the "unpack" subcommand:
 
-```cmd
+```sh
 kpm unpack kpmtool/example -v 1.0.0
 ```
 
@@ -602,35 +577,4 @@ If an output directory is not provided with the `--output-dir` flag, `<current d
 
 If an export name is not provided with the `--export-name` flag, `<package name>-<package version>` will be used.
 
-If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [pulled](#pull-a-template-package-from-a-docker-registry) or [packed](#pack-your-template-package)) will be used.
-
-If a version is specified and the template package is not available in the local KPM repository, it will be pulled from the `docker.io` [Docker registry](#docker) (i.e. Docker Hub).  Specify a different Docker registry to use with the `--docker-registry` flag.
-
-## Sharing your template package
-
-### Push your template package to a Docker registry
-
-1. If you have not already done so, make your package locally available by running the ["pack" command](#pack-your-template-package).  You can verify that it really is locally available with the ["list" command](#list-the-locally-available-template-packages).
-
-    ```cmd
-    kpm pack /path/to/package/root
-    kpm ls
-    ```
-
-1. To push your package to a [Docker registry](#docker), ensure that you have the credentials to do so by first logging in.  For example, to get credentials for your Docker Hub account, run:
-
-    ```cmd
-    docker login docker.io
-    ```
-
-1. Run the "push" subcommand to push the template package to the Docker registry:
-
-    ```cmd
-    kpm push username/example
-    ```
-
-1. Your package is now usable by anyone who has access to your Docker repository!
-
-    ```cmd
-    kpm pull username/example -v 0.1.0
-    ```
+If a version is not specified, the highest available version which is in the local KPM repository (i.e. one that has already been [packed](#pack-your-template-package)) will be used.

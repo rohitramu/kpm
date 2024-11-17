@@ -1,0 +1,74 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches:
+    - 'master'
+    - 'develop'
+    tags:
+    - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      APP_VERSION: 0.0.0
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Print environment variables
+      run: |
+        #!/bin/bash
+        set -e -x
+
+        echo "$GITHUB_ENV"
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 'stable'
+
+    - name: Get app version from tag
+      run: |
+        #!/bin/bash
+        set -e -x
+
+        # Only ever try to get the version from the Git tag
+        if [[ $GITHUB_REF_TYPE != 'tag' ]]; then
+          exit 0
+        fi
+
+        # Official SemVer regex slightly modified to work with Bash: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+        semVerRegex='(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?'
+
+        # Check if the tag matches the semVer versioning scheme
+        if [[ $GIT_REF_NAME =~ ^v(${semVerRegex})$ ]]; then
+          # Set this GitHub action's environment variable
+          echo "APP_VERSION=${BASH_REMATCH[1]}" >> $GITHUB_ENV
+        fi
+
+    - name: Build
+      run: |
+        #!/bin/bash
+        set -e -x
+
+        go build -v -x -ldflags="-X 'github.com/rohitramu/kpm/cli/model/utils/constants.VersionString=v${APP_VERSION}'"
+
+    - name: Test
+      if: success()
+      run: go test -v ./...
+
+    - name: Release
+      if: success() && github.ref_type == 'tag' && env.APP_VERSION != '0.0.0'
+      uses: goreleaser/goreleaser-action@v6
+      with:
+        version: "${{ env.APP_VERSION }}"
+        args: release --clean
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
