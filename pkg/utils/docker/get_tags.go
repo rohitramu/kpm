@@ -78,8 +78,12 @@ func getTagsFromDockerRegistryV2Api(ch chan<- string, baseUrl string, dockerRepo
 
 		// Extract the tags
 		for _, obj := range response.Results {
-			if obj.ContentType == "image" && obj.TagStatus == "active" {
-				ch <- obj.TagName
+			if obj.ContentType == "image" {
+				if obj.TagStatus == "active" {
+					ch <- obj.TagName
+				} else {
+					log.Debugf("Inactive tag: %s:%s", dockerRepository, obj.TagName)
+				}
 			}
 		}
 
