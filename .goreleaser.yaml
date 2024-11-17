@@ -1,0 +1,4 @@
+dist: /tmp/goreleaser
+builds:
+  - ldflags:
+    - -X 'github.com/rohitramu/kpm/cli/model/utils/constants.VersionString={{ .Env.APP_VERSION }}'
