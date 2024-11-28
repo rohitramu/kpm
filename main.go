@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/rohitramu/kpm/cli"
-	"github.com/rohitramu/kpm/cli/model/utils/constants"
-	"github.com/rohitramu/kpm/pkg/utils/log"
+	"github.com/rohitramu/kpm/src/cli"
+	"github.com/rohitramu/kpm/src/cli/model/utils/constants"
+	"github.com/rohitramu/kpm/src/pkg/utils/log"
 
 	"runtime/debug"
 	"strconv"
