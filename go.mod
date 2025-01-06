@@ -6,15 +6,16 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/emirpasic/gods v1.18.1
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/otiai10/copy v1.14.0
+	github.com/otiai10/copy v1.14.1
 	github.com/spf13/cobra v1.8.1
 	github.com/vishalkuo/bimap v0.0.0-20230512162637-a5362d2f581f
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 )
 
 require (
-	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	github.com/otiai10/mint v1.6.3 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sys v0.24.0 // indirect
 )
 
 require (
